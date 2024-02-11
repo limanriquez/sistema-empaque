@@ -1,0 +1,33 @@
+{
+  "name": "inventarios",
+  "description": "",
+  "main": "",
+  "authors": [
+    "Jose Luis Manriquez"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "static/bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "^3.3.7",
+    "bootstrap-submenu": "^2.0.4",
+    "jquery": "3.5.1",
+    "angular": "1.7.9",
+    "angular-route": "1.7.9",
+    "angular-sanitize": "1.7.9",
+    "angular-animate": "1.7.9",
+    "angular-bootstrap": "^2.3.0",
+    "alertify-js": "1.9.0",
+    "font-awesome": "^4.7.0",
+    "moment": "2.18.1",
+    "dropzone": "5.5.0"
+  }
+}
