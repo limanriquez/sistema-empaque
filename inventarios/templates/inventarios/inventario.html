@@ -22,8 +22,8 @@
 <link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/alertify.min.css' %}"  />
 <link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/themes/default.min.css' %}"  />
 <div ng-controller='Inventario as vm'>
-	
-	<div class ="content dx-viewport">
+	{% initial_loader %}
+	<div class ="content dx-viewport" {% initial_loader_hide %}>
         <div dx-load-panel="vm.loadPanels.basicOptions"></div>
         <div class="row">
             <div class="col-md-9 col-xs-9">		
