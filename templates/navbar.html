@@ -1,0 +1,50 @@
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="{% url 'home' %}">Inventarios</a>
+      </div>
+      <div id="navbar" class="collapse navbar-collapse">
+        <ul class="nav navbar-nav">
+          <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-tasks" aria-hidden="true"></i> Inventario General<span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <li><a href="{% url 'inventario:inventario' %}"><i class="fa fa-archive" aria-hidden="true"></i> Inventario</a></li>
+              <li><a href=""><i class="fa fa-usd" aria-hidden="true"></i> Reportes</a></li>
+               <li><a href=""><i class="fa fa-newspaper-o" aria-hidden="true"></i> </a></li>
+            </ul>
+          </li>
+          <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" data-submenu><i class="fa fa-briefcase" aria-hidden="true"></i> Opciones<span class="caret"></span></a>
+            <ul class="dropdown-menu" role="button">
+              <li class="dropdown-header">CONFIGURACION</li>
+              <li><a href=""><i class="fa fa-file-text-o" aria-hidden="true"></i> </a></li>
+             
+              <li><a href=""><i class="fa fa-book" aria-hidden="true"></i> </a></li>
+              <li><a href="{% url 'authentication:logout' %}">Salir <i class="fa fa-sign-out" aria-hidden="true"></i> </a></li>
+             
+             
+              <li class="dropdown-submenu">
+                <a><i class="fa fa-files-o" aria-hidden="true"></i> </a>
+                <ul class="dropdown-menu">
+                   <li><a href=""><i class="fa fa-file-text-o" aria-hidden="true"></i> </a></li>
+                   <li><a href=""><i class="fa fa-newspaper-o" aria-hidden="true"></i> </a></li>
+                   <li><a href=""><i class="fa fa-leaf" aria-hidden="true"></i> </a></li>
+                </ul>
+              </li>
+              
+  
+            </ul>
+  
+  
+          </li>
+    
+        </ul>
+      </div><!--/.nav-collapse -->
+    </div>
+  </nav>
