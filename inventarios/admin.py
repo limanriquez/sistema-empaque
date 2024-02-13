@@ -2,8 +2,8 @@ from django.contrib import admin
 
 from inventarios.models import *
 # Register your models here.
-admin.site.site_header = "Inventario Horizont Re"
-admin.site.site_title = "Panel de control para inventarios de Horizon Re."
+admin.site.site_header = "Inventario lasser"
+admin.site.site_title = "Panel de control para inventarios"
 admin.site.index_title = "Bienvenidos al panel de control"
 
 class InventarioAdmin(admin.ModelAdmin):
