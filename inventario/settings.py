@@ -84,10 +84,20 @@ WSGI_APPLICATION = 'inventario.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'Main',
+        'USER': 'lasserdev',
+        'PASSWORD': 'HaHd=82VLWjz',
+        'HOST': 'localhost',  # Cambia esto si tu MySQL está en un host remoto
+        'PORT': '3306',       # Puerto predeterminado de MySQL
     }
 }
+#DATABASES = {
+ #   'default': {
+  #      'ENGINE': 'django.db.backends.sqlite3',
+   #     'NAME': BASE_DIR / 'db.sqlite3',
+    #}
+#}
 
 
 #AUTH_USER_MODEL = 'authentication.Account'
