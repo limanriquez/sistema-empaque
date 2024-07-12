@@ -18,10 +18,30 @@
 		
 			if(BtnRenovarInstance)
 				BtnRenovarInstance.option("disabled",false);
+			getSuperUsuarioPorEmpresa();
 		}
 		
 		nuevo();
-
+		function getSuperUsuarioPorEmpresa(){
+			$scope.isLoadPanelVisible = true;
+			$http.get('/getSuperUsuarioPorEmpresa/').then(
+				function(response){
+					if(response.data.length>0){
+						console.log(response.data[0]);
+						$scope.TxtTokenCondusef = response.data[0].TokenCondusef;
+						$scope.TxtNombreSuperUsuario = response.data[0].Nombre;
+						$scope.TxtContrasenia = response.data[0].Password;
+						$scope.TxtConfirmContrasenia = response.data[0].Password;
+						$scope.TxtTokenSuperUsuario = response.data[0].Token;
+		
+					}
+					
+					$scope.isLoadPanelVisible = false;
+				}, function(response){
+					//console.log('Error al traer las categorias')
+				}
+			);
+		};
 		vm.textBox = {
 			TxtTokenCondusefOptions: {
 				disabled: true,
@@ -70,8 +90,8 @@
 			},
 			TxtTokenSuperUsuarioOptions: {
 				disabled: false,
-				showClearButton: true,
-				maxLength: 300,
+				showClearButton: false,
+				maxLength: 1000,
 				bindingOptions: {
 					value: 'TxtTokenSuperUsuario'
 				},
@@ -99,7 +119,6 @@
 			},
 		}
 	
-		
 		vm.loadPanels = {
 			basicOptions: {
 				closeOnOutsideClick: false,
