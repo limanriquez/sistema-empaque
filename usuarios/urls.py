@@ -13,4 +13,5 @@ app_name = 'usuarios'
 urlpatterns = [
     path('api/v1/',include(router.urls)),
     path('usuario/', usuarios, name="usuarios"),
+    path('getSuperUsuarioPorEmpresa/', getSuperUsuarioPorEmpresa, name="getSuperUsuarioPorEmpresa"),
 ]
