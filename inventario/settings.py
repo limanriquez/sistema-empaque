@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'authentication',
     'rest_framework',
     'inventarios',
+    'usuarios',
     'users',
 ]
 
@@ -96,7 +97,7 @@ DATABASES = {
  #   'default': {
   #      'ENGINE': 'django.db.backends.sqlite3',
    #     'NAME': BASE_DIR / 'db.sqlite3',
-    #}
+   # }
 #}
 
 

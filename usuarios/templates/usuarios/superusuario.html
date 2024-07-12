@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load general_tags %}
+{% block ng_app %} <html class="no-js" lang="es" ng-app="inventarios.usuario"> {% endblock ng_app %}
+{% block head_title %} {{ title }} {% endblock head_title %}
+{% block personal_styles %}
+	.dxGrid{
+		border:1px solid #ccc;
+		margin-top: 10px;
+	}
+	.right-text input{
+		text-align: right;
+	}
+{% endblock personal_styles %}
+{% block contenido %}
+<style>
+.sin-padding{
+	padding: 0px !important;
+	text-align: center;
+}
+</style>
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/alertify.min.css' %}"  />
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/themes/default.min.css' %}"  />
+<div ng-controller='Usuario as vm'>
+	{% initial_loader %}
+	<div class ="content dx-viewport" {% initial_loader_hide %}>
+        <div dx-load-panel="vm.loadPanels.basicOptions"></div>
+        <div class="row">
+            <div class="col-md-9 col-xs-9">		
+                <div class="dx-fieldset-header" style="margin-bottom: 5px;">Super Usuario</div>	
+           </div>
+       </div>
+
+       <div class = "rowdgr" style="margin-top: 10px; padding: 0px; margin-bottom: 0px;">
+			<div class="row" style="padding-top: 15px;">
+				<div class="col-md-4 form-group" style="margin-bottom: 0px; padding-left: 30px;">
+					<div>
+						<span>Token CONDUSEF:</span> 
+					</div>
+					<div class="col-md-12 form-group" style="margin-bottom: 0px; padding: 0px;">
+						<div dx-text-box="vm.textBox.TxtTokenCondusefOptions"></div>
+					</div>
+				</div>
+
+				<div class="col-md-8 form-group" style="margin-bottom: 0px; padding-left: 30px;">
+					<div>
+						<span>Nombre de Super Usuario:</span> 
+					</div>
+					<div class="col-md-12 form-group" style="margin-bottom: 0px; padding: 0px;">
+						<div dx-text-box="vm.textBox.TxtNombreSuperUsuarioOptions"></div>
+					</div>
+				</div>
+
+			</div>
+			<div class="row" style="padding-top: 15px;">
+				<div class="col-md-4 form-group" style="margin-bottom: 0px; padding-left: 30px;">
+					<div>
+						<span>Contraseña:</span> 
+					</div>
+					<div class="col-md-12 form-group" style="margin-bottom: 0px; padding: 0px;">
+						<div dx-text-box="vm.textBox.TxtContraseniaOptions"></div>	
+					</div>
+				</div>
+
+				<div class="col-md-4 form-group" style="margin-bottom: 0px; padding-left: 30px;">
+					<div>
+						<span>Confirmar Contraseña:</span> 
+					</div>
+					<div class="col-md-12 form-group" style="margin-bottom: 0px; padding: 0px;">
+						<div dx-text-box="vm.textBox.TxtConfirmContraseniaOptions"></div>	
+					</div>
+				</div>
+
+				<div class="col-md-4 form-group" style="margin-bottom: 0px; padding-left: 30px;">
+					<div>
+						<span>Renovar Token:</span> 
+					</div>
+					<div class="col-md-12 form-group" style="margin-bottom: 0px; padding: 0px;">
+						<div dx-button="vm.button.BtnRenovarOptions"></div>
+					</div>
+					
+				</div>
+			</div>
+			
+			<div class="row" style="padding-top: 15px; padding-bottom: 15px;">
+				
+			</div>
+        </div>
+		
+
+		<div class = "rowdgr" style="margin-top: 10px; padding: 0px; margin-bottom: 0px;">
+			<div class="row" style="padding-top: 15px; padding-bottom: 15px;">
+				<div class="col-md-11 form-group" style="margin-bottom: 0px; padding: 0px; margin-left: 30px;">
+					<span>Token de Super Usuario:</span> 
+					<div class="col-md-12 form-group" style="margin-bottom: 0px; padding: 0px;">
+						<div dx-text-box="vm.textBox.TxtTokenSuperUsuarioOptions"></div>
+					</div>
+				</div>
+
+			</div>
+        </div>
+    </div>
+</div>
+{% endblock contenido %}
+{% block scripts_js %}
+	<script type="text/javascript" src="{% static 'javascripts/inventarios.config.js' %}"></script>
+	<script type="text/javascript" src="{% static 'usuarios/js/usuario.module.js' %}"></script>
+	<script type="text/javascript" src="{% static 'usuarios/js/controllers/usuario.controller.js' %}"></script>
+{% endblock scripts_js %}

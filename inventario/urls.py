@@ -24,5 +24,6 @@ urlpatterns = [
     path('', home, name='home'),
   #  path('',include('personas.urls')),
     path('',include('inventarios.urls',namespace='inventarios')),
+     path('',include('usuarios.urls',namespace='usuarios')),
     path('',include('authentication.urls',namespace='authentication')),
 ]
