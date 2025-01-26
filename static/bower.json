@@ -17,8 +17,8 @@
     "tests"
   ],
   "dependencies": {
-    "bootstrap": "^3.3.7",
-    "bootstrap-submenu": "^2.0.4",
+    "bootstrap": "3.3.7",
+    "bootstrap-submenu": "2.0.4",
     "jquery": "3.5.1",
     "angular": "1.7.9",
     "angular-route": "1.7.9",
