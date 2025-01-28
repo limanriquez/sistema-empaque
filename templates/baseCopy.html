@@ -1,0 +1,80 @@
+{% load staticfiles %}
+{% load general_tags %}
+
+<!doctype html>
+{% block ng_app %}<html class="no-js" lang="es-MX">{% endblock ng_app %}
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Inventarios - {% block head_title %}{% endblock head_title %}</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% include 'stylesheets.html' %}
+        {% block scripts_css %} {% endblock scripts_css %}
+        <style>
+            body {
+                background-color: #eee;
+                padding-top: 50px;
+            }
+            .content{
+                background-color: white;
+                box-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+                padding: 10px;
+                margin-top:5px;
+            }
+            .footer {
+                padding: 5pt;
+                position: fixed;
+                bottom: 0;
+            }
+            {% block personal_styles %}{% endblock personal_styles %}
+        </style>
+        <!--
+        background-color: rgba(0, 90, 150, 0.3);
+        <script src="https://use.fontawesome.com/76790a708b.js"></script>
+        -->
+    </head>
+    <body style="height: 100vh;">
+        <!--[if lt IE 8]>
+            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+
+        {% include 'navbar.html' %}
+        {% include 'javascripts.html' %}
+
+
+
+
+        <div id="contenedor-principal" class="container" style="height: 100%;">
+            {% block contenido %}{% endblock contenido %}
+        </div><!-- /.container -->
+        <div class="footer">
+            <div class="btn-group dropup">
+                <ul class="dropdown-menu" role="menu">
+                </ul>
+              </div>
+        </div>
+
+        <!-- Default dropright button -->
+
+        {% block scripts_js %} {% endblock scripts_js %}
+         
+ 
+        
+        <script>
+            $('[data-submenu]').submenupicker();
+            //Este se usa para formatos de fecha, moneda, etc.
+            DevExpress.localization.locale("es-MX");
+            //Con esta línea evitamos que al usar columnas con el formato currency que salgan con USD
+            DevExpress.config({defaultCurrency: 'MXN'});
+            /*Este otro se usa para los mensajes de los componentes.
+              loadMessageData se define como variable global al cargar 
+              el archivo es.js, el cual define todos los mensajes para
+              los componentes. */
+            DevExpress.localization.loadMessages(loadMessagesData); 
+        </script>
+    </body>
+</html>
+
+
+
