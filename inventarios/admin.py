@@ -48,3 +48,4 @@ admin.site.register(Categoria,CategoriaAdmin)
 admin.site.register(CatalogoElementoInventario,CatalogoElementoInventarioAdmin)
 admin.site.register(Departamento,DepartamentoAdmin)
 admin.site.register(ElementoInventario,ElementoInventarioAdmin)
+
