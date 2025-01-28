@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.urls import path, include
 
 from inventario.views import home, error_404, error_500
+
 handler404 = error_404
 handler500 = error_500
 urlpatterns = [
@@ -24,6 +25,8 @@ urlpatterns = [
     path('', home, name='home'),
   #  path('',include('personas.urls')),
     path('',include('inventarios.urls',namespace='inventarios')),
-     path('',include('usuarios.urls',namespace='usuarios')),
+    path('',include('usuarios.urls',namespace='usuarios')),
+  #  path('',include('users.urls',namespace='users')),
+    path('user/', include('users.urls', namespace='user')),  # Usa 'users' si la app se llama así
     path('',include('authentication.urls',namespace='authentication')),
 ]
