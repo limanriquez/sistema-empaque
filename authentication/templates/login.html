@@ -12,6 +12,7 @@
         body, html {
             height: 100%;
             background-color: #eef9f8; /* Fondo claro */
+            z-index: 0;
         }
 
         .card {
@@ -19,6 +20,7 @@
             border-radius: 1.5rem; /* Esquinas uniformemente redondeadas */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra inicial */
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            z-index: 2;
         }
 
         .card:hover {
@@ -51,8 +53,41 @@
             align-items: flex-start; /* Alinear más arriba */
             justify-content: center; 
             padding-top: 5rem; /* Ajustar altura superior */
+            z-index: 2;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(to right, #287AA9, #226b9c);
+            color: white;
+            overflow: hidden;
+            position: relative;
+        }
+
+        canvas {
+            background-color: transparent;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1; /* Canvas detrás */
+            transition: box-shadow 2s ease-in-out, filter 2s ease-in-out; /* Animación de sombra y filtro */
+        }
+
+        input {
+            margin: 10px;
+            padding: 10px;
+            border: 2px solid white;
+            border-radius: 5px;
+            z-index: 3; /* Cajas de texto encima del canvas */
         }
     </style>
+
 </head>
 <body>
     <div class="container-centered">
@@ -90,7 +125,124 @@
             </div>
         </div>
     </div>
+    <canvas id="lenteCanvas"></canvas>
     {% include 'javascripts.html' %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const canvas = document.getElementById("lenteCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let angle = 0;
+        let posX = Math.random() * canvas.width;
+        let posY = Math.random() * canvas.height;
+        let velocityX = (Math.random() - 0.5) * 2;
+        let velocityY = (Math.random() - 0.5) * 2;
+        let isHovered = false;
+
+        let color1 = "rgba(50, 150, 255, 0.3)";
+        let color2 = "rgba(70, 200, 255, 0.3)";
+        let color3 = "rgba(50, 150, 255, 0.3)";
+        
+        let targetColor1 = color1;
+        let targetColor2 = color2;
+        let targetColor3 = color3;
+
+        function drawLens() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(posX, posY);
+            ctx.rotate(angle * Math.PI / 180);
+            
+            // Colores originales
+            const gradient = ctx.createLinearGradient(-240, -320, 240, 320);
+            gradient.addColorStop(0, color1);
+            gradient.addColorStop(0.5, color2);
+            gradient.addColorStop(1, color3);
+            
+            // Reducir el tamaño de la figura un 10%
+            ctx.beginPath();
+            ctx.moveTo(-216, -180); // Cambié de -240, -200 a -216, -180
+            ctx.bezierCurveTo(-252, 50, 252, 50, 216, -180); // Cambié de -280, 56 a -252, 50
+            ctx.bezierCurveTo(180, -288, -180, -576, -216, -180); // Cambié de 200, -320 a 180, -288
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function animate() {
+            angle += 0.3;
+            posX += velocityX;
+            posY += velocityY;
+            
+            if (posX - 168 < 0 || posX + 168 > canvas.width) velocityX *= -1;
+            if (posY - 224 < 0 || posY + 224 > canvas.height) velocityY *= -1;
+            
+            // Lógica para animar los colores
+            color1 = lerpColor(color1, targetColor1, 0.05);
+            color2 = lerpColor(color2, targetColor2, 0.05);
+            color3 = lerpColor(color3, targetColor3, 0.05);
+            
+            drawLens();
+            requestAnimationFrame(animate);
+        }
+
+        // Función para hacer la interpolación de colores
+        function lerpColor(color1, color2, t) {
+            const rgb1 = hexToRgb(color1);
+            const rgb2 = hexToRgb(color2);
+            
+            const r = Math.round(lerp(rgb1.r, rgb2.r, t));
+            const g = Math.round(lerp(rgb1.g, rgb2.g, t));
+            const b = Math.round(lerp(rgb1.b, rgb2.b, t));
+            const a = lerp(rgb1.a, rgb2.a, t);
+            
+            return `rgba(${r}, ${g}, ${b}, ${a})`;
+        }
+
+        function lerp(start, end, t) {
+            return start + (end - start) * t;
+        }
+
+        function hexToRgb(hex) {
+            const result = /^rgba?\((\d+), (\d+), (\d+), (\d+(\.\d+)?)\)$/.exec(hex);
+            return result ? {
+                r: parseInt(result[1]),
+                g: parseInt(result[2]),
+                b: parseInt(result[3]),
+                a: parseFloat(result[4])
+            } : null;
+        }
+
+        canvas.addEventListener("mousemove", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const dx = mouseX - posX;
+            const dy = mouseY - posY;
+            isHovered = Math.sqrt(dx * dx + dy * dy) < 224; // 70% de 320
+
+            // Aplicar el desenfoque cuando el ratón está encima
+            if (isHovered) {
+                canvas.style.boxShadow = "0 0 100px rgba(0, 0, 0, 0.6)";
+                canvas.style.filter = "blur(3px)";  // Agregar filtro de desenfoque
+                // Transición de colores al pasar el ratón
+                targetColor1 = "rgba(255, 105, 180, 0.7)";
+                targetColor2 = "rgba(200, 100, 255, 0.7)";
+                targetColor3 = "rgba(135, 206, 250, 0.7)";
+            } else {
+                canvas.style.boxShadow = "0 0 0px rgba(0, 0, 0, 0.6)";
+                canvas.style.filter = "none";  // Eliminar el filtro de desenfoque
+                // Colores originales cuando no hay hover
+                targetColor1 = "rgba(50, 150, 255, 0.3)";
+                targetColor2 = "rgba(70, 200, 255, 0.3)";
+                targetColor3 = "rgba(50, 150, 255, 0.3)";
+            }
+        });
+
+        animate();
+    </script>
 </body>
 </html>
