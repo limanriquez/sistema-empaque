@@ -349,6 +349,23 @@ textarea {
     margin: 20px 0px;
 }
 
+.rowdgrBlue {
+  background: #417690;
+  background: -moz-linear-gradient(left, #417690 0%, #5488a3 26%, #69a0b7 41%, #79aec8 69%);
+  background: -webkit-gradient(left top, right top, color-stop(0%, #417690), color-stop(26%, #5488a3), color-stop(41%, #69a0b7), color-stop(69%, #79aec8));
+  background: -webkit-linear-gradient(left, #417690 0%, #5488a3 26%, #69a0b7 41%, #79aec8 69%);
+  background: -o-linear-gradient(left, #417690 0%, #5488a3 26%, #69a0b7 41%, #79aec8 69%);
+  background: -ms-linear-gradient(left, #417690 0%, #5488a3 26%, #69a0b7 41%, #79aec8 69%);
+  background: linear-gradient(to right, #417690 0%, #5488a3 26%, #69a0b7 41%, #79aec8 69%);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#417690', endColorstr='#79aec8', GradientType=1);
+
+  -moz-box-shadow: 0 0 7px #888;
+  -webkit-box-shadow: 0 0 7px #888;
+  box-shadow: 0 0 7px #888;
+
+  margin: 20px 0px;
+}
+
 .right-text input{
     text-align: right;
 }

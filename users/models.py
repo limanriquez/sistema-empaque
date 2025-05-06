@@ -8,5 +8,6 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ['username']
 
     def __str__(self):
-        return str(self.id)
+        # Cambiar para que se muestre el nombre de usuario o el correo
+        return self.email  # O si prefieres: return self.email
     

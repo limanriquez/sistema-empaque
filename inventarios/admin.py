@@ -43,9 +43,9 @@ class ElementoInventarioAdmin(admin.ModelAdmin):
     list_filter = ("Descripcion",)
 
 
-admin.site.register(Inventario,InventarioAdmin)
-admin.site.register(Categoria,CategoriaAdmin)
-admin.site.register(CatalogoElementoInventario,CatalogoElementoInventarioAdmin)
-admin.site.register(Departamento,DepartamentoAdmin)
-admin.site.register(ElementoInventario,ElementoInventarioAdmin)
+#admin.site.register(Inventario,InventarioAdmin)
+#admin.site.register(Categoria,CategoriaAdmin)
+#admin.site.register(CatalogoElementoInventario,CatalogoElementoInventarioAdmin)
+#admin.site.register(Departamento,DepartamentoAdmin)
+#admin.site.register(ElementoInventario,ElementoInventarioAdmin)
 

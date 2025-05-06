@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load general_tags %}
+{% block ng_app %} <html class="no-js" lang="es" ng-app="operaciones.operacion"> {% endblock ng_app %}
+{% block head_title %} {{ title }} {% endblock head_title %}
+{% block personal_styles %}
+{% endblock personal_styles %}
+{% block contenido %}
+<style>
+.sin-padding{
+	padding: 0px !important;
+	text-align: center;
+}
+</style>
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/alertify.min.css' %}"  />
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/themes/default.min.css' %}"  />
+<div ng-controller='Clientes as vm' style="padding-left:  40px; padding-right: 40px;">
+	{% initial_loader %}
+	<div class ="content dx-viewport" {% initial_loader_hide %}>
+		<div dx-load-panel="vm.loadPanels.basicOptions"></div>
+        <div class="row">
+            <div class="col-md-9 col-xs-9">		
+                <div class="dx-fieldset-header" style="margin-bottom: 5px;">Clientes</div>	
+           </div>
+       </div>
+	   <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+		<!-- Fila 1: Nombre y apellidos -->
+			<div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+		  		<div class="col-md-4 form-group" style="margin-bottom: 0px;">
+					<span>Nombre:</span>
+					<div dx-text-box="vm.textBox.TxtNombreOptions"></div>
+				</div>
+				<div class="col-md-4 form-group" style="margin-bottom: 0px;">
+					<span>Apellido paterno:</span>
+					<div dx-text-box="vm.textBox.TxtApellidoPaternoOptions"></div>
+				</div>
+				<div class="col-md-4 form-group" style="margin-bottom: 0px;">
+					<span>Apellido materno:</span>
+					<div dx-text-box="vm.textBox.TxtApellidoMaternoOptions"></div>
+				</div>
+			</div>
+	  
+			<!-- Fila 2: Teléfonos, correo, tipo de persona y RFC -->
+			<div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+				<div class="col-md-2 form-group" style="margin-bottom: 0px;">
+					<span>Teléfono:</span>
+					<div dx-text-box="vm.textBox.TxtTelefonoOptions"></div>
+				</div>
+				<div class="col-md-2 form-group" style="margin-bottom: 0px;">
+					<span>Teléfono 2:</span>
+					<div dx-text-box="vm.textBox.TxtTelefonoAdicionalOptions"></div>
+				</div>
+				<div class="col-md-4 form-group" style="margin-bottom: 0px;">
+					<span>Correo electrónico:</span>
+					<div dx-text-box="vm.textBox.TxtCorreoElectronicoOptions"></div>
+				</div>
+				<div class="col-md-2 form-group" style="margin-bottom: 0px;">
+					<span>Tipo de persona:</span>
+					<div dx-select-box="vm.selectBox.CmbTipoPersonaOptions"></div>
+				</div>
+				<div class="col-md-2 form-group" style="margin-bottom: 0px;">
+					<span>RFC:</span>
+					<div dx-text-box="vm.textBox.TxtRfcOptions"></div>
+				</div>
+			</div>
+	  
+			<!-- Fila 3: Dirección -->
+			<div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+				<div class="col-md-4 form-group" style="margin-bottom: 0px;">
+					<span>Dirección:</span>
+					<div dx-text-box="vm.textBox.TxtDireccionOptions"></div>
+				</div>
+				<div class="col-md-4 form-group" style="margin-bottom: 0px;"></div>
+				<div class="col-md-4 form-group" style="margin-bottom: 0px;"></div>
+			</div>
+		</div>
+		<div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+			<div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+				<div class="col-md-4 form-group" style="margin-bottom: 0px;"></div>
+				<div class="col-md-4 form-group" style="margin-bottom: 0px;"></div>
+				<div class="col-md-4 form-group" style="margin-bottom: 0px;">
+					<div dx-button="vm.button.BtnNuevoClienteOptions"></div>
+					<div dx-button="vm.button.BtnGuardarClienteOptions"></div>
+					<div dx-button="vm.button.BtnBuscarClienteOptions"></div>
+				</div>
+				
+			</div>
+		</div>
+
+
+		<div dx-popup="vm.popups.popConsultarClienteOptions">
+        	<div class="rowdgr" style="margin-top: 10px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 10px;">
+				<div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+					<div class="col-md-12 form-group" style="margin-bottom: 0px;">
+						<div dx-button="vm.button.BtnSeleccionarClienteOptions" style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+						<div dx-button="vm.button.BtnRegresarOptions" style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+					</div>		
+				</div>
+			</div>
+
+        	<div class="rowdgr" style="margin-top: 15px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 20px;">
+				<div class="row" style="padding-top: 5px; padding-left: 0px; padding-right: 5px;">
+					<div dx-data-grid="vm.grid.grdConsultarClienteOptions"></div>
+	 			</div>
+	 		</div>
+	 	</div>
+
+    </div>
+</div>
+{% endblock contenido %}
+{% block scripts_js %}
+	<script type="text/javascript" src="{% static 'javascripts/inventarios.config.js' %}"></script>
+	<script type="text/javascript" src="{% static 'operaciones/js/operacion.module.js' %}"></script>
+	<script type="text/javascript" src="{% static 'operaciones/js/controllers/cliente.controller.js' %}"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/OverlayScrollbars/2.1.0/js/OverlayScrollbars.min.js"></script>
+{% endblock scripts_js %}
