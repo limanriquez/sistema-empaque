@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'empresa',
     'usuarios',
     'users',
+    'operaciones',
 ]
 
 MIDDLEWARE = [
@@ -106,14 +107,29 @@ DATABASES = {
 #AUTH_USER_MODEL = 'authentication.Account'
 LOGIN_URL = '/login/'
 
+
 REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',  # Solo habilitado para los administradores
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+}
+
+#REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    ],
-    'DEFAULT_RENDERED_CLASSES':['rest_framework.renderers.JSONRenderer',]
-}
+  #  'DEFAULT_PERMISSION_CLASSES': [
+   #     'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+   # ],
+   # 'DEFAULT_RENDERED_CLASSES':['rest_framework.renderers.JSONRenderer',]
+#}
 
 
 

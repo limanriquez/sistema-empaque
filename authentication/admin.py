@@ -81,5 +81,5 @@ class UserAdmin(BaseUserAdmin):
     filter_horizontal = ()
 
 # Now register the new UserAdmin...
-admin.site.register(Account, UserAdmin)
+#admin.site.register(Account, UserAdmin)
 admin.site.unregister(Group)
