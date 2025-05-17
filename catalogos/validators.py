@@ -10,17 +10,32 @@ def validar_correo(value):
     if not re.match(regex, value):
         raise ValidationError(f"El correo '{value}' no tiene un formato válido.")
         
-def validar_curp(value):
-    # Expresión regular para validar el formato de CURP
-    regex = r'^[A-Z]{4}\d{6}[HM]{1}[A-Z]{5}[A-Z0-9]{3}$'
-    
-    if not re.match(regex, value):
-        raise ValidationError('CURP no válido')
+
+def validar_curp(curp):
+    patron = re.compile(
+        r'^[A-Z][AEIOU][A-Z]{2}'        # Letras iniciales
+        r'\d{2}(0[1-9]|1[0-2])'         # Año y mes de nacimiento
+        r'(0[1-9]|[12]\d|3[01])'        # Día de nacimiento
+        r'[HM]'                         # Sexo
+        r'(AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|'
+        r'GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|'
+        r'QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS)'  # Entidad federativa
+        r'[B-DF-HJ-NP-TV-Z]{3}'         # Consonantes internas
+        r'[A-Z\d]\d$'                   # Homoclave
+    )
+    return bool(patron.match(curp.upper()))
         
 def validar_rfc(value):
-    # Expresión regular para validar RFC mexicano
-    regex = r'^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$'  # Formato genérico RFC
-    if not re.match(regex, value):
+    value = value.upper()
+
+    regex = re.compile(
+        r'^([A-ZÑ&]{3}|[A-ZÑ&]{4})'         # 3 para moral, 4 para física
+        r'([0-9]{2}(0[1-9]|1[0-2])'         # Año y mes válidos
+        r'(0[1-9]|[12][0-9]|3[01]))'        # Día válido
+        r'[A-Z0-9]{3}$'                     # Homoclave
+    )
+
+    if not regex.match(value):
         raise ValidationError('RFC no válido')
 
 # Función de validación para el teléfono

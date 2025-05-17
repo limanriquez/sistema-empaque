@@ -1,10 +1,11 @@
 from django.db import models
 from catalogos.validators import validar_rfc, validar_telefono
+from django.core.validators import MinLengthValidator
 
 # Modelo de Almacen
 class Almacen(models.Model):
     nombre = models.CharField(max_length=100)
-    empresa = models.ForeignKey('empresa.Empresa', on_delete=models.CASCADE)  # Corregido
+    empresa = models.ForeignKey('empresa.Empresa', on_delete=models.PROTECT)
     status = models.BooleanField(default=True)
 
     def __str__(self):
@@ -18,7 +19,7 @@ class Almacen(models.Model):
 # Modelo de Estante
 class Estante(models.Model):
     nombre = models.CharField(max_length=100)
-    id_almacen = models.ForeignKey(Almacen, on_delete=models.CASCADE)  # Relación con Almacen
+    id_almacen = models.ForeignKey(Almacen, on_delete=models.PROTECT)  # Relación con Almacen
     status = models.BooleanField(default=True)  # Estatus del estante
 
     def __str__(self):
@@ -32,7 +33,7 @@ class Estante(models.Model):
 # Modelo de Seccion
 class Seccion(models.Model):
     nombre = models.CharField(max_length=100)
-    id_estante = models.ForeignKey(Estante, on_delete=models.CASCADE)  # Relación con Estante
+    id_estante = models.ForeignKey(Estante, on_delete=models.PROTECT)  # Relación con Estante
     status = models.BooleanField(default=True)  # Estatus de la sección
 
     def __str__(self):
@@ -105,3 +106,20 @@ class Seguros(models.Model):
     def __str__(self):
         return self.nombre
 
+
+class TipoContacto(models.Model):
+    tipo = models.CharField(
+        max_length=100,
+        null=False,  # requerido a nivel de base de datos
+        blank=False,  # requerido en formularios
+        validators=[MinLengthValidator(1)],  # evita strings vacíos o solo espacios
+        verbose_name="Tipo de contacto"
+    )
+    status = models.BooleanField(default=True, verbose_name="Activo")
+
+    class Meta:
+        verbose_name = "Tipo de contacto"
+        verbose_name_plural = "Tipos de contacto"
+
+    def __str__(self):
+        return self.tipo

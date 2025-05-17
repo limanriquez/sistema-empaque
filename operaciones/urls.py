@@ -11,4 +11,6 @@ app_name = 'operaciones'
 urlpatterns = [
     path('api/v1/',include(router.urls)),
     path('clientes/', clientes, name="clientes"),
+    path('cotizaciones/', cotizaciones, name="cotizaciones"),
+    path('existeTelefono/<str:telefono>/', existeTelefono, name="existeTelefono"),
 ]

@@ -1,9 +1,11 @@
 from inventarios.views import *
+from catalogos.views import *
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register('puesto',PuestoViewSet)
+router.register('tipoContacto',TipoContactoViewSet)
 
 app_name = 'catalogos'
 urlpatterns = [

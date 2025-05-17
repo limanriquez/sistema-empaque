@@ -234,6 +234,30 @@ class SegurosAdmin(admin.ModelAdmin):
         verbose_name_plural = 'Seguros'    
 
 
+@admin.register(TipoContacto)
+class TipoContactoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'tipo', 'status')
+    search_fields = ('tipo',)
+    list_filter = ('status',)
+    list_display_links = ('id', 'tipo')
+    fields = ('tipo', 'status')
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ('tipo',)  # Solo se puede modificar status en edición
+        return ()  # En creación, todos los campos editables
+
+    def has_change_permission(self, request, obj=None):
+        return True  # Permitimos edición (solo status editable)
+
+    def has_delete_permission(self, request, obj=None):
+        return False  # No se puede eliminar
+
+    def has_add_permission(self, request):
+        return True  # Se permite agregar nuevos registros
+
+    def has_view_permission(self, request, obj=None):
+        return True  # Se permite visualizar
 # Con el decorador de la clase se sustituye esto
 
 # Registrar el modelo y la configuración del admin

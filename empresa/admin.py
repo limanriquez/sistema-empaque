@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib import messages  # Importar messages
 from django.db import models  # Importar models
 from django.contrib.auth.models import User  # Importa el modelo User
-from .models import Empresa, Personal, Proveedor, Cliente, VehiculoFlotilla
+from .models import Empresa, Personal, Proveedor, Cliente, VehiculoFlotilla, Telefonos
 # Personalización del panel de administración
 admin.site.site_header = "Panel de control de Catálogos"
 admin.site.site_title = "Panel de control de Catálogos"
@@ -13,7 +13,7 @@ class ClienteAdmin(admin.ModelAdmin):
     # Mostrar los campos en la vista de lista
     list_display = (
         'id', 'nombre', 'apellido_paterno', 'apellido_materno', 'telefono', 
-        'telefono_adicional', 'correo_electronico', 'rfc', 'tipo_persona', 'estatus', 'fecha_registro'
+        'telefono_adicional', 'correo_electronico', 'rfc', 'tipo_persona', 'empresa','estatus', 'fecha_registro'
     )
     
     # Campos que se pueden buscar en el admin
@@ -28,7 +28,7 @@ class ClienteAdmin(admin.ModelAdmin):
     # Campos disponibles para visualizar y editar
     fields = (
         'nombre', 'apellido_paterno', 'apellido_materno', 'telefono', 'telefono_adicional', 
-        'correo_electronico', 'direccion', 'rfc', 'tipo_persona', 'estatus'
+        'correo_electronico', 'direccion', 'rfc', 'tipo_persona','empresa','estatus'
     )
     
     # Deshabilitar la opción de eliminar
@@ -173,6 +173,42 @@ class VehiculoFlotillaAdmin(admin.ModelAdmin):
     class Meta:
         verbose_name = 'Vehículo Flotilla'
         verbose_name_plural = 'Vehículos Flotilla'
+
+@admin.register(Telefonos)
+class TelefonosAdmin(admin.ModelAdmin):
+    list_display = ('id', 'numero', 'empresa', 'status')
+    search_fields = ('numero',)
+    list_filter = ('status', 'empresa')
+    list_display_links = ('id', 'numero')
+    
+    fields = ('numero', 'empresa', 'status')  # campos visibles en formulario
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # si es edición (obj existe)
+            return ('numero', 'empresa')  # solo status editable
+        else:
+            return ()  # en creación todos editables
+    
+    # Permitir modificar solo 'status' en edición
+    def has_change_permission(self, request, obj=None):
+        return True
+    
+    # No permitir eliminar
+    def has_delete_permission(self, request, obj=None):
+        return False
+    
+    # Permitir agregar
+    def has_add_permission(self, request):
+        return True
+    
+    # Permitir ver
+    def has_view_permission(self, request, obj=None):
+        return True
+
+    class Meta:
+        verbose_name = 'Teléfono'
+        verbose_name_plural = 'Teléfonos'
+
 
 # Registrar el modelo y la configuración del admin
 admin.site.register(Empresa, EmpresaAdmin)

@@ -18,6 +18,17 @@
 	{% initial_loader %}
 	<div class ="content dx-viewport" {% initial_loader_hide %}>
 		<div dx-load-panel="vm.loadPanels.basicOptions"></div>
+		<div class="container mt-4"  ng-show="modoEdicion">
+			<div class="row justify-content-center">
+			  <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+				<div class="alert text-center rounded-3 shadow-lg px-3 py-2 mb-0"
+					 role="alert"
+					 style="background-color: #ffe1cc; color: #cd6625; border: 1px solid #ffae66;">
+				  	<strong>Modo Modificación</strong>
+				</div>
+			  </div>
+			</div>
+		  </div>
         <div class="row">
             <div class="col-md-9 col-xs-9">		
                 <div class="dx-fieldset-header" style="margin-bottom: 5px;">Clientes</div>	
@@ -74,6 +85,7 @@
 				<div class="col-md-4 form-group" style="margin-bottom: 0px;"></div>
 			</div>
 		</div>
+
 		<div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
 			<div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
 				<div class="col-md-4 form-group" style="margin-bottom: 0px;"></div>

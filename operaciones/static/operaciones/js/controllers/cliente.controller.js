@@ -13,10 +13,12 @@
     function ClienteController($http, $scope, $filter) {
 		let cmbTipoPersonaOptionsInstance,btnNuevoClienteInstance,btnGuardarClienteInstance,
 		btnBuscarClienteInstance,txtCorreoElectronicoInstance, popConsultarClienteInstance,
-		BtnSeleccionarClienteInstance, BtnRegresarInstance, grdConsultarClienteInstance;
+		BtnSeleccionarClienteInstance, BtnRegresarInstance, grdConsultarClienteInstance,
+		txtTelefonoInstance;
 		let clienteSeleccionado = null;
 		let ArrayClientes = [];
         var vm = this;
+		$scope.modoEdicion = false; 
 	//	$scope.tipo_persona_source = new DevExpress.data.DataSource({
 	//		store: ArrayTipoPersona
 	//	});
@@ -33,15 +35,77 @@
 			$scope.txtRfc = "";
 			$scope.cmbTipoPersona = 1; 
 			clienteSeleccionado = null;
-			ArrayClientes.length = 0;;
+			ArrayClientes.length = 0;
+			$scope.modoEdicion = false; 
+			if(txtTelefonoInstance){
+				txtTelefonoInstance.option("disabled",false);
+			}
+			if(btnGuardarClienteInstance){
+				btnGuardarClienteInstance.option("text","Guardar");
+				btnGuardarClienteInstance.option("icon", "fas fa-save");
+			}
 		}
+		function existeTelefono(telefono) {
+			let url = '/existeTelefono/' + telefono + '/';;
+			$http.get(url)
+				.then(function(response) {
+					if(response.data.Existe = "false"){
+						guardarCliente();	
+					}
+				})
+				.catch(function(error) {
+					console.error("Error consultando teléfono:", error);
+				});
+		}
+		function guardarCliente() {
+			$scope.isLoadPanelVisible = true;
+			var cliente_json = {
+				nombre: $scope.txtNombre,
+				apellido_paterno: $scope.txtApellidoParterno,
+				apellido_materno: $scope.txtApellidoMaterno,
+				telefono: $scope.txtTelefono,
+				telefono_adicional: $scope.txtTelefonoAdicional,
+				correo_electronico: $scope.txtCorreoElectronico,
+				direccion: $scope.txtDirecion,
+				rfc: $scope.txtRfc,
+				tipo_persona: $scope.cmbTipoPersona,
+				estatus: true,  // o false dependiendo de la lógica de tu negocio
+			};
+
+			// Hacer el POST al backend con el JSON del cliente
+			$http.post('/api/v1/clientes.json', cliente_json)
+				.then(function(response) {
+					$scope.isLoadPanelVisible = false;
+					var clienteCreado = response.data;  // La respuesta del backend que contiene el cliente guardado
+		
+					// Usar SweetAlert2 para mostrar la notificación de éxito
+					Swal.fire({
+						icon: 'success',  // Tipo de alerta (success, error, warning, info)
+						title: 'Cliente guardado exitosamente',
+						text: 'El cliente se ha guardado correctamente en el sistema.',
+						confirmButtonText: 'Aceptar',
+						timer: 3500  // Duración de la alerta (en milisegundos)
+					});
+					limpiarCampos();
+					// Aquí puedes agregar otras acciones si es necesario (por ejemplo, habilitar botones, limpiar campos, etc.)
+				}, function(response) {
+					$scope.isLoadPanelVisible = false;
+					// Usar SweetAlert2 para mostrar la notificación de error
+					Swal.fire({
+						icon: 'error',  // Tipo de alerta (error)
+						title: 'Error al guardar el cliente',
+						text: 'Hubo un problema al intentar guardar la información del cliente.',
+						confirmButtonText: 'Aceptar'
+					});
+				});
+		}
+		
 		function getClientes(){
 			$scope.isLoadPanelVisible = true;
 			$http.get('/api/v1/clientes.json').then(
 				function(response){
 					ArrayClientes.length = 0;
 					for(let i = 0; i < response.data.length; i++){
-						console.log(response.data[i]);
 						ArrayClientes.push(response.data[i]);
 					}
 					grdConsultarClienteInstance.refresh();
@@ -51,6 +115,24 @@
 				}
 			);
 		};
+		
+		function llenarInformacion(){
+			$scope.txtNombre = clienteSeleccionado.nombre;
+			$scope.txtApellidoParterno = clienteSeleccionado.apellido_paterno;
+			$scope.txtApellidoMaterno = clienteSeleccionado.apellido_materno;
+			$scope.txtTelefono = clienteSeleccionado.telefono;
+			$scope.txtTelefonoAdicional = clienteSeleccionado.telefono_adicional;
+			$scope.txtCorreoElectronico = clienteSeleccionado.correo_electronico;
+			$scope.txtDirecion = clienteSeleccionado.direccion;
+			$scope.txtRfc = clienteSeleccionado.rfc;
+			$scope.cmbTipoPersona = clienteSeleccionado.tipo_persona;
+			popConsultarClienteInstance.hide();
+			$scope.modoEdicion = true; 
+			txtTelefonoInstance.option("disabled",true);
+			btnGuardarClienteInstance.option("text","Modificar");
+			btnGuardarClienteInstance.option("icon", "fas fa-edit");
+		}
+
 		$scope.clientes_source = new DevExpress.data.DataSource({
 			store: ArrayClientes
 		});
@@ -78,8 +160,19 @@
 					btnGuardarClienteInstance = e.component;
 				},
 				onClick: function(){
-					
-					
+					if($scope.modoEdicion==false){
+						if ($scope.txtTelefono && $scope.txtTelefono.trim() !== '') {
+							existeTelefono($scope.txtTelefono);
+						} else {
+							// Si el teléfono está vacío o no tiene valor, no hacemos nada
+							Swal.fire({
+								icon: 'warning',
+								title: 'Teléfono requerido',
+								text: 'Por favor ingresa un número de teléfono.',
+								confirmButtonText: 'Aceptar'
+							});
+						}
+					}
 				}
 			},
 			BtnBuscarClienteOptions: {
@@ -107,7 +200,7 @@
 					BtnSeleccionarClienteInstance = e.component;
 				},
 				onClick: function(){
-					
+					llenarInformacion();
 				}
 			},
 			BtnRegresarOptions: {
@@ -173,6 +266,9 @@
 					if (!/^\d$/.test(key) && !allowedKeys.includes(key)) {
 						e.event.preventDefault();
 					}
+				},
+				onInitialized: function(e){
+					txtTelefonoInstance = e.component;
 				},
 				onValueChanged: function(e) {
 					// Puedes agregar validación adicional aquí si deseas

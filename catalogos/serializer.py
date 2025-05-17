@@ -5,3 +5,8 @@ class PuestoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Puesto
         exclude = []
+
+class TipoContactoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoContacto
+        exclude = []
