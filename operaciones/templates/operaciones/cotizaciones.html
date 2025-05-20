@@ -14,7 +14,8 @@
 </style>
 <link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/alertify.min.css' %}"  />
 <link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/themes/default.min.css' %}"  />
-<div ng-controller='Cotizaciones as vm' style="padding-left:  40px; padding-right: 40px;">
+<div id="cotizaciones-data" data-id-empresa="{{ idEmpresa }}" data-id-personal="{{ idPersonal }}"></div>
+<div ng-controller="Cotizaciones as vm" style="padding-left: 40px; padding-right: 40px;">
 	{% initial_loader %}
 	<div class ="content dx-viewport" {% initial_loader_hide %}>
 		<div dx-load-panel="vm.loadPanels.basicOptions"></div>
@@ -113,29 +114,29 @@
 					<div class="row" style="padding: 15px 30px 0 20px;">
 						<div class="col-md-4 form-group" style="margin-bottom: 0px;">
 						<span>Marca:</span>
-						<div dx-text-box="vm.textBox.TxtNombreOptions"></div>
+						<div dx-text-box="vm.textBox.TxtMarcaOptions"></div>
 						</div>
 						<div class="col-md-4 form-group" style="margin-bottom: 0px;">
 						<span>Modelo:</span>
-						<div dx-select-box="vm.textBox.TxtApellidoPaternoOptions"></div>
+							<div dx-lookup="vm.lookup.CmbModeloOptions"></div>	
 						</div>
 						<div class="col-md-4 form-group" style="margin-bottom: 0px;">
 						<span>Año:</span>
-						<div dx-select-box="vm.textBox.TxtApellidoMaternoOptions"></div>
+							<div dx-lookup="vm.lookup.CmbAnioOptions"></div>
 						</div>
 					</div>
 
 					<div class="row" style="padding: 15px 30px 0 20px;">
 						<div class="col-md-12 form-group" style="margin-bottom: 0px;">
 							<span>Observaciones:</span>
-							<div dx-text-box="vm.textBox.TxtCorreoElectronicoOptions"></div>
+							<div dx-text-area="vm.textArea.txtAreaObservacionesOptions"></div>
 						</div>
 					</div>
 
 					<div class="row" style="padding: 15px 30px 0 20px;">
 						<div class="col-md-4 form-group" style="margin-bottom: 0px;">
 							<span>NAG:</span>
-							<div dx-text-box="vm.textBox.TxtTelefonoOptions"></div>
+							<div dx-text-box="vm.textBox.TxtNagOptions"></div>
 						</div>
 						<div class="col-md-8 form-group" style="margin-bottom: 0px; padding-top: 17px; text-align: center;">
 							<div dx-button="vm.button.BtnNuevoRegistroOptions"></div>

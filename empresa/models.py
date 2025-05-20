@@ -5,7 +5,7 @@ from django.core.validators import FileExtensionValidator, RegexValidator
 from django.contrib import admin
 from catalogos.validators import validar_rfc, validar_telefono, validar_curp, validar_telefono_mx_usa, validar_correo
 from django.core.validators import EmailValidator
-from catalogos.models import Puesto, Marca, Modelo
+from catalogos.models import Puesto, Marca, Modelo, TipoContacto
 from empresa.validators import validar_unicidad_cliente
 from users.models import User
 import re
@@ -174,8 +174,8 @@ class Telefonos(models.Model):
     status = models.BooleanField(default=True)
 
     class Meta:
-        verbose_name = 'Teléfono'
-        verbose_name_plural = 'Teléfonos'
+        verbose_name = 'Teléfono empresa'
+        verbose_name_plural = 'Teléfonos empresa'
 
     def clean(self):
         super().clean()

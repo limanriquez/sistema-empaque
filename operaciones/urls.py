@@ -1,11 +1,13 @@
 from operaciones.views import *
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+#from django.contrib.auth import views as auth_views
 
 #router = DefaultRouter()
 #router.register('catalogoElementoInventario',CatalogoElementoInventarioViewSet)
 router = DefaultRouter()
 router.register('clientes',ClientesViewSet)
+router.register('cotizaciones',CotizacionesViewSet)
 
 app_name = 'operaciones'
 urlpatterns = [
@@ -13,4 +15,5 @@ urlpatterns = [
     path('clientes/', clientes, name="clientes"),
     path('cotizaciones/', cotizaciones, name="cotizaciones"),
     path('existeTelefono/<str:telefono>/', existeTelefono, name="existeTelefono"),
+  #  path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]

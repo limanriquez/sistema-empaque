@@ -1,25 +1,41 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.contrib import messages
+from django.shortcuts import render, redirect
 from django.http import JsonResponse,HttpResponse
 from operaciones.serializer import *
 from rest_framework import viewsets
 from inventario.permissions import IsAdminOrReadOnly
+from authentication.decoradores import require_personal
 
 class ClientesViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
     serializer_class = ClientesSerializer
-    permission_classes = [IsAdminOrReadOnly]  # Aplica el permiso personalizado
-   
+   # permission_classes = [IsAdminOrReadOnly]  # Aplica el permiso personalizado
+
+class CotizacionesViewSet(viewsets.ModelViewSet):
+    queryset = Cotizacion.objects.all()
+    serializer_class = CotizacionesSerializer
+    #permission_classes = [IsAdminOrReadOnly]  # Aplica el permiso personalizado
+
 # Create your views here.
 @login_required()
+@require_personal
 def clientes(request):
 	return render(request, 'operaciones/clientes.html',{
 			'title':"Clientes"})
 
-@login_required()
+
+@login_required
+@require_personal
 def cotizaciones(request):
-	return render(request, 'operaciones/cotizaciones.html',{
-			'title':"Cotizaciones"})
+    id_personal = request.user.personal.id
+    id_empresa = request.user.personal.empresa_id
+    return render(request, 'operaciones/cotizaciones.html', {
+        'title': "Cotizaciones",
+        'idEmpresa': id_empresa,
+        'idPersonal': id_personal
+    })
+   
 
 @login_required
 def existeTelefono(request, telefono):

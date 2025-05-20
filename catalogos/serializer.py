@@ -10,3 +10,9 @@ class TipoContactoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoContacto
         exclude = []
+
+class ModeloSerializer(serializers.ModelSerializer):
+    marca_nombre = serializers.CharField(source='marca.nombre', read_only=True)
+    class Meta:
+        model = Modelo
+        exclude = []

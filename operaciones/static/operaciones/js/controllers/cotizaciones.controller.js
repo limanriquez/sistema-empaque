@@ -15,14 +15,30 @@
 		btnBuscarCotizacionInstance,txtCorreoElectronicoInstance, popConsultarCotizacionInstance,
 		BtnSeleccionarCotizacionInstance, BtnRegresarInstance,CmbTelefonoReceptorInstance, 
 		CmbTipoContactoInstance,txtTelefonoInstance, grdConsultarInventarioInstance,
-		btnNuevoRegistroInstance, btnAgregarRegistroInstance,btnEliminarRegistroInstance;
+		btnNuevoRegistroInstance, btnAgregarRegistroInstance,btnEliminarRegistroInstance,
+		CmbModeloInstance, CmbAnioInstance, txtAreaObservacionesInstance;
 
 		let cotizacionSeleccionada = null;
 		let ArrayTipoContacto = [];
 		let ArrayTelefonos = [];
 		let ArrayInventario = [];
-        var vm = this;
+		let ArrayModelo = [];
+		let ArrayAnio = [];
+		let cotizacionCreada = null;
+		let clienteCreado = null;
+		let el = document.getElementById('cotizaciones-data');
+    	$scope.idEmpresa = el.dataset.idEmpresa;
+   		$scope.idPersonal = el.dataset.idPersonal;
+
+		var vm = this;
 		$scope.modoEdicion = false; 
+	
+
+		getTipoContacto();
+		getTelefonosEmpresa();
+		getModelos();
+	//	console.log($scope.idEmpresa);  // tendrá el valor que pasó Django
+   	//	console.log($scope.idPersonal);
 	//	$scope.tipo_persona_source = new DevExpress.data.DataSource({
 	//		store: ArrayTipoPersona
 	//	});
@@ -48,6 +64,62 @@
 				btnGuardarCotizacionInstance.option("icon", "fas fa-save");
 			}
 		}
+
+		function getModelos(){
+			$scope.isLoadPanelVisible = true;
+			$http.get('/api/v1/modelo/modelos_con_marca/').then(
+				function(response){
+					ArrayModelo.length = 0;
+					for(let i = 0; i < response.data.length; i++){
+						ArrayModelo.push(response.data[i]);
+					}
+					$scope.modelo_source.load().done(function(response){
+					//	$scope.cmbTelefonoReceptor = ArrayTelefonos.length > 0 ? ArrayTelefonos[0].id : null; // selecciona el primero disponible
+        				//$scope.$applyAsync(); // para asegurar que Angular detecte el cambio
+					});
+					$scope.isLoadPanelVisible = false;
+				}, function(response){
+				}
+			);
+		};
+
+		function getTelefonosEmpresa(){
+			$scope.isLoadPanelVisible = true;
+			$http.get('/api/v1/telefonos/activos/').then(
+				function(response){
+					ArrayTelefonos.length = 0;
+					for(let i = 0; i < response.data.length; i++){
+						ArrayTelefonos.push(response.data[i]);
+					}
+					$scope.telefonos_source.load().done(function(response){
+						$scope.cmbTelefonoReceptor = ArrayTelefonos.length > 0 ? ArrayTelefonos[0].id : null; // selecciona el primero disponible
+        				//$scope.$applyAsync(); // para asegurar que Angular detecte el cambio
+					});
+					$scope.isLoadPanelVisible = false;
+				}, function(response){
+				}
+			);
+		};
+
+		function getTipoContacto(){
+			$scope.isLoadPanelVisible = true;
+			$http.get('/api/v1/tipoContacto.json').then(
+				function(response){
+					ArrayTipoContacto.length = 0;
+					ArrayTipoContacto.push({ id: 0, tipo: 'Ninguno' });
+					for(let i = 0; i < response.data.length; i++){
+						ArrayTipoContacto.push(response.data[i]);
+					}
+					$scope.tipo_contacto_source.load().done(function(response){
+						$scope.cmbTipoContacto = 0; // selecciona el primero disponible
+        				//$scope.$applyAsync(); // para asegurar que Angular detecte el cambio
+					});
+					$scope.isLoadPanelVisible = false;
+				}, function(response){
+				}
+			);
+		};
+
 		function guardarCliente() {
 			$scope.isLoadPanelVisible = true;
 			var cliente_json = {
@@ -55,11 +127,10 @@
 				apellido_paterno: $scope.txtApellidoParterno,
 				apellido_materno: $scope.txtApellidoMaterno,
 				telefono: $scope.txtTelefono,
-				telefono_adicional: $scope.txtTelefonoAdicional,
 				correo_electronico: $scope.txtCorreoElectronico,
 				direccion: $scope.txtDirecion,
-				rfc: $scope.txtRfc,
 				tipo_persona: $scope.cmbTipoPersona,
+				empresa: $scope.idEmpresa,
 				estatus: true,  // o false dependiendo de la lógica de tu negocio
 			};
 
@@ -67,18 +138,8 @@
 			$http.post('/api/v1/clientes.json', cliente_json)
 				.then(function(response) {
 					$scope.isLoadPanelVisible = false;
-					var clienteCreado = response.data;  // La respuesta del backend que contiene el cliente guardado
-		
-					// Usar SweetAlert2 para mostrar la notificación de éxito
-					Swal.fire({
-						icon: 'success',  // Tipo de alerta (success, error, warning, info)
-						title: 'Cliente guardado exitosamente',
-						text: 'El cliente se ha guardado correctamente en el sistema.',
-						confirmButtonText: 'Aceptar',
-						timer: 3500  // Duración de la alerta (en milisegundos)
-					});
-					limpiarCampos();
-					// Aquí puedes agregar otras acciones si es necesario (por ejemplo, habilitar botones, limpiar campos, etc.)
+					clienteCreado = response.data;  // La respuesta del backend que contiene el cliente guardado
+					guardarCotizacion(clienteCreado.id);
 				}, function(response) {
 					$scope.isLoadPanelVisible = false;
 					// Usar SweetAlert2 para mostrar la notificación de error
@@ -86,6 +147,43 @@
 						icon: 'error',  // Tipo de alerta (error)
 						title: 'Error al guardar el cliente',
 						text: 'Hubo un problema al intentar guardar la información del cliente.',
+						confirmButtonText: 'Aceptar'
+					});
+				});
+		}
+
+		function guardarCotizacion(cliente) {
+			$scope.isLoadPanelVisible = true;
+			var cotizacion_json = {
+				cliente: cliente,
+				personal: $scope.idPersonal,
+				telefono: $scope.cmbTelefonoReceptor, 
+				tipo_contacto: $scope.cmbTipoContacto,
+				tipo_persona: $scope.cmbTipoPersona,
+				empresa: $scope.idEmpresa,
+			};
+			// Hacer el POST al backend con el JSON del cliente
+			$http.post('/api/v1/cotizaciones.json', cotizacion_json)
+				.then(function(response) {
+					$scope.isLoadPanelVisible = false;
+					cotizacionCreada = response.data;  // La respuesta del backend que contiene el cliente guardado
+					// Usar SweetAlert2 para mostrar la notificación de éxito
+					Swal.fire({
+						icon: 'success',  // Tipo de alerta (success, error, warning, info)
+						title: 'Mensaje del sistema',
+						text: 'Cotización almacenada satisfactoriamente',
+						confirmButtonText: 'Aceptar',
+						timer: 3500  // Duración de la alerta (en milisegundos)
+					});
+					//limpiarCampos();
+					// Aquí puedes agregar otras acciones si es necesario (por ejemplo, habilitar botones, limpiar campos, etc.)
+				}, function(response) {
+					$scope.isLoadPanelVisible = false;
+					// Usar SweetAlert2 para mostrar la notificación de error
+					Swal.fire({
+						icon: 'error',  // Tipo de alerta (error)
+						title: 'Mensaje del sistema',
+						text: 'Cotización almacenada satisfactoriamente',
 						confirmButtonText: 'Aceptar'
 					});
 				});
@@ -99,14 +197,14 @@
 					for(let i = 0; i < response.data.length; i++){
 						ArrayClientes.push(response.data[i]);
 					}
-					grdConsultarClienteInstance.refresh();
 					$scope.isLoadPanelVisible = false;
 				}, function(response){
 				
 				}
 			);
 		};
-		
+
+			
 		function llenarInformacion(){
 			$scope.txtNombre = clienteSeleccionado.nombre;
 			$scope.txtApellidoParterno = clienteSeleccionado.apellido_paterno;
@@ -135,6 +233,22 @@
 		$scope.tipo_contacto_source = new DevExpress.data.DataSource({
 			store: ArrayTipoContacto
 		});
+
+
+		$scope.modelo_source = new DevExpress.data.DataSource({
+			store: ArrayModelo
+		});
+		
+		$scope.anio_source = new DevExpress.data.DataSource({
+			store: ArrayAnio
+		});
+
+		
+		var currentYear = new Date().getFullYear();
+		for (var year = currentYear; year >= 1980; year--) {
+    		ArrayAnio.push({ id: year, anio: year });
+		}
+
 		vm.button = {
 			BtnNuevaCotizacionOptions: {
 				icon: 'fas fa-eraser',
@@ -160,14 +274,17 @@
 				},
 				onClick: function(){
 					if($scope.modoEdicion==false){
-						if ($scope.txtTelefono && $scope.txtTelefono.trim() !== '') {
-						
+						if (
+							$scope.txtTelefono && $scope.txtTelefono.trim() !== '' &&
+							$scope.txtNombre && $scope.txtNombre.trim() !== ''
+						) {
+							guardarCliente();
 						} else {
 							// Si el teléfono está vacío o no tiene valor, no hacemos nada
 							Swal.fire({
 								icon: 'warning',
-								title: 'Teléfono requerido',
-								text: 'Por favor ingresa un número de teléfono.',
+								title: 'Mensaje del sistema',
+								text: 'El Nombre y el No. de Teléfono es información requerida.',
 								confirmButtonText: 'Aceptar'
 							});
 						}
@@ -255,6 +372,26 @@
 				}
 			},
 		}
+		vm.textArea = {
+			txtAreaObservacionesOptions: {
+				height: 38,
+				maxLength: 200,
+				placeholder: "Escribe las observaciones",
+				showClearButton: true,
+				autoResizeEnabled: true, // opcional
+				bindingOptions: {
+					value: 'txtAreaObservaciones'
+				},
+				onValueChanged: function(e) {
+					let value = e.value || '';
+					$scope.txtAreaObservaciones = value.toUpperCase();
+				},
+				onInitialized: function(e) {
+					txtAreaObservacionesInstance = e.component;
+				}
+			}
+		};
+
 		vm.textBox = {
 			TxtNombreOptions: {
 				disabled: false,
@@ -343,6 +480,66 @@
 					$scope.txtDirecion = $filter('uppercase')(data.value);
 				},
 			},
+			TxtMarcaOptions: {
+				disabled: true,
+				showClearButton: true,
+				maxLength: 100,
+				bindingOptions: {
+					value: 'txtMarca'
+				},
+			},
+		}
+		vm.lookup = {
+			CmbModeloOptions: {
+				dataSource: $scope.modelo_source,
+				searchEnabled: true,
+				placeholder:'Seleccione el modelo',
+				displayExpr: 'nombre',
+				valueExpr: 'id',
+				value: '',
+				dropDownOptions:{
+					title: 'Modelo',
+				},
+				cancelButtonText: 'Cancelar',
+				searchPlaceholder: 'Buscar modelo',
+				noDataText: "Sin datos",
+				bindingOptions: {
+					value: 'cmbModelo',
+				},
+				onInitialized: function(e){
+					CmbModeloInstance = e.component;
+				},
+				onValueChanged: function(e){
+					var selectedId = e.value; // id del modelo seleccionado
+					var selectedModelo = ArrayModelo.find(function(item) {
+                        return item.id === selectedId;
+                    });
+					if (selectedModelo) {
+						$scope.txtMarca = selectedModelo.marca_nombre ;
+					}
+				},
+			},
+
+			CmbAnioOptions: {
+				dataSource: $scope.anio_source,
+				searchEnabled: true,
+				placeholder:'Seleccionar el año.',
+				displayExpr: 'anio',
+				valueExpr: 'id',
+				value: '',
+				dropDownOptions:{
+					title: 'Año',
+				},
+				disabled: true,
+				disabled: false,
+				noDataText: 'Sin Datos',
+				bindingOptions: {
+					value: 'cmbAnio'
+				},
+				onInitialized: function(e){
+					CmbAnioInstance = e.component;
+				},
+			},
 		}
 		vm.selectBox = {
 			CmbTipoPersonaOptions: {
@@ -365,8 +562,8 @@
 			},
 			CmbTipoContactoOptions: {
 				dataSource: $scope.tipo_contacto_source,
-				displayExpr: 'TipoContacto',
-				valueExpr: 'Id',
+				displayExpr: 'tipo',
+				valueExpr: 'id',
 				placeholder:'Seleccionar tipo de contacto',
 				disabled: false,
 				noDataText: 'Sin Datos',
@@ -375,13 +572,13 @@
 				},
 				onInitialized: function(e){
 					CmbTipoContactoInstance = e.component;
-					$scope.cmbTipoContacto = 1; 
+					//$scope.cmbTipoContacto = 1; 
 				},
 			},
 			CmbTelefonoReceptorOptions: {
 				dataSource: $scope.telefonos_source,
-				displayExpr: 'TelefonoReceptor',
-				valueExpr: 'Id',
+				displayExpr: 'numero',
+				valueExpr: 'id',
 				placeholder:'Seleccionar el telefono.',
 				disabled: false,
 				noDataText: 'Sin Datos',
@@ -390,9 +587,9 @@
 				},
 				onInitialized: function(e){
 					CmbTelefonoReceptorInstance = e.component;
-					$scope.cmbTelefonoReceptor = 1; 
+					//$scope.cmbTelefonoReceptor = 1; 
 				},
-			},
+			},			
 		}
 		
 		vm.grid = {
@@ -415,14 +612,11 @@
     			},
 				showBorders: true,
 				columns: [{dataField: 'id', visible: false}, 
-						{dataField: 'nombre', caption: 'Nombre'},
-						{dataField: 'apellido_paterno', caption: 'Apellido paterno'},
-						{dataField: 'apellido_materno', caption: 'Apellido materno'},
-						{dataField: 'telefono', caption: 'Telefono'},
-						{dataField: 'telefono_adicional', caption: 'Telefono adicional'},
-						{dataField: 'direccion', caption: 'Dirección'},
-						{dataField: 'rfc', caption: 'RFC'},
-						{dataField: 'correo_electronico', caption: 'Email'},
+						{dataField: 'tipoCristal', caption: 'TipoCristal'},
+						{dataField: 'existencia', caption: 'Existencia'},
+						{dataField: 'NAG', caption: 'NAG'},
+						{dataField: 'empresa', caption: 'Empresa'},
+						{dataField: 'almacen', caption: 'Almacen'},
 					],
 				onInitialized: function(e){
 					grdConsultarInventarioInstance = e.component;

@@ -6,6 +6,7 @@ from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 router.register('puesto',PuestoViewSet)
 router.register('tipoContacto',TipoContactoViewSet)
+router.register('modelo',ModeloViewSet)
 
 app_name = 'catalogos'
 urlpatterns = [
