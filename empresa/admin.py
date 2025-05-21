@@ -47,12 +47,13 @@ class ClienteAdmin(admin.ModelAdmin):
         verbose_name = "Cliente"
         verbose_name_plural = "Clientes"
 
+
 class EmpresaAdmin(admin.ModelAdmin):
     list_display = ("id", "nombre", "tipo", "rfc", "activo")
     search_fields = ("nombre", "rfc", "direccion")
     list_filter = ("activo", "tipo")
     list_display_links = ("id", "nombre")
-    
+
     formfield_overrides = {
         models.DateField: {'widget': admin.widgets.AdminDateWidget(attrs={'class': 'vDateField'})},
     }
@@ -63,12 +64,18 @@ class EmpresaAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         # Verificar si ya existe una empresa matriz antes de guardar
-        if obj.tipo == 1 and Empresa.objects.filter(tipo=1).exists():
-            # Mostrar el mensaje de error
+        if obj.tipo == 1 and Empresa.objects.filter(tipo=1).exclude(pk=obj.pk).exists():
             messages.error(request, 'Ya existe una empresa matriz en el sistema. Solo puede haber una empresa matriz.')
-            return  # Detener el guardado, no continuar con el proceso
-        else:
-            super().save_model(request, obj, form, change)
+            return  # No guarda
+        super().save_model(request, obj, form, change)
+
+    def get_fields(self, request, obj=None):
+        # Solo mostrar estos 3 campos para edición
+        return ('direccion', 'telefono', 'correo_electronico')
+
+    def get_readonly_fields(self, request, obj=None):
+        # Los demás campos son de solo lectura o ni siquiera están en el formulario porque no los mostramos
+        return []  # No hay campo
 
 @admin.register(Personal)
 class PersonalAdmin(admin.ModelAdmin):

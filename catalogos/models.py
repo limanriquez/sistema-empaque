@@ -42,7 +42,7 @@ class Seccion(models.Model):
     class Meta:
         verbose_name = "Sección"
         verbose_name_plural = "Secciones"
-
+#Gestiona los puestos de la empresa(Ventas, Instalador, Seguros, Cristales sueltos)
 class Puesto(models.Model):
     nombre_puesto = models.CharField(max_length=30, blank=False)
     descripcion = models.CharField(max_length=200,  blank=False)
@@ -51,6 +51,7 @@ class Puesto(models.Model):
     def __str__(self):
         return self.nombre_puesto
 
+#Gestiona la marca delvehiculo (Nissan, Ford)
 class Marca(models.Model):
     nombre = models.CharField(max_length=30, unique=True)
 
@@ -62,6 +63,7 @@ class Marca(models.Model):
     def __str__(self):
         return self.nombre
 
+#Gestiona el modelo del vehiculo (Altima, F150)
 class Modelo(models.Model):
     nombre = models.CharField(max_length=30, unique=True)
     marca = models.ForeignKey('Marca', on_delete=models.PROTECT, related_name='modelos')
@@ -74,6 +76,7 @@ class Modelo(models.Model):
     def __str__(self):
         return f"{self.marca.nombre} {self.nombre}"
 
+#Tipos de servicio que maneja la empresa, cristales sueltos, seguros, particulares 
 class Servicios(models.Model):
     nombre = models.CharField(max_length=30, unique=True)
     descripcion = models.CharField(max_length=100, unique=True)
@@ -87,7 +90,7 @@ class Servicios(models.Model):
 
     def __str__(self):
         return self.nombre
-
+#Modelo que se encarga de gestionar los seguros con los que la empresa realiza transacciones, banamex, qualitas, etc
 class Seguros(models.Model):
     nombre = models.CharField(max_length=100)
     rfc = models.CharField(max_length=13, unique=True, validators=[validar_rfc])  # RFC con validación
@@ -106,7 +109,7 @@ class Seguros(models.Model):
     def __str__(self):
         return self.nombre
 
-
+#Modelo gestiona como el cliente nos localiza, facebook, telefono watss app, instagram etc. 
 class TipoContacto(models.Model):
     tipo = models.CharField(
         max_length=100,
@@ -123,3 +126,42 @@ class TipoContacto(models.Model):
 
     def __str__(self):
         return self.tipo
+
+#Este modelo se encarga de clasificar los tipos de cristales de los vehiculos por ejemplo, parabrisas, luneta, quemacocos etc.
+class TipoCristal(models.Model):
+    tipo_cristal = models.CharField(max_length=30, unique=True)
+    status = models.BooleanField(default=True)  # True si está activo, False si está inactivo
+
+    class Meta:
+        verbose_name = "Tipo de Cristal"
+        verbose_name_plural = "Tipos de Cristal"
+        ordering = ['tipo_cristal']  # Corregido: minúscula y coincide con el atributo
+
+    def __str__(self):
+        return self.tipo_cristal  # Mostrar el texto del campo
+
+#Este modelo se encarga de clasificar los tipos de productos de la empresa por ejemplo, cristales, pegamentos, piezas de colición, molduras etc.
+class TipoProducto(models.Model):
+    tipo_producto = models.CharField(max_length=30, unique=True)
+    status = models.BooleanField(default=True)  # True si está activo, False si está inactivo
+
+    class Meta:
+        verbose_name = "Tipo de producto"
+        verbose_name_plural = "Tipos de productos"
+        ordering = ['tipo_producto']  # Corregido: minúscula y coincide con el atributo
+
+    def __str__(self):
+        return self.tipo_producto  # Mostrar el texto del campo
+
+# Este modelo indica los tipos de precio que pueden manejar un producto: Público, Mayoreo, Distribuidor, Descuento, Especial, etc.
+class TipoPrecio(models.Model):
+    nombre = models.CharField(max_length=50, unique=True)
+    status = models.BooleanField(default=True)  # True si está activo, False si está inactivo
+
+    class Meta:
+        verbose_name = "Tipo de precio"
+        verbose_name_plural = "Tipos de precios"
+        ordering = ['nombre']  # Orden alfabético por nombre
+
+    def __str__(self):
+        return self.nombre  # Muestra el nombre del tipo de precio

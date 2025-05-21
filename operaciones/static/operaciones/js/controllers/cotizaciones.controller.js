@@ -16,7 +16,8 @@
 		BtnSeleccionarCotizacionInstance, BtnRegresarInstance,CmbTelefonoReceptorInstance, 
 		CmbTipoContactoInstance,txtTelefonoInstance, grdConsultarInventarioInstance,
 		btnNuevoRegistroInstance, btnAgregarRegistroInstance,btnEliminarRegistroInstance,
-		CmbModeloInstance, CmbAnioInstance, txtAreaObservacionesInstance;
+		CmbModeloInstance, CmbAnioInstance, txtAreaObservacionesInstance,CmbProductoInstance,
+		CmbTipoCristalInstance,txtPrecioInstance, BtnSetProductoInventarioInstance;
 
 		let cotizacionSeleccionada = null;
 		let ArrayTipoContacto = [];
@@ -24,6 +25,8 @@
 		let ArrayInventario = [];
 		let ArrayModelo = [];
 		let ArrayAnio = [];
+		let ArrayProducto = [];
+		let ArrayTipoCristal = [];
 		let cotizacionCreada = null;
 		let clienteCreado = null;
 		let el = document.getElementById('cotizaciones-data');
@@ -37,6 +40,8 @@
 		getTipoContacto();
 		getTelefonosEmpresa();
 		getModelos();
+		getTipoCristal();
+		
 	//	console.log($scope.idEmpresa);  // tendrá el valor que pasó Django
    	//	console.log($scope.idPersonal);
 	//	$scope.tipo_persona_source = new DevExpress.data.DataSource({
@@ -70,11 +75,12 @@
 			$http.get('/api/v1/modelo/modelos_con_marca/').then(
 				function(response){
 					ArrayModelo.length = 0;
+					ArrayModelo.push({ id: 0, nombre: 'Ninguno' });
 					for(let i = 0; i < response.data.length; i++){
 						ArrayModelo.push(response.data[i]);
 					}
 					$scope.modelo_source.load().done(function(response){
-					//	$scope.cmbTelefonoReceptor = ArrayTelefonos.length > 0 ? ArrayTelefonos[0].id : null; // selecciona el primero disponible
+						$scope.cmbModelo = 0;
         				//$scope.$applyAsync(); // para asegurar que Angular detecte el cambio
 					});
 					$scope.isLoadPanelVisible = false;
@@ -112,6 +118,25 @@
 					}
 					$scope.tipo_contacto_source.load().done(function(response){
 						$scope.cmbTipoContacto = 0; // selecciona el primero disponible
+        				//$scope.$applyAsync(); // para asegurar que Angular detecte el cambio
+					});
+					$scope.isLoadPanelVisible = false;
+				}, function(response){
+				}
+			);
+		};
+
+		function getTipoCristal(){
+			$scope.isLoadPanelVisible = true;
+			$http.get('/api/v1/tipoCristal/activos/').then(
+				function(response){
+					ArrayTipoCristal.length = 0;
+					ArrayTipoCristal.push({ id: 0, tipo_cristal: 'Ninguno' });
+					for(let i = 0; i < response.data.length; i++){
+						ArrayTipoCristal.push(response.data[i]);
+					}
+					$scope.tipo_cristal_source.load().done(function(response){
+						$scope.cmbTipoCristal = 0; // selecciona el primero disponible
         				//$scope.$applyAsync(); // para asegurar que Angular detecte el cambio
 					});
 					$scope.isLoadPanelVisible = false;
@@ -243,11 +268,22 @@
 			store: ArrayAnio
 		});
 
+		$scope.producto_source = new DevExpress.data.DataSource({
+			store: ArrayProducto
+		});
+
+		$scope.tipo_cristal_source = new DevExpress.data.DataSource({
+			store: ArrayTipoCristal
+		});
+
 		
 		var currentYear = new Date().getFullYear();
+		ArrayAnio.push({ id: 0, anio: "Ninguno" });
 		for (var year = currentYear; year >= 1980; year--) {
     		ArrayAnio.push({ id: year, anio: year });
 		}
+		// Seleccionar automáticamente la primera opción ("Ninguno")
+		$scope.cmbAnio = ArrayAnio[0].id;
 
 		vm.button = {
 			BtnNuevaCotizacionOptions: {
@@ -261,6 +297,19 @@
 				},
 				onClick: function(){
 					limpiarCampos();
+				}
+			},
+			BtnSetProductoInventarioOptions: {
+				icon: 'fas fa-check-circle',
+				type: 'success',
+				width: 135,
+				text: 'Seleccionar',
+				disabled: true,	
+				onInitialized: function(e){
+					BtnSetProductoInventarioInstance = e.component;
+				},
+				onClick: function(){
+					
 				}
 			},
 			BtnGuardarCotizacionOptions: {
@@ -337,7 +386,7 @@
 				type: 'default',
 				width: 135,
 				text: 'Limpiar',
-				disabled: false,	
+				disabled: true,	
 				onInitialized: function(e){
 					btnNuevoRegistroInstance = e.component;
 				},
@@ -350,7 +399,7 @@
 				type: 'success',
 				width: 135,
 				text: 'Agregar',
-				disabled: false,	
+				disabled: true,	
 				onInitialized: function(e){
 					btnAgregarRegistroInstance = e.component;
 				},
@@ -363,7 +412,7 @@
 				type: 'danger',
 				width: 135,
 				text: 'Eliminar',
-				disabled: false,	
+				disabled: true,	
 				onInitialized: function(e){
 					btnEliminarRegistroInstance = e.component;
 				},
@@ -374,7 +423,7 @@
 		}
 		vm.textArea = {
 			txtAreaObservacionesOptions: {
-				height: 38,
+				height: 53,
 				maxLength: 200,
 				placeholder: "Escribe las observaciones",
 				showClearButton: true,
@@ -488,6 +537,49 @@
 					value: 'txtMarca'
 				},
 			},
+			TxtProductoInventarioOptions: {
+				disabled: true,
+				showClearButton: true,
+				maxLength: 100,
+				bindingOptions: {
+					value: 'txtProductoInventario'
+				},
+			},
+			txtPrecioOptions: {
+				disabled: true,
+				showClearButton: true,
+				maxLength: 100,
+				bindingOptions: {
+					value: 'txtPrecio'
+				},
+				format: "#,##0.00", // formato numérico con comas y dos decimales
+				inputAttr: {
+					style: "text-align: right;" // alineación derecha
+				},
+				buttons: [
+					{
+					name: "peso",
+					location: "before",
+					options: {
+						stylingMode: "text",
+						template: function () {
+						return $("<span>")
+							.text("$")
+							.css({
+							fontWeight: "bold",
+							padding: "0 5px",
+							fontSize: "14px",
+							color: "#333"
+							});
+						}
+					}
+					}
+				],
+				onInitialized: function(e) {
+					txtPrecioInstance = e.component;
+				}
+			}
+		
 		}
 		vm.lookup = {
 			CmbModeloOptions: {
@@ -538,6 +630,46 @@
 				},
 				onInitialized: function(e){
 					CmbAnioInstance = e.component;
+				},
+			},
+			CmbTipoCristalOptions: {
+				dataSource: $scope.tipo_cristal_source,
+				searchEnabled: true,
+				placeholder:'Seleccionar tipo de cristal',
+				displayExpr: 'tipo_cristal',
+				valueExpr: 'id',
+				value: '',
+				dropDownOptions:{
+					title: 'Tipo Cristal',
+				},
+				disabled: true,
+				disabled: false,
+				noDataText: 'Sin Datos',
+				bindingOptions: {
+					value: 'cmbTipoCristal'
+				},
+				onInitialized: function(e){
+					CmbTipoCristalInstance = e.component;
+				},
+			},
+			CmbProductoOptions: {
+				dataSource: $scope.producto_source,
+				searchEnabled: true,
+				placeholder:'Seleccionar producto.',
+				displayExpr: 'producto',
+				valueExpr: 'id',
+				value: '',
+				dropDownOptions:{
+					title: 'Producto',
+				},
+				disabled: true,
+				disabled: false,
+				noDataText: 'Sin Datos',
+				bindingOptions: {
+					value: 'cmbProducto'
+				},
+				onInitialized: function(e){
+					CmbProductoInstance = e.component;
 				},
 			},
 		}

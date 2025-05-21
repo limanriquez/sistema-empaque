@@ -16,3 +16,8 @@ class ModeloSerializer(serializers.ModelSerializer):
     class Meta:
         model = Modelo
         exclude = []
+
+class TipoCristalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoCristal
+        exclude = []

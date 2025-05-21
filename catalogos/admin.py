@@ -258,6 +258,98 @@ class TipoContactoAdmin(admin.ModelAdmin):
 
     def has_view_permission(self, request, obj=None):
         return True  # Se permite visualizar
+
+
+@admin.register(TipoCristal)
+class TipoCristalAdmin(admin.ModelAdmin):
+    list_display = ('id', 'tipo_cristal', 'status')
+    search_fields = ('tipo_cristal',)
+    list_filter = ('tipo_cristal', 'status')
+    list_display_links = ('id', 'tipo_cristal')
+    fields = ('tipo_cristal', 'status')
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Si es edición, bloquear tipo_cristal
+            return ('tipo_cristal',)
+        return ()
+
+    # Deshabilitar eliminación
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    # Permitir modificación
+    def has_change_permission(self, request, obj=None):
+        return True  # Necesario para permitir editar status
+
+    # Permitir creación
+    def has_add_permission(self, request):
+        return True
+
+    # Permitir visualización
+    def has_view_permission(self, request, obj=None):
+        return True
+
+    class Meta:
+        verbose_name = 'Tipo de Cristal'
+        verbose_name_plural = 'Tipos de Cristal'
+
+@admin.register(TipoProducto)
+class TipoProductoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'tipo_producto', 'status')
+    search_fields = ('tipo_producto',)
+    list_filter = ('tipo_producto', 'status')
+    list_display_links = ('id', 'tipo_producto')
+    fields = ('tipo_producto', 'status')
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ('tipo_producto',)
+        return ()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return True  # Se permite edición (solo para 'status')
+
+    def has_add_permission(self, request):
+        return True
+
+    def has_view_permission(self, request, obj=None):
+        return True
+
+    class Meta:
+        verbose_name = 'Tipo de producto'
+        verbose_name_plural = 'Tipos de productos'
+
+@admin.register(TipoPrecio)
+class TipoPrecioAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombre', 'status')
+    search_fields = ('nombre',)
+    list_filter = ('nombre', 'status')
+    list_display_links = ('id', 'nombre')
+    fields = ('nombre', 'status')
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ('nombre',)
+        return ()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return True  # Se permite edición (solo para 'status')
+
+    def has_add_permission(self, request):
+        return True
+
+    def has_view_permission(self, request, obj=None):
+        return True
+
+    class Meta:
+        verbose_name = 'Tipo de precio'
+        verbose_name_plural = 'Tipos de precios'
 # Con el decorador de la clase se sustituye esto
 
 # Registrar el modelo y la configuración del admin

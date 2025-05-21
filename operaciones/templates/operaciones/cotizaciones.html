@@ -35,10 +35,11 @@
                 <div class="dx-fieldset-header" style="margin-bottom: 5px;">Cotizaciones</div>	
            </div>
        </div>
+	   
     
 	   <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
 		<!-- Fila 1: Nombre y apellidos -->
-			<div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+			<div class="row" style="padding-top: 5px; padding-left: 20px; padding-right: 30px;">
 		  		<div class="col-md-4 form-group" style="margin-bottom: 0px;">
 					<span>Nombre:</span>
 					<div dx-text-box="vm.textBox.TxtNombreOptions"></div>
@@ -54,7 +55,7 @@
 			</div>
 	  
 			<!-- Fila 2: Teléfonos, correo, tipo de persona y RFC -->
-			<div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+			<div class="row" style="padding-top: 5px; padding-left: 20px; padding-right: 30px;">
 				<div class="col-md-4 form-group" style="margin-bottom: 0px;">
 					<span>Teléfono:</span>
 					<div dx-text-box="vm.textBox.TxtTelefonoOptions"></div>
@@ -78,7 +79,7 @@
 			</div>
 	  
 			<!-- Fila 3: Dirección -->
-			<div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+			<div class="row" style="padding-top: 5px; padding-left: 20px; padding-right: 30px;">
 				<div class="col-md-8 form-group" style="margin-bottom: 0px;">
 					<span>Dirección:</span>
 					<div dx-text-box="vm.textBox.TxtDireccionOptions"></div>
@@ -106,42 +107,62 @@
 			</div>
 		</div>
          -->
+		
         <div class="row">
 		<!-- Columna izquierda -->
 			<div class="col-6">
 				<div class="rowdgr" style="padding-bottom: 20px;">
 					<!-- Contenido izquierdo -->
-					<div class="row" style="padding: 15px 30px 0 20px;">
+					<div class="row" style="padding: 5px 30px 0 20px;">
 						<div class="col-md-4 form-group" style="margin-bottom: 0px;">
-						<span>Marca:</span>
-						<div dx-text-box="vm.textBox.TxtMarcaOptions"></div>
+							<span>Marca:</span>
+							<div dx-text-box="vm.textBox.TxtMarcaOptions"></div>
 						</div>
 						<div class="col-md-4 form-group" style="margin-bottom: 0px;">
-						<span>Modelo:</span>
+							<span>Modelo:</span>
 							<div dx-lookup="vm.lookup.CmbModeloOptions"></div>	
 						</div>
 						<div class="col-md-4 form-group" style="margin-bottom: 0px;">
-						<span>Año:</span>
+							<span>Año:</span>
 							<div dx-lookup="vm.lookup.CmbAnioOptions"></div>
 						</div>
 					</div>
 
-					<div class="row" style="padding: 15px 30px 0 20px;">
-						<div class="col-md-12 form-group" style="margin-bottom: 0px;">
+					<div class="row" style="padding: 5px 30px 0 20px;">
+						<div class="col-md-4 form-group" style="margin-bottom: 0px;">
+							<span>Tipo cristal:</span>
+							<div dx-lookup="vm.lookup.CmbTipoCristalOptions"></div>
+						</div>
+						<div class="col-md-4 form-group" style="margin-bottom: 0px;">
+							<span>Producto/NAGS:</span>
+							<div dx-lookup="vm.lookup.CmbProductoOptions"></div>
+						</div>
+						<div class="col-md-4 form-group" style="margin-bottom: 0px;">
+							<span>Precio:</span>
+							<div dx-text-box="vm.textBox.txtPrecioOptions"></div>
+						</div>
+					</div>
+
+				
+					<div class="row" style="padding: 5px 30px 0 20px;">
+						<div class="col-md-4 form-group" style="margin-bottom: 0px;">
+							<span>Producto de inventario:</span>
+							<div dx-text-box="vm.textBox.TxtProductoInventarioOptions"></div>
+						</div>
+						<div class="col-md-8 form-group" style="margin-bottom: 0px;">
 							<span>Observaciones:</span>
 							<div dx-text-area="vm.textArea.txtAreaObservacionesOptions"></div>
 						</div>
 					</div>
 
-					<div class="row" style="padding: 15px 30px 0 20px;">
-						<div class="col-md-4 form-group" style="margin-bottom: 0px;">
-							<span>NAG:</span>
-							<div dx-text-box="vm.textBox.TxtNagOptions"></div>
-						</div>
-						<div class="col-md-8 form-group" style="margin-bottom: 0px; padding-top: 17px; text-align: center;">
+					<div class="row" style="padding: 10px 30px 0 20px;">
+						<div class="col-md-8 form-group" style="margin-bottom: 0px;">
 							<div dx-button="vm.button.BtnNuevoRegistroOptions"></div>
 							<div dx-button="vm.button.BtnAgregarRegistroOptions"></div>
 							<div dx-button="vm.button.BtnEliminarRegistroOptions"></div>
+						</div>
+						<div class="col-md-4 form-group" style="margin-bottom: 0px;">
+							
 						</div>
 					</div>
 				</div>
@@ -150,20 +171,30 @@
 			<!-- Columna derecha -->
 			<div class="col-6">
 				<div class="rowdgr" style="padding-bottom: 7px;">
-				<!-- Contenido derecho -->
-				<div class="row" style="padding: 15px 30px 0 20px;">
-					<div class="col-md-12 form-group">
-						<span>Información de inventario:</span>
-						<div class="row" style="padding-top: 5px; padding-left: 0px; padding-right: 5px;">
-							<div dx-data-grid="vm.grid.grdConsultarInventarioOptions">	
+					<!-- Contenido derecho -->
+					<div class="row" style="padding: 5px 30px 0 20px;">
+						<div class="col-md-12 form-group">
+							<span>Información de inventario:</span>
+							<div class="row" style="padding-top: 5px; padding-left: 0px; padding-right: 5px;">
+								<div dx-data-grid="vm.grid.grdConsultarInventarioOptions"></div>
+							</div>
+						<!-- Más contenido a la derecha -->
 						</div>
 					</div>
-					<!-- Más contenido a la derecha -->
-				</div>
+					<div class="row" style="padding: 5px 10px 0 20px;">
+						<div class="col-md-8 form-group" style="margin-bottom: 0px;">
+							<div dx-button="vm.button.BtnSetProductoInventarioOptions"></div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
-        
+
+        <div class="rowdgr" style="margin-top: 5px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+			<div class="row" style="padding-top: 15px; padding-left: 0px; padding-right: 5px;">
+				<div dx-data-grid="vm.grid.grdConsultarInventarioOptions"></div>
+			</div>
+		</div>
 
 		<div dx-popup="vm.popups.popConsultarClienteOptions">
         	<div class="rowdgr" style="margin-top: 10px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 10px;">

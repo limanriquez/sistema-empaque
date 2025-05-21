@@ -1,51 +1,28 @@
 from django.db import models
+from catalogos.models import TipoCristal, TipoProducto, TipoPrecio, Seccion
+from empresa.models import Empresa
 
-class Categoria(models.Model):
-    Id = models.AutoField(primary_key=True)
-    Categoria = models.CharField(max_length=300,verbose_name="Categoria")
-    Descripcion = models.CharField(max_length=300,verbose_name="Descripción")
-    Estado = models.BooleanField(default=True)
+class Producto(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    codigo = models.CharField(max_length=50, unique=True, blank=True, null=True)  # Código de barras o SKU
+    descripcion = models.TextField(blank=True, null=True)
+    tipo_cristal = models.ForeignKey(TipoCristal, on_delete=models.PROTECT,blank=True, null=True)
+    tipo_producto = models.ForeignKey(TipoProducto, on_delete=models.PROTECT)
+    empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT) #Relacionado a la empresa a la cual pertenece este producto
+    seccion = models.ForeignKey(Seccion, on_delete=models.PROTECT, blank=True, null=True)
+    total_existencia = models.PositiveIntegerField(default=0)
+    activo = models.BooleanField(default=True)
+    def __str__(self):
+        return self.nombre
+
+class PrecioProducto(models.Model):
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='precios')
+    tipo_precio = models.ForeignKey(TipoPrecio, on_delete=models.PROTECT)
+    precio = models.DecimalField(max_digits=10, decimal_places=2)  # Dos decimales, max 99999999.99 aprox
+    activo = models.BooleanField(default=True)  # Opcional para desactivar precios sin eliminar
+
+    class Meta:
+        unique_together = ('producto', 'tipo_precio')  # Para evitar duplicados por combinación
 
     def __str__(self):
-        return self.Categoria
-        
-class Departamento(models.Model):
-    Id = models.AutoField(primary_key=True)
-    Descripcion = models.CharField(max_length=300,null=True,blank=True,verbose_name="Descripción")
-    Estado = models.BooleanField(default=True)
-    def __str__(self):
-        return self.Descripcion
-
-class Inventario(models.Model):
-    Id = models.AutoField(primary_key=True)
-    #verbose_name="Apellido Paterno" Sirve para mostrar de esa manera el campo en el panel de administracion
-    NoInventario = models.CharField(max_length=300,verbose_name="Número de inventario")
-    Descripcion = models.CharField(max_length=300,null=True,blank=True,verbose_name="Descripción")
-    Observaciones = models.CharField(max_length=300,null=True,blank=True,verbose_name="Observaciones")
-    Ubicacion = models.CharField(max_length=300, verbose_name="Ubicación")
-    FechaAdquisicion = models.DateField(null=True,blank=True,verbose_name="Fecha de adquisición")
-    Precio = models.DecimalField(max_digits=12,null=True,blank=True,decimal_places=4)
-    Categoria = models.ForeignKey(Categoria,related_name = 'inventario',null=True,blank=True,on_delete=models.CASCADE)
-    Departamento = models.ForeignKey(Departamento,related_name = 'inventario',null=True,blank=True,on_delete=models.CASCADE)
-    URL = models.CharField(max_length=300,null=True,blank=True,verbose_name="URL")
-
-    def __str__(self):
-        return self.NoInventario
-
-class CatalogoElementoInventario(models.Model):
-    Id = models.AutoField(primary_key=True)
-    Descripcion = models.CharField(max_length=300,null=True,blank=True,verbose_name="Descripción")
-    Estado = models.BooleanField(default=True)
-    def __str__(self):
-        return self.Descripcion
-
-class ElementoInventario(models.Model):
-    Id = models.AutoField(primary_key=True)
-    Categoria = models.ForeignKey(CatalogoElementoInventario,related_name = 'elementosInventario',null=True,blank=True,on_delete=models.CASCADE)
-    Descripcion = models.CharField(max_length=300,null=True,blank=True,verbose_name="Descripción")
-    Inventario = models.ForeignKey(Inventario,related_name = 'elementosInventario',null=True,blank=True,on_delete=models.CASCADE)
-    def __str__(self):
-        return self.Descripcion
-
-
-
+        return f"{self.producto.nombre} - {self.tipo_precio.nombre}: ${self.precio}"

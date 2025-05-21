@@ -4,10 +4,11 @@ from catalogos.models import TipoContacto,Marca, Modelo
 
 class Cotizacion(models.Model):
     STATUS = (
-        (1, 'Creada'),
-        (2, 'Seguimiento'),
-        (3, 'Cancelada'),
-        (4, 'Finalizada'),
+        (1, 'Creada'), #Indica que se creo y puede o no tener desgloce
+        (2, 'Proceso'),#Indica que allgun producto no esta en existencia
+        (3, 'Seguimiento'),#Tanto en proceso como en seguimiento se puede retroalimentar con el cliente
+        (4, 'Cancelada'),#Se cancela
+        (5, 'Finalizada'),#Es cuando se termina y ya no lleva seguimiento, se puede finalizar con venta o no.
     ) 
     fecha_creacion = models.DateTimeField(auto_now_add=True) #Fecha en que se esta creando la cotización es automaticamente
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT) #Relacionado al cliente que solicita la cotización si el cliente es anonimo se pondra el 1 que es cleinte General
