@@ -15,26 +15,37 @@ class PrecioProductoInline(admin.TabularInline):
     def has_delete_permission(self, request, obj=None):
         return True  # puedes ajustar si quieres bloquearlo
 
+from django.contrib import admin
+from .models import Producto, PrecioProducto
+
+class PrecioProductoInline(admin.TabularInline):
+    model = PrecioProducto
+    extra = 1
+
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'nombre', 'codigo', 'tipo_producto', 
-        'empresa', 'seccion', 'estante', 'almacen', 'total_existencia', 'activo'
+        'id', 'nombre', 'codigo', 'tipo_producto',
+        'empresa', 'seccion', 'get_total_existencia', 'es_compuesto', 'activo'
     )
     search_fields = ('nombre', 'codigo')
-    list_filter = ('activo', 'tipo_producto', 'empresa')
+    list_filter = ('activo', 'tipo_producto', 'empresa', 'es_compuesto')
     list_display_links = ('id', 'nombre')
     inlines = [PrecioProductoInline]
+
+    def get_total_existencia(self, obj):
+        return sum(c.stock_item.existencia for c in obj.componentes.all())
+    get_total_existencia.short_description = 'Total Existencia'
 
     def get_fields(self, request, obj=None):
         fields = [
             'nombre', 'codigo', 'descripcion',
-            'tipo_producto', 'empresa',
-            'total_existencia', 'activo'
+            'tipo_producto', 'empresa', 'es_compuesto', 'activo'
         ]
         if obj:
-            fields.insert(6, 'seccion')  # después de empresa
+            fields.insert(fields.index('empresa') + 1, 'seccion')
         return fields
+
 
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -86,3 +97,33 @@ class ProductoAdmin(admin.ModelAdmin):
     class Meta:
         verbose_name = 'Producto'
         verbose_name_plural = 'Productos'
+
+
+@admin.register(StockItem)
+class StockItemAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombre', 'existencia', 'listar_proveedores')
+    list_display_links = ('nombre',)
+    search_fields = ('nombre', 'proveedores__nombre')  # para buscar por proveedor
+    filter_horizontal = ('proveedores',)  # para seleccionar varios proveedores fácilmente
+    actions = None  # deshabilita acciones masivas como eliminar
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def listar_proveedores(self, obj):
+        return ", ".join([p.nombre for p in obj.proveedores.all()])
+    listar_proveedores.short_description = 'Proveedores'
+
+@admin.register(BOM)
+class BOMAdmin(admin.ModelAdmin):
+    list_display = ('id', 'producto_nombre', 'stock_item_nombre', 'cantidad')
+    list_display_links = ('producto_nombre', 'stock_item_nombre')
+    search_fields = ('producto__nombre', 'stock_item__nombre')
+
+    def producto_nombre(self, obj):
+        return obj.producto.nombre
+    producto_nombre.short_description = 'Producto'
+
+    def stock_item_nombre(self, obj):
+        return obj.stock_item.nombre
+    stock_item_nombre.short_description = 'Stock Item'

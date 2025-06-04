@@ -1,6 +1,7 @@
 from django.db import models
 from catalogos.models import TipoProducto, TipoPrecio, Seccion
-from empresa.models import Empresa
+from empresa.models import Empresa, Proveedor
+
 
 class Producto(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
@@ -9,7 +10,7 @@ class Producto(models.Model):
     tipo_producto = models.ForeignKey(TipoProducto, on_delete=models.PROTECT)
     empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT) #Relacionado a la empresa a la cual pertenece este producto
     seccion = models.ForeignKey(Seccion, on_delete=models.PROTECT, blank=True, null=True)
-    total_existencia = models.PositiveIntegerField(default=0)
+    es_compuesto = models.BooleanField(default=False)
     activo = models.BooleanField(default=True)
     def __str__(self):
         return self.nombre
@@ -25,3 +26,24 @@ class PrecioProducto(models.Model):
 
     def __str__(self):
         return f"{self.producto.nombre} - {self.tipo_precio.nombre}: ${self.precio}"
+
+
+class StockItem(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    existencia = models.PositiveIntegerField(default=0)  # No puede ser negativo
+    proveedores = models.ManyToManyField(Proveedor, related_name='stock_items', blank=True)
+
+    def __str__(self):
+        return f"{self.nombre} ({self.existencia})"
+
+# Bill of Materials (en español: Lista de Materiales). Son los insumos para armar un producto de venta.
+class BOM(models.Model):
+    producto = models.ForeignKey(Producto, on_delete=models.PROTECT, related_name='componentes')
+    stock_item = models.ForeignKey(StockItem, on_delete=models.PROTECT)
+    cantidad = models.PositiveIntegerField()
+
+    class Meta:
+        unique_together = ('producto', 'stock_item')
+
+    def __str__(self):
+        return f"{self.cantidad} x {self.stock_item.nombre} para {self.producto.nombre}"
