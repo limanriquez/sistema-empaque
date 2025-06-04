@@ -5,7 +5,7 @@ from django.core.validators import FileExtensionValidator, RegexValidator
 from django.contrib import admin
 from catalogos.validators import validar_rfc, validar_telefono, validar_curp, validar_telefono_mx_usa, validar_correo
 from django.core.validators import EmailValidator
-from catalogos.models import Puesto, Marca, Modelo, TipoContacto
+from catalogos.models import Puesto
 from empresa.validators import validar_unicidad_cliente
 from users.models import User
 import re
@@ -81,8 +81,6 @@ class Cliente(models.Model):
         verbose_name = "Cliente"
         verbose_name_plural = "Clientes"
 
-
-
 class Personal(models.Model):
     # Campos básicos del empleado
     nombre = models.CharField(max_length=100)
@@ -135,38 +133,6 @@ class Proveedor(models.Model):
         verbose_name = "Proveedor"
         verbose_name_plural = "Proveedores"
         ordering = ['nombre']
-
-class VehiculoFlotilla(models.Model):
-    TIPO_VEHICULO = (
-        ('sedan', 'Sedán'),
-        ('suv', 'SUV'),
-        ('pickup', 'Pickup'),
-        ('van', 'Van'),
-        ('camion', 'Camión'),
-        ('camioneta', 'Camioneta'),
-        ('furgoneta', 'Furgoneta'),
-        # Puedes añadir más tipos de vehículos si lo deseas
-    )
-    
-    # Relación con las tablas de Marca y Modelo
-    marca = models.ForeignKey('catalogos.Marca', on_delete=models.PROTECT)
-    modelo = models.ForeignKey('catalogos.Modelo', on_delete=models.PROTECT)
-    
-    # Campos adicionales
-    placa = models.CharField(max_length=10, unique=True)  # Placa única
-    vin = models.CharField(max_length=20, unique=True)  # VIN de 17 caracteres
-    año = models.IntegerField()
-    color = models.CharField(max_length=20)
-    tipo_vehiculo = models.CharField(max_length=10, choices=TIPO_VEHICULO)
-    estatus = models.BooleanField(default=True)  # True si está activo, False si está inactivo
-    empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT)
-    def __str__(self):
-        return f'{self.marca.nombre} {self.modelo.nombre} - {self.placa} ({self.tipo_vehiculo})'
-
-    class Meta:
-        verbose_name = 'Vehículo Flotilla'
-        verbose_name_plural = 'Vehículos Flotilla'
-
 
 class Telefonos(models.Model):
     numero = models.CharField(max_length=15)

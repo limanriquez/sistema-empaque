@@ -90,8 +90,8 @@ WSGI_APPLICATION = 'inventario.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'Main',
-        'USER': 'lasserdev',
+        'NAME': 'MainPuntoVenta',
+        'USER': 'root',
         'PASSWORD': 'HaHd=82VLWjz',
         'HOST': 'localhost',  # Cambia esto si tu MySQL está en un host remoto
         'PORT': '3306',       # Puerto predeterminado de MySQL

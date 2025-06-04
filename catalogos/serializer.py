@@ -5,19 +5,3 @@ class PuestoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Puesto
         exclude = []
-
-class TipoContactoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TipoContacto
-        exclude = []
-
-class ModeloSerializer(serializers.ModelSerializer):
-    marca_nombre = serializers.CharField(source='marca.nombre', read_only=True)
-    class Meta:
-        model = Modelo
-        exclude = []
-
-class TipoCristalSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TipoCristal
-        exclude = []

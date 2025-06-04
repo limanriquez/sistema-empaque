@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib import messages  # Importar messages
 from django.db import models  # Importar models
 from django.contrib.auth.models import User  # Importa el modelo User
-from .models import Empresa, Personal, Proveedor, Cliente, VehiculoFlotilla, Telefonos
+from .models import Empresa, Personal, Proveedor, Cliente, Telefonos
 # Personalización del panel de administración
 admin.site.site_header = "Panel de control de Catálogos"
 admin.site.site_title = "Panel de control de Catálogos"
@@ -48,6 +48,7 @@ class ClienteAdmin(admin.ModelAdmin):
         verbose_name_plural = "Clientes"
 
 
+@admin.register(Empresa)
 class EmpresaAdmin(admin.ModelAdmin):
     list_display = ("id", "nombre", "tipo", "rfc", "activo")
     search_fields = ("nombre", "rfc", "direccion")
@@ -59,23 +60,17 @@ class EmpresaAdmin(admin.ModelAdmin):
     }
 
     def has_delete_permission(self, request, obj=None):
-        # No permitir eliminar ninguna empresa
-        return False
+        return False  # No permitir eliminar empresas
 
     def save_model(self, request, obj, form, change):
-        # Verificar si ya existe una empresa matriz antes de guardar
         if obj.tipo == 1 and Empresa.objects.filter(tipo=1).exclude(pk=obj.pk).exists():
             messages.error(request, 'Ya existe una empresa matriz en el sistema. Solo puede haber una empresa matriz.')
-            return  # No guarda
+            return
         super().save_model(request, obj, form, change)
 
     def get_fields(self, request, obj=None):
-        # Solo mostrar estos 3 campos para edición
-        return ('direccion', 'telefono', 'correo_electronico')
-
-    def get_readonly_fields(self, request, obj=None):
-        # Los demás campos son de solo lectura o ni siquiera están en el formulario porque no los mostramos
-        return []  # No hay campo
+        # Muestra todos los campos menos 'id'
+        return [f.name for f in self.model._meta.fields if f.name != 'id']
 
 @admin.register(Personal)
 class PersonalAdmin(admin.ModelAdmin):
@@ -144,43 +139,6 @@ class ProveedorAdmin(admin.ModelAdmin):
         verbose_name = "Proveedor"
         verbose_name_plural = "Proveedores"
 
-@admin.register(VehiculoFlotilla)
-class VehiculoFlotillaAdmin(admin.ModelAdmin):
-    list_display = (
-        'id', 'marca', 'modelo', 'placa', 'vin', 'año', 
-        'color', 'tipo_vehiculo', 'estatus'
-    )
-    search_fields = ('placa', 'vin', 'marca__nombre', 'modelo__nombre', 'color')
-    list_filter = ('tipo_vehiculo', 'estatus', 'marca', 'modelo')
-    list_display_links = ('id', 'placa')
-    fields = (
-        'modelo', 'placa', 'vin', 'año', 
-        'color', 'tipo_vehiculo', 'estatus'
-    )
-    readonly_fields = ('marca',)  # Marca es solo lectura y no editable
-
-    # Sobrescribimos el método save_model para que la marca se autocomplemente
-    def save_model(self, request, obj, form, change):
-        if obj.modelo:  # Solo asignar marca si el modelo está presente
-            obj.marca = obj.modelo.marca  # Asigna la marca del modelo seleccionado
-        else:
-            # Si no hay modelo seleccionado, no asigna marca y levanta un error
-            raise ValueError("El modelo debe ser seleccionado para asignar una marca.")
-        super().save_model(request, obj, form, change)
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def has_add_permission(self, request):
-        return True
-
-    def has_view_permission(self, request, obj=None):
-        return True
-
-    class Meta:
-        verbose_name = 'Vehículo Flotilla'
-        verbose_name_plural = 'Vehículos Flotilla'
-
 @admin.register(Telefonos)
 class TelefonosAdmin(admin.ModelAdmin):
     list_display = ('id', 'numero', 'empresa', 'status')
@@ -217,6 +175,4 @@ class TelefonosAdmin(admin.ModelAdmin):
         verbose_name_plural = 'Teléfonos'
 
 
-# Registrar el modelo y la configuración del admin
-admin.site.register(Empresa, EmpresaAdmin)
 

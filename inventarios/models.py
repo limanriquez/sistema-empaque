@@ -1,12 +1,11 @@
 from django.db import models
-from catalogos.models import TipoCristal, TipoProducto, TipoPrecio, Seccion
+from catalogos.models import TipoProducto, TipoPrecio, Seccion
 from empresa.models import Empresa
 
 class Producto(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     codigo = models.CharField(max_length=50, unique=True, blank=True, null=True)  # Código de barras o SKU
     descripcion = models.TextField(blank=True, null=True)
-    tipo_cristal = models.ForeignKey(TipoCristal, on_delete=models.PROTECT,blank=True, null=True)
     tipo_producto = models.ForeignKey(TipoProducto, on_delete=models.PROTECT)
     empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT) #Relacionado a la empresa a la cual pertenece este producto
     seccion = models.ForeignKey(Seccion, on_delete=models.PROTECT, blank=True, null=True)

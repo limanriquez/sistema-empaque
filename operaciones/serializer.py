@@ -7,7 +7,3 @@ class ClientesSerializer(serializers.ModelSerializer):
         model = Cliente
         exclude = []
     
-class CotizacionesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Cotizacion
-        exclude = []

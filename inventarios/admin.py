@@ -18,31 +18,24 @@ class PrecioProductoInline(admin.TabularInline):
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'nombre', 'codigo', 'tipo_producto', 'tipo_cristal', 
+        'id', 'nombre', 'codigo', 'tipo_producto', 
         'empresa', 'seccion', 'estante', 'almacen', 'total_existencia', 'activo'
     )
     search_fields = ('nombre', 'codigo')
-    list_filter = ('activo', 'tipo_producto', 'tipo_cristal', 'empresa')
+    list_filter = ('activo', 'tipo_producto', 'empresa')
     list_display_links = ('id', 'nombre')
     inlines = [PrecioProductoInline]
 
     def get_fields(self, request, obj=None):
         fields = [
             'nombre', 'codigo', 'descripcion',
-            'tipo_producto', 'tipo_cristal', 'empresa',
+            'tipo_producto', 'empresa',
             'total_existencia', 'activo'
         ]
         if obj:
             fields.insert(6, 'seccion')  # después de empresa
         return fields
 
-    def get_readonly_fields(self, request, obj=None):
-        readonly = []
-        if obj:
-            # Si el tipo_producto NO es CRISTALES, tipo_cristal es readonly
-            if obj.tipo_producto.tipo_producto.upper() != "CRISTALES":
-                readonly.append('tipo_cristal')
-        return readonly
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'seccion':
