@@ -20,6 +20,11 @@ def clientes(request):
 	return render(request, 'operaciones/clientes.html',{
 			'title':"Clientes"})
    
+@login_required()
+@require_personal
+def punto_de_venta(request):
+	return render(request, 'operaciones/punto_venta.html',{
+			'title':"Punto de venta"})
 
 @login_required
 def existeTelefono(request, telefono):

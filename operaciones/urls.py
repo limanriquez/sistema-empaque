@@ -12,6 +12,7 @@ app_name = 'operaciones'
 urlpatterns = [
     path('api/v1/',include(router.urls)),
     path('clientes/', clientes, name="clientes"),
+    path('punto_de_venta/', punto_de_venta, name="punto_de_venta"),
     path('existeTelefono/<str:telefono>/', existeTelefono, name="existeTelefono"),
   #  path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]

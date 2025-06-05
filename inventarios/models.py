@@ -11,6 +11,7 @@ class Producto(models.Model):
     empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT) #Relacionado a la empresa a la cual pertenece este producto
     seccion = models.ForeignKey(Seccion, on_delete=models.PROTECT, blank=True, null=True)
     es_compuesto = models.BooleanField(default=False)
+    vendible = models.BooleanField(default=True)  # Si se usa directamente en ventas o no
     activo = models.BooleanField(default=True)
     def __str__(self):
         return self.nombre

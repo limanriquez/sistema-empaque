@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load general_tags %}
+{% block ng_app %}
+<html class="no-js" lang="es" ng-app="operaciones.operacion" ng-init="usuario='{{usuario}}'">
+{% endblock ng_app %}
+{% block head_title %} {{ title }} {% endblock head_title %}
+
+{% block contenido %}
+
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/alertify.min.css' %}" />
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/themes/default.min.css' %}" />
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
+
+<style>
+    .card-like {
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: #333;
+        border: 1px solid #ddd;
+        padding: 15px;
+        min-height: 100px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        text-align: center;
+        background-color: white;
+        transition: box-shadow 0.3s ease;
+        cursor: pointer;
+        /* Indica que es clickeable */
+    }
+
+    .card-like:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .scroll-card-grid {
+        max-height: calc(4 * 130px);
+        /* 4 filas de altura aprox */
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 15px;
+    }
+
+    /* Agrego padding bottom al contenedor para que no tape el párrafo fijo */
+    div[ng-controller="PanelController as vm"] {
+        padding-bottom: 15vh;
+    }
+
+    /* Párrafo fijo abajo */
+    .fixed-bottom-paragraph {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 15vh;
+        background-color: #f8f9fa;
+        border-top: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 20px;
+        box-sizing: border-box;
+        z-index: 1050;
+    }
+
+    .fixed-bottom-paragraph p {
+        margin: 0;
+        color: #666;
+        text-align: center;
+        font-size: 1rem;
+    }
+
+    /* Nuevo div */
+    .mi-nuevo-div {
+        margin-top: 15px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        background-color: #fafafa;
+        font-weight: 500;
+        text-align: center;
+    }
+</style>
+
+<div ng-controller="PuntoVenta as vm">
+    {% initial_loader %}
+    <div class="content dx-viewport" {% initial_loader_hide %}>
+        <!-- Contenedor fila que contiene columna 8 + columna 4 -->
+        <div class="row justify-content-center" style="margin-top:15px;">
+
+            <!-- Columna 8: listado o filtrado -->
+            <div class="col-md-8">
+
+                <!-- Mostrar listado por categorías si NO hay filtro -->
+                <div ng-if="!vm.filtro || vm.filtro === ''">
+
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs">
+                        <li ng-repeat="cat in vm.categorias" ng-class="{active: vm.categoriaActiva === cat.id}">
+                            <a href="" ng-click="vm.setCategoria(cat.id)">
+                                {[{cat.nombre}]} - {[{cat.predios.length}]}
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Contenido por categoría -->
+                    <div class="tab-content" style="margin-top:15px;">
+                        <div class="tab-pane fade" ng-repeat="cat in vm.categorias"
+                            ng-class="{'active': vm.categoriaActiva === cat.id, 'in': vm.categoriaActiva === cat.id}"
+                            ng-show="vm.categoriaActiva === cat.id">
+                            <div class="scroll-card-grid">
+                                <div class="grid">
+                                    <div class="card-like" ng-repeat="predio in cat.predios"
+                                        ng-style="{'background-color': predio.color}"
+                                        ng-click="vm.mostrarAlertId(predio.id)">
+                                        <strong>{[{predio.nombre}]}</strong><br />
+                                        Cultivo: {[{predio.cultivo}]}<br />
+                                        ID: {[{predio.id}]}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Mostrar listado filtrado si hay filtro -->
+                <div ng-if="vm.filtro && vm.filtro !== ''">
+                    <div class="scroll-card-grid">
+                        <div class="grid">
+                            <div class="card-like" ng-repeat="predio in vm.prediosFiltrados() track by predio.id"
+                                ng-style="{'background-color': predio.color || '#f0f0f0'}"
+                                ng-click="vm.mostrarAlertId(predio.id)">
+                                <strong>{[{predio.nombre}]}</strong><br />
+                                Cultivo: {[{predio.cultivo}]}<br />
+                                ID: {[{predio.id}]}
+                            </div>
+                        </div>
+                    </div>
+                    <div ng-if="vm.prediosFiltrados().length === 0" class="col-12 text-center text-muted"
+                        style="margin-top: 15px;">
+                        No se encontraron predios que coincidan con el filtro.
+                    </div>
+                </div>
+
+                <!-- NUEVO DIV agregado justo debajo del listado o filtrado dentro de col-md-8 -->
+                <div class="mi-nuevo-div" style="height: 120px">
+                    Aquí va tu nuevo contenido o funcionalidad justo debajo del listado/filtrado.
+                </div>
+
+            </div>
+
+            <!-- Columna 4: filtro + grid SIEMPRE visibles -->
+            <div class="col-md-4">
+                <input type="text" ng-model="vm.filtro" placeholder="Filtrar por nombre, cultivo o ID"
+                    class="form-control" style="margin-bottom: 8px;" />
+
+                <div class="row" style="margin-left: 0px; margin-right: 0px;" id="gridSiniestros">
+                    <div class="rowdgr" style="margin-top: 0px; padding: 5px 20px 5px 30px; margin-bottom: 10px;">
+                        <span>Pagos:</span>
+                        <div class="row" style="padding-right: 15px; height: 635px; overflow-y: auto;">
+                            <div dx-data-grid="vm.grids.gridSiniestrosOptions" style="height: 620px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!-- Párrafo fijo abajo -->
+        <div class="fixed-bottom-paragraph">
+            <p>
+                Aquí va tu párrafo que estará anclado abajo y ocupará el 15% de la pantalla.
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock contenido %}
+
+{% block scripts_js %}
+<script type="text/javascript" src="{% static 'javascripts/inventarios.config.js' %}"></script>
+<script type="text/javascript" src="{% static 'operaciones/js/operacion.module.js' %}"></script>
+<script type="text/javascript" src="{% static 'operaciones/js/controllers/puntoVenta.controller.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OverlayScrollbars/2.1.0/js/OverlayScrollbars.min.js"></script>
+{% endblock scripts_js %}

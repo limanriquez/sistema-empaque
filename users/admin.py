@@ -11,31 +11,45 @@ except admin.sites.NotRegistered:
     pass  # Si no está registrado, no hacemos nada
 
 class CustomUserAdmin(UserAdmin):
-    # Los campos que quieres mostrar en el panel de administración
     list_display = ("email", "username", "is_staff", "is_active")
     search_fields = ("email", "username")
     list_filter = ("is_staff", "is_active")
 
-    # Los conjuntos de campos que se van a mostrar (sin 'groups' ni 'user_permissions')
     fieldsets = (
-        (None, {'fields': ('email', 'password')}), 
-        ('Información personal', {'fields': ('username',)}), 
-        ('Permisos', {'fields': ('is_active', 'is_staff', 'is_superuser')}),  # Sin 'groups' ni 'user_permissions'
-        ('Fechas importantes', {'fields': ('last_login', 'date_joined')}), 
+        (None, {'fields': ('email', 'password')}),
+        ('Información personal', {'fields': ('username',)}),
+        ('Permisos', {
+            'fields': (
+                'is_active',
+                'is_staff',
+                'is_superuser',
+                'groups',
+                'user_permissions',
+            )
+        }),
+        ('Fechas importantes', {'fields': ('last_login', 'date_joined')}),
     )
 
-    # Para agregar el formulario de cambio de contraseña
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'username', 'password1', 'password2', 'is_active', 'is_staff')
+            'fields': (
+                'email',
+                'username',
+                'password1',
+                'password2',
+                'is_active',
+                'is_staff',
+                'is_superuser',
+                'groups',
+                'user_permissions',
+            ),
         }),
     )
 
-    # Esta es la clave para permitir el cambio de contraseña desde el admin
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
-        if not obj:  # Si estamos creando un nuevo usuario
+        if not obj:
             return fieldsets
         return fieldsets + (
             ('Password change', {'fields': ('password',)}),
@@ -43,6 +57,6 @@ class CustomUserAdmin(UserAdmin):
 
 # Registro del modelo con la clase de administración personalizada
 admin.site.register(User, CustomUserAdmin)
-admin.site.site_header = "Panel de administración"  # Título del sitio en el admin
-admin.site.index_title = "Usuarios"  # Título de la página principal del admin
-admin.site.site_title = "Panel de Administración de Usuarios"  # Título del navegador
+admin.site.site_header = "Panel de administración"
+admin.site.index_title = "Usuarios"
+admin.site.site_title = "Panel de Administración de Usuarios"

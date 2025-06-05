@@ -28,10 +28,6 @@ class AlmacenAdmin(admin.ModelAdmin):
     def has_view_permission(self, request, obj=None):
         return True
 
-    class Meta:
-        verbose_name = 'Almacén'
-        verbose_name_plural = 'Almacenes'
-
 
 # === ADMIN DE ESTANTE ===
 @admin.register(Estante)
@@ -175,6 +171,31 @@ class TipoPrecioAdmin(admin.ModelAdmin):
     class Meta:
         verbose_name = 'Tipo de precio'
         verbose_name_plural = 'Tipos de precios'
+
+@admin.register(ZonaNotificacion)
+class ZonaNotificacionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombre', 'activo')
+    search_fields = ('nombre', 'descripcion')
+    list_filter = ('activo',)
+    list_display_links = ('id', 'nombre')
+    fields = ('nombre', 'descripcion', 'activo')
+
+    # Solo permitir agregar y ver
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request):
+        return True
+
+    def has_view_permission(self, request, obj=None):
+        return True
+
+    class Meta:
+        verbose_name = 'Zona de notificación'
+        verbose_name_plural = 'Zonas de notificación'
 # Con el decorador de la clase se sustituye esto
 
 # Registrar el modelo y la configuración del admin

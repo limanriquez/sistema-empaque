@@ -76,3 +76,16 @@ class TipoPrecio(models.Model):
 
     def __str__(self):
         return self.nombre  # Muestra el nombre del tipo de precio
+
+class ZonaNotificacion(models.Model):
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True)
+    activo = models.BooleanField(default=True)
+    
+    class Meta:
+            verbose_name = "Zona de notificación"
+            verbose_name_plural = "Zonas de notificación"
+            ordering = ['nombre']  # ordena alfabéticamente por nombre
+
+    def __str__(self):
+        return self.nombre
