@@ -15,8 +15,8 @@ class CorteCaja(models.Model):
         (CERRADO, 'Cerrado'),
         (CANCELADO, 'Cancelado'),
     ]
-    empresa = models.ForeignKey(Empresa,on_delete=models.PROTECT, related_name='cortes')
-    personal = models.ForeignKey(Personal,on_delete=models.PROTECT, related_name='cortes')
+    empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT, related_name='cortes')
+    personal = models.ForeignKey(Personal, on_delete=models.PROTECT, related_name='cortes')
     saldo_inicial = models.DecimalField(max_digits=10, decimal_places=2)
     saldo_final = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     ingresos_efectivo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -31,6 +31,12 @@ class CorteCaja(models.Model):
         default=ABIERTO,
         help_text="Estado actual del corte de caja"
     )
+    empresas_autorizadas = models.ManyToManyField(
+        Empresa,
+        through='CorteCajaEmpresa',
+        related_name='cortes_autorizados'
+    )
+
     class Meta:
         verbose_name = "Corte de Caja"
         verbose_name_plural = "Cortes de Caja"
@@ -44,7 +50,12 @@ class CorteCaja(models.Model):
             if qs.exists():
                 raise ValidationError("Ya existe un corte de caja abierto para esta empresa.")
 
+class CorteCajaEmpresa(models.Model):
+    corte_caja = models.ForeignKey(CorteCaja, on_delete=models.CASCADE)
+    empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT)
 
+    class Meta:
+        unique_together = ('corte_caja', 'empresa')
 
 class Ventas(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name='ventas')
@@ -73,7 +84,7 @@ class NotificacionZona(models.Model):
         (ESTADO_CANCELADA, 'Cancelada'),
     ]
 
-    venta = models.ForeignKey(Ventas, on_delete=models.CASCADE)
+    venta = models.ForeignKey(Ventas, on_delete=models.CASCADE) 
     producto = models.ForeignKey(Producto, on_delete=models.PROTECT)
     zona = models.ForeignKey(ZonaNotificacion, on_delete=models.PROTECT)
     cantidad = models.PositiveIntegerField(default=1)
