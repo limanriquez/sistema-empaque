@@ -7,3 +7,8 @@ class ClientesSerializer(serializers.ModelSerializer):
         model = Cliente
         exclude = []
     
+class NotificacionZonaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificacionZona
+        exclude = []
+    

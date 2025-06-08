@@ -1,5 +1,5 @@
 from django.db import models
-from catalogos.models import TipoProducto, TipoPrecio, Seccion
+from catalogos.models import TipoProducto, TipoPrecio, Seccion, ZonaNotificacion
 from empresa.models import Empresa, Proveedor
 
 
@@ -48,3 +48,26 @@ class BOM(models.Model):
 
     def __str__(self):
         return f"{self.cantidad} x {self.stock_item.nombre} para {self.producto.nombre}"
+
+"""
+Configura la zona de notificación asignada a cada producto.
+Permite controlar en qué área de preparación se debe notificar la elaboración
+de un producto vendido. Una vez configurada al realizar la venta se consulta en 
+esta tabla y se generan registro en la tabla de : para que las notificaciones
+aparezcan en la zona especifica.
+"""
+class ProductoZonaNotificacion(models.Model):
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='zonas_notificacion')
+    zona = models.ForeignKey(ZonaNotificacion, on_delete=models.PROTECT, related_name='productos_notificados')
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('producto', 'zona')
+        verbose_name = 'Configuración de Notificación Producto-Zona'
+        verbose_name_plural = 'Configuraciones de Notificación Producto-Zona'
+
+    def __str__(self):
+        estado = "Activo" if self.activo else "Inactivo"
+        return f"{self.producto.nombre} → {self.zona.nombre} ({estado})"
+        
+        

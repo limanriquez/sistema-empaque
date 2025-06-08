@@ -77,6 +77,7 @@ class TipoPrecio(models.Model):
     def __str__(self):
         return self.nombre  # Muestra el nombre del tipo de precio
 
+#Almacena la zona en donde se realizara las notificaciones, por ejemplo parrilla, plancha, refrigeradores, etc.
 class ZonaNotificacion(models.Model):
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True)

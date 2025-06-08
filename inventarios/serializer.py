@@ -7,5 +7,8 @@ class ProductoSerializer(serializers.ModelSerializer):
         model = Producto
         exclude = []
 
+class ProductoZonaNotificacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductoZonaNotificacion
+        exclude = []
 
-        

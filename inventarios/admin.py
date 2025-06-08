@@ -26,10 +26,10 @@ class PrecioProductoInline(admin.TabularInline):
 class ProductoAdmin(admin.ModelAdmin):
     list_display = (
         'id', 'nombre', 'codigo', 'tipo_producto',
-        'empresa', 'seccion', 'get_total_existencia', 'es_compuesto', 'activo'
+        'empresa', 'seccion', 'get_total_existencia', 'es_compuesto', 'vendible', 'activo'
     )
     search_fields = ('nombre', 'codigo')
-    list_filter = ('activo', 'tipo_producto', 'empresa', 'es_compuesto')
+    list_filter = ('activo', 'tipo_producto', 'empresa', 'es_compuesto', 'vendible')
     list_display_links = ('id', 'nombre')
     inlines = [PrecioProductoInline]
 
@@ -40,7 +40,7 @@ class ProductoAdmin(admin.ModelAdmin):
     def get_fields(self, request, obj=None):
         fields = [
             'nombre', 'codigo', 'descripcion',
-            'tipo_producto', 'empresa', 'es_compuesto', 'activo'
+            'tipo_producto', 'empresa', 'es_compuesto', 'vendible', 'activo'
         ]
         if obj:
             fields.insert(fields.index('empresa') + 1, 'seccion')
@@ -127,3 +127,23 @@ class BOMAdmin(admin.ModelAdmin):
     def stock_item_nombre(self, obj):
         return obj.stock_item.nombre
     stock_item_nombre.short_description = 'Stock Item'
+
+@admin.register(ProductoZonaNotificacion)
+class ProductoZonaNotificacionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'producto', 'zona', 'activo')
+    list_filter = ('activo', 'zona')
+    search_fields = ('producto__nombre', 'zona__nombre')
+    list_display_links = ('id', 'producto')
+    fields = ('producto', 'zona', 'activo')
+
+    def has_delete_permission(self, request, obj=None):
+        return False  # Evita eliminar desde admin
+
+    def has_view_permission(self, request, obj=None):
+        return True
+
+    def has_add_permission(self, request):
+        return True
+
+    def has_change_permission(self, request, obj=None):
+        return True

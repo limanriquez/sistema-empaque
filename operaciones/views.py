@@ -6,10 +6,43 @@ from operaciones.serializer import *
 from rest_framework import viewsets
 from inventario.permissions import IsAdminOrReadOnly
 from authentication.decoradores import require_personal
+from rest_framework.decorators import action
 
 class ClientesViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
     serializer_class = ClientesSerializer
+
+    @action(detail=False, methods=['get'])
+    def activos_por_empresa(self, request):
+        empresa_id = request.query_params.get('empresa')
+        if not empresa_id:
+            return Response({"error": "Parámetro 'empresa' es requerido."}, status=400)
+
+        queryset = self.queryset.filter(estatus=True, empresa_id=empresa_id)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class NotificacionZonaSerializerViewSet(viewsets.ModelViewSet):
+    queryset = NotificacionZona.objects.all()
+    serializer_class = NotificacionZonaSerializer
+   
+    @action(detail=False, methods=['get'])
+    def activos(self, request):
+        queryset = self.queryset.filter(activo=True)
+
+        zona_id = request.query_params.get('zona_id')
+        if zona_id:
+            queryset = queryset.filter(zona_id=zona_id)
+
+        venta_id = request.query_params.get('venta_id')
+        if venta_id:
+            queryset = queryset.filter(venta_id=venta_id)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    
    # permission_classes = [IsAdminOrReadOnly]  # Aplica el permiso personalizado
 
 

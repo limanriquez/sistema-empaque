@@ -76,7 +76,7 @@ class Cliente(models.Model):
     empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT)
     def __str__(self):
         return f"{self.nombre} {self.apellido_paterno} {self.apellido_materno}"
-
+   
     class Meta:
         verbose_name = "Cliente"
         verbose_name_plural = "Clientes"
@@ -154,4 +154,35 @@ class Telefonos(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+"""
+    Relaciona empresas líderes con empresas autorizadas para vender sus productos.
+    Permite gestionar ventas multiempresa en un solo punto de venta, 
+    controlando permisos sin eliminar datos con un campo 'activo'.
+"""
+class ProductosAutorizados(models.Model):
+    empresa_lider = models.ForeignKey(
+        'Empresa',
+        on_delete=models.PROTECT,
+        related_name='empresas_autorizadas_como_lider'
+    )
+    empresa_autorizada = models.ForeignKey(
+        'Empresa',
+        on_delete=models.PROTECT,
+        related_name='es_autorizada_por'
+    )
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('empresa_lider', 'empresa_autorizada')
+        verbose_name = 'Productos Autorizados'
+        verbose_name_plural = 'Productos Autorizados'
+
+    def clean(self):
+        if self.empresa_lider == self.empresa_autorizada:
+            raise ValidationError("Una empresa no puede autorizarse a sí misma.")
+        
+    def __str__(self):
+        estado = "Activa" if self.activo else "Inactiva"
+        return f"{self.empresa_lider.nombre} → {self.empresa_autorizada.nombre} ({estado})"
     

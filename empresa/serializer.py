@@ -5,3 +5,8 @@ class TelefonoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Telefonos
         exclude = []
+
+class ProductosAutorizadosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductosAutorizados
+        exclude = []

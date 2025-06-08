@@ -51,11 +51,6 @@ class EstanteAdmin(admin.ModelAdmin):
     def has_view_permission(self, request, obj=None):
         return True
 
-    class Meta:
-        verbose_name = 'Estante'
-        verbose_name_plural = 'Estantes'
-
-
 # === ADMIN DE SECCIÓN ===
 @admin.register(Seccion)
 class SeccionAdmin(admin.ModelAdmin):
@@ -139,10 +134,6 @@ class TipoProductoAdmin(admin.ModelAdmin):
     def has_view_permission(self, request, obj=None):
         return True
 
-    class Meta:
-        verbose_name = 'Tipo de producto'
-        verbose_name_plural = 'Tipos de productos'
-
 @admin.register(TipoPrecio)
 class TipoPrecioAdmin(admin.ModelAdmin):
     list_display = ('id', 'nombre', 'status')
@@ -168,10 +159,6 @@ class TipoPrecioAdmin(admin.ModelAdmin):
     def has_view_permission(self, request, obj=None):
         return True
 
-    class Meta:
-        verbose_name = 'Tipo de precio'
-        verbose_name_plural = 'Tipos de precios'
-
 @admin.register(ZonaNotificacion)
 class ZonaNotificacionAdmin(admin.ModelAdmin):
     list_display = ('id', 'nombre', 'activo')
@@ -180,7 +167,6 @@ class ZonaNotificacionAdmin(admin.ModelAdmin):
     list_display_links = ('id', 'nombre')
     fields = ('nombre', 'descripcion', 'activo')
 
-    # Solo permitir agregar y ver
     def has_delete_permission(self, request, obj=None):
         return False
 
@@ -192,10 +178,6 @@ class ZonaNotificacionAdmin(admin.ModelAdmin):
 
     def has_view_permission(self, request, obj=None):
         return True
-
-    class Meta:
-        verbose_name = 'Zona de notificación'
-        verbose_name_plural = 'Zonas de notificación'
 # Con el decorador de la clase se sustituye esto
 
 # Registrar el modelo y la configuración del admin

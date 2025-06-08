@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib import messages  # Importar messages
 from django.db import models  # Importar models
 from django.contrib.auth.models import User  # Importa el modelo User
-from .models import Empresa, Personal, Proveedor, Cliente, Telefonos
+from .models import Empresa, Personal, Proveedor, Cliente, Telefonos, ProductosAutorizados
 # Personalización del panel de administración
 admin.site.site_header = "Panel de control de Catálogos"
 admin.site.site_title = "Panel de control de Catálogos"
@@ -173,6 +173,35 @@ class TelefonosAdmin(admin.ModelAdmin):
     class Meta:
         verbose_name = 'Teléfono'
         verbose_name_plural = 'Teléfonos'
+
+
+@admin.register(ProductosAutorizados)
+class ProductosAutorizadosAdmin(admin.ModelAdmin):
+    list_display = ("id", "empresa_lider", "empresa_autorizada", "activo")
+    search_fields = ("empresa_lider__nombre", "empresa_autorizada__nombre")
+    list_filter = ("activo",)
+    list_display_links = ("id", "empresa_lider", "empresa_autorizada")
+    
+    def has_delete_permission(self, request, obj=None):
+        # Evita borrado desde el admin, igual puedes ajustar si quieres permitirlo
+        return False
+
+    def save_model(self, request, obj, form, change):
+        if obj.empresa_lider == obj.empresa_autorizada:
+            messages.error(request, "Una empresa no puede autorizarse a sí misma.")
+            return
+        # Validar unicidad manualmente para dar mensaje claro
+        if ProductosAutorizados.objects.filter(
+            empresa_lider=obj.empresa_lider,
+            empresa_autorizada=obj.empresa_autorizada
+        ).exclude(pk=obj.pk).exists():
+            messages.error(request, "Esta relación ya existe.")
+            return
+        super().save_model(request, obj, form, change)
+
+    def get_fields(self, request, obj=None):
+        # Mostrar todos menos 'id'
+        return [f.name for f in self.model._meta.fields if f.name != 'id']
 
 
 
