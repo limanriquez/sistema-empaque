@@ -105,7 +105,7 @@
                     <ul class="nav nav-tabs">
                         <li ng-repeat="cat in vm.categorias" ng-class="{active: vm.categoriaActiva === cat.id}">
                             <a href="" ng-click="vm.setCategoria(cat.id)">
-                                {[{cat.nombre}]} - {[{cat.predios.length}]}
+                                {[{cat.nombre}]} - {[{cat.productos.length}]}
                             </a>
                         </li>
                     </ul>
@@ -117,12 +117,12 @@
                             ng-show="vm.categoriaActiva === cat.id">
                             <div class="scroll-card-grid">
                                 <div class="grid">
-                                    <div class="card-like" ng-repeat="predio in cat.predios"
-                                        ng-style="{'background-color': predio.color}"
-                                        ng-click="vm.mostrarAlertId(predio.id)">
-                                        <strong>{[{predio.nombre}]}</strong><br />
-                                        Cultivo: {[{predio.cultivo}]}<br />
-                                        ID: {[{predio.id}]}
+                                    <div class="card-like" ng-repeat="producto in cat.productos"
+                                        ng-style="{'background-color': producto.color}"
+                                        ng-click="vm.mostrarAlertId(producto.id)">
+                                        <strong>{[{producto.nombre}]}</strong><br />
+                                            ID: {[{producto.id}]}
+                                        
                                     </div>
                                 </div>
                             </div>
@@ -135,12 +135,12 @@
                 <div ng-if="vm.filtro && vm.filtro !== ''">
                     <div class="scroll-card-grid">
                         <div class="grid">
-                            <div class="card-like" ng-repeat="predio in vm.prediosFiltrados() track by predio.id"
-                                ng-style="{'background-color': predio.color || '#f0f0f0'}"
-                                ng-click="vm.mostrarAlertId(predio.id)">
-                                <strong>{[{predio.nombre}]}</strong><br />
-                                Cultivo: {[{predio.cultivo}]}<br />
-                                ID: {[{predio.id}]}
+                            <div class="card-like" ng-repeat="producto in vm.prediosFiltrados() track by producto.id"
+                                ng-style="{'background-color': producto.color || '#f0f0f0'}"
+                                ng-click="vm.mostrarAlertId(producto.id)">
+                                <strong>{[{producto.nombre}]}</strong><br />
+                                ID: {[{producto.id}]}
+                                
                             </div>
                         </div>
                     </div>
@@ -159,7 +159,7 @@
 
             <!-- Columna 4: filtro + grid SIEMPRE visibles -->
             <div class="col-md-4">
-                <input type="text" ng-model="vm.filtro" placeholder="Filtrar por nombre, cultivo o ID"
+                <input type="text" ng-model="vm.filtro" placeholder="Filtrar por nombre, ID"
                     class="form-control" style="margin-bottom: 8px;" />
 
                 <div class="row" style="margin-left: 0px; margin-right: 0px;" id="gridSiniestros">

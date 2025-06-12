@@ -16,6 +16,26 @@ class ProductosViewSet(viewsets.ModelViewSet):
         activos = self.queryset.filter(activo=True)
         serializer = self.get_serializer(activos, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], url_path='activos_por_tipo')
+    def activos_por_tipo(self, request):
+        tipo_id = request.query_params.get('categoria')
+        empresa_id = request.query_params.get('empresa')
+
+        if not tipo_id or not empresa_id:
+            return Response(
+                {"error": "El tipo de producto y empresa son requeridos"},
+                status=400
+            )
+
+        productos = self.queryset.filter(
+            activo=True,
+            tipo_producto_id=tipo_id,
+            empresa_id=empresa_id,
+        ).order_by('orden')
+
+        serializer = self.get_serializer(productos, many=True)
+        return Response(serializer.data)
 
 class ProductoZonaNotificacionViewSet(viewsets.ModelViewSet):
     queryset = ProductoZonaNotificacion.objects.all()

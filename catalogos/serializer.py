@@ -10,3 +10,9 @@ class ZonaNotificacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ZonaNotificacion
         exclude = []
+
+class TipoProductoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoProducto
+        exclude = []
+        

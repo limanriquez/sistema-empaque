@@ -7,6 +7,7 @@ from rest_framework import viewsets
 from inventario.permissions import IsAdminOrReadOnly
 from authentication.decoradores import require_personal
 from rest_framework.decorators import action
+from django.urls import reverse
 
 class ClientesViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
@@ -56,8 +57,22 @@ def clientes(request):
 @login_required()
 @require_personal
 def punto_de_venta(request):
-	return render(request, 'operaciones/punto_venta.html',{
-			'title':"Punto de venta"})
+    user = request.user.personal
+    empresa = user.empresa
+    print(empresa.nombre)
+    # Verificar si el usuario tiene un corte abierto
+    corte_abierto = CorteCaja.objects.filter(
+        estatus = 1,
+        empresa = empresa.id
+    ).exists()
+    if not corte_abierto:
+        messages.warning(request, "No tienes un corte de caja abierto. Ábrelo en el administrador.")
+        # Redirige directamente a la vista de agregar CorteCaja en el admin
+        return redirect(reverse('admin:%s_%s_add' % (CorteCaja._meta.app_label, CorteCaja._meta.model_name)))
+
+    return render(request, 'operaciones/punto_venta.html', {
+        'title': "Punto de venta"
+    })
 
 @login_required
 def existeTelefono(request, telefono):

@@ -6,6 +6,7 @@ from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 router.register('puesto',PuestoViewSet)
 router.register('zonaNotificacion',ZonaNotificacionViewSet)
+router.register('TipoProducto',TipoProductoViewSet)
 
 app_name = 'catalogos'
 urlpatterns = [

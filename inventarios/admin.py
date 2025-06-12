@@ -25,9 +25,16 @@ class PrecioProductoInline(admin.TabularInline):
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'nombre', 'codigo', 'tipo_producto',
-        'empresa', 'seccion', 'get_total_existencia', 'es_compuesto', 'vendible', 'activo'
+        'id', 'nombre', 'codigo', 'tipo_producto', 'empresa', 'orden',  # ← aquí
+        'seccion', 'get_total_existencia', 'es_compuesto', 'vendible', 'activo'
     )
+
+    fields = [
+        'nombre', 'codigo', 'descripcion',
+        'tipo_producto', 'empresa', 'orden',  # ← aquí
+        'es_compuesto', 'vendible', 'activo'
+    ]
+  
     search_fields = ('nombre', 'codigo')
     list_filter = ('activo', 'tipo_producto', 'empresa', 'es_compuesto', 'vendible')
     list_display_links = ('id', 'nombre')
@@ -44,9 +51,10 @@ class ProductoAdmin(admin.ModelAdmin):
         ]
         if obj:
             fields.insert(fields.index('empresa') + 1, 'seccion')
+            fields.insert(fields.index('seccion') + 1, 'orden')  # inserta orden después de seccion
+        else:
+            fields.insert(fields.index('empresa') + 1, 'orden')  # si es nuevo objeto, también mostrar orden
         return fields
-
-
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'seccion':

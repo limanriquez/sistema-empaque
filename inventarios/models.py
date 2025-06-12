@@ -13,8 +13,28 @@ class Producto(models.Model):
     es_compuesto = models.BooleanField(default=False)
     vendible = models.BooleanField(default=True)  # Si se usa directamente en ventas o no
     activo = models.BooleanField(default=True)
+    orden = models.PositiveIntegerField(blank=True, null=True) #Campo para orden personalizado
+    
+    class Meta:
+        ordering = ['id', 'nombre']
+    
     def __str__(self):
         return self.nombre
+    
+    def save(self, *args, **kwargs):
+        if self.orden is not None:
+            conflicto = Producto.objects.filter(
+                empresa=self.empresa,
+                orden=self.orden
+            ).exclude(id=self.id)
+
+            if conflicto.exists():
+                Producto.objects.filter(
+                    empresa=self.empresa,
+                    orden__gte=self.orden
+                ).exclude(id=self.id).update(orden=models.F('orden') + 1)
+
+        super().save(*args, **kwargs)
 
 class PrecioProducto(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='precios')
