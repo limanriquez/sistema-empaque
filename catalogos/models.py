@@ -77,6 +77,15 @@ class TipoPrecio(models.Model):
     def __str__(self):
         return self.nombre  # Muestra el nombre del tipo de precio
 
+class LugarEntrega(models.Model):
+    nombre = models.CharField(max_length=100)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Lugar de Entrega"
+        verbose_name_plural = "Lugares de Entrega"
+        ordering = ["id"]
+
 #Almacena la zona en donde se realizara las notificaciones, por ejemplo parrilla, plancha, refrigeradores, etc.
 class ZonaNotificacion(models.Model):
     nombre = models.CharField(max_length=100)

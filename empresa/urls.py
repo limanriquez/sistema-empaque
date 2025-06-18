@@ -9,4 +9,5 @@ router.register('productosAutorizados',ProductosAutorizadosViewSet)
 app_name = 'empresa'
 urlpatterns = [
     path('api/v1/',include(router.urls)),
+    path('empresas_autorizadas/', empresaAutorizadas, name='empresaAutorizadas'),
 ]

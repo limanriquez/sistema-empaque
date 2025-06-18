@@ -4,15 +4,19 @@ from catalogos.models import *
 class PuestoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Puesto
-        exclude = []
+        fields = "__all__"
 
 class ZonaNotificacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ZonaNotificacion
-        exclude = []
+        fields = "__all__"
 
 class TipoProductoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoProducto
-        exclude = []
-        
+        fields = "__all__"
+
+class LugarEntregaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LugarEntrega
+        fields = "__all__"

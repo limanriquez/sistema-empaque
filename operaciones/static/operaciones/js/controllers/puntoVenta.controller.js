@@ -8,9 +8,23 @@
     PuntoVentaController.$inject = ['$http', '$scope', '$filter'];
 
     function PuntoVentaController($http, $scope, $filter) {
-        var gridSiniestrosInstance;
+        var gridSiniestrosInstance, CmbMesaInstance, BtnCrearVentaInstance;
         var ArraySiniestros = [];
+        var ArrayMesa = [];
+        var ArrayEmpresasVenta = [];
+        var strEmpresasVenta = ""
         var vm = this;
+        var tab = 0;
+
+        $scope.ventas = [];
+        $scope.ventaActiva = null;
+
+
+        vm.empresaId = $scope.empresaId;
+        vm.nombrePersonal = $scope.nombrePersonal;
+
+        // console.log("Empresa:", vm.empresaId);
+        //  console.log("Nombre:", vm.nombrePersonal);
 
         vm.coloresCategoria = [
             '#d6e9f8', // azul claro
@@ -19,6 +33,7 @@
             '#f9d6d5', // rojo claro
             '#e3d4f5'  // morado claro
         ];
+
         function cargarCategorias() {
             $http.get('/api/v1/TipoProducto')  // endpoint que devuelve las categorías
                 .then(function (response) {
@@ -31,10 +46,20 @@
                             };
                         });
                         // Opcional: luego cargar productos para cada categoría
-                        vm.categorias.forEach(function (cat,index) {
-                            const color = vm.coloresCategoria[index % vm.coloresCategoria.length];
-                            getProductosPorCategoria(1, cat.id, color);
-                        });
+                        //   vm.categorias.forEach(function (cat,index) {
+                        //      const color = vm.coloresCategoria[index % vm.coloresCategoria.length];
+                        //    getProductosPorCategoria(1, cat.id, color);
+                        //  getProductosPorCategoria(2, cat.id, color);
+                        // });
+
+                        //  for (let index = 0; index < vm.categorias.length; index++) {
+                        //    const cat = vm.categorias[index];
+                        //  const color = vm.coloresCategoria[index % vm.coloresCategoria.length];
+
+                        //getProductosPorCategoria(1, cat.id, color);
+                        // getProductosPorCategoria(2, cat.id, color);
+                        // }
+                        cargarProductosSecuencialmente();
                     } else {
                         vm.categorias = [];
                     }
@@ -44,52 +69,96 @@
                 });
         }
 
+        async function cargarProductosSecuencialmente() {
+            for (let index = 0; index < vm.categorias.length; index++) {
+                const cat = vm.categorias[index];
+                const color = vm.coloresCategoria[index % vm.coloresCategoria.length];
+                await getProductosPorCategoria(cat.id, color);  // espera a que termine antes de continuar
+            }
+
+            console.log("Se completó la carga de productos por categoría.");
+        }
+
+        function getMesas() {
+            $scope.isLoadPanelVisible = true;
+            $http.get('/api/v1/lugarEntrega/activos/').then(
+                function (response) {
+                    ArrayMesa.length = 0;
+                    for (let i = 0; i < response.data.length; i++) {
+                        ArrayMesa.push(response.data[i]);
+                    }
+                    $scope.mesa_source.load().done(function (response) {
+                        $scope.cmbMesa = 1;
+                    });
+                    $scope.isLoadPanelVisible = false;
+                }, function (response) {
+                }
+            );
+        };
+
+        function empresasVenta() {
+            $scope.isLoadPanelVisible = true;
+            const params = new URLSearchParams({
+                empresa: vm.empresaId,
+            });
+            const url = `/empresas_autorizadas/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    strEmpresasVenta = response.data;
+                    cargarCategorias();
+                    $scope.isLoadPanelVisible = false;
+                }, function (response) {
+                    $scope.isLoadPanelVisible = false;
+                }
+            );
+        };
         // Definición de la función para inicializar productos
         function inicializarProductos() {
-            cargarCategorias()
+            empresasVenta()
+            getMesas();
+            //cargarCategorias();
+            // 
         }
 
         inicializarProductos();
-        function getProductosPorCategoria(empresa, categoriaId, color) {
+        function getProductosPorCategoria(categoriaId, color) {
             $scope.isLoadPanelVisible = true;
-
             const params = new URLSearchParams({
-                empresa: empresa,
+                empresas: strEmpresasVenta,
                 categoria: categoriaId
             });
-
-            const url = `/api/v1/productos/activos_por_tipo/?${params.toString()}`;
-
-            $http.get(url).then(
+            //const url = `/api/v1/productos/activos_por_tipo/?${params.toString()}`;
+            const url = `/productos_activos_empresas/?${params.toString()}`;
+            // Retornar la promesa para poder usar await
+            return $http.get(url).then(
                 function (response) {
                     let categoria = vm.categorias.find(cat => cat.id === categoriaId);
                     if (!categoria) {
                         console.warn(`Categoría con ID ${categoriaId} no encontrada`);
-                        $scope.isLoadPanelVisible = false;
                         return;
                     }
-                    categoria.productos = [];
+
                     if (response.data && response.data.length > 0) {
-                        console.log(response.data);
                         categoria.productos = response.data.map(producto => ({
                             id: producto.id,
                             nombre: producto.nombre,
-                            color: color || '#e0e0e0', // usa el color asignado o por defecto
+                            color: color || '#e0e0e0',
+                            empresa: producto.empresa_nombre,
+                            precio: producto.primer_precio,
                             data: producto
                         }));
                     } else {
                         DevExpress.ui.notify("La consulta no generó información, intente con otros parámetros", "warning", 3500);
                     }
-
-                    $scope.isLoadPanelVisible = false;
                 },
                 function (error) {
-                    $scope.isLoadPanelVisible = false;
                     console.error(`Error al obtener productos para categoría ${categoriaId}:`, error);
                 }
-            );
+            ).finally(function () {
+                $scope.isLoadPanelVisible = false;
+            });
         }
-    
+
         vm.categoriaActiva = 1;
 
         vm.setCategoria = function (id) {
@@ -117,13 +186,82 @@
             return resultados;
         };
 
+        function agregarVenta(idVenta) {
+            if (!idVenta) return;
+            if (!$scope.ventas) $scope.ventas = [];
+
+            if ($scope.ventas.indexOf(idVenta) === -1) {
+                $scope.ventas.push(idVenta);
+            }
+            $scope.ventaActiva = idVenta;  // Para activar la pestaña recién creada
+        }
+
+        $scope.setVentaActiva = function (idVenta) {
+            $scope.ventaActiva = idVenta;
+        };
+
+        $scope.consultarVenta = function (ventaId) {
+            alertify.success("Venta seleccionada: " + ventaId);
+        };
         // Función para mostrar alertify con el id del predio
         vm.mostrarAlertId = function (id) {
             DevExpress.ui.notify("El ID seleccionado es: " + id, "success", 3500);
         };
+
         $scope.siniestros_source = new DevExpress.data.DataSource({
             store: ArraySiniestros
         });
+        $scope.mesa_source = new DevExpress.data.DataSource({
+            store: ArrayMesa
+        });
+
+        vm.button = {
+            BtnCrearVentaOptions: {
+                icon: 'fas fa-plus',
+                type: 'default',
+                width: 135,
+                text: 'Crear',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnCrearVentaInstance = e.component;
+                },
+                onClick: function () {
+                    tab = tab + 1;
+                    agregarVenta(tab);
+                }
+            },
+        }
+        vm.lookup = {
+            CmbMesaOptions: {
+                dataSource: $scope.mesa_source,
+                searchEnabled: true,
+                placeholder: 'Seleccione la mesa',
+                displayExpr: 'nombre',
+                valueExpr: 'id',
+                value: '',
+                dropDownOptions: {
+                    title: 'Mesa',
+                },
+                cancelButtonText: 'Cancelar',
+                searchPlaceholder: 'Buscar mesa',
+                noDataText: "Sin datos",
+                bindingOptions: {
+                    value: 'cmbMesa',
+                },
+                onInitialized: function (e) {
+                    CmbMesaInstance = e.component;
+                },
+                onValueChanged: function (e) {
+                    //var selectedId = e.value; // id del modelo seleccionado
+                    //	var selectedModelo = ArrayModelo.find(function(item) {
+                    //      return item.id === selectedId;
+                    // });
+                    //	if (selectedModelo) {
+                    //		$scope.txtMarca = selectedModelo.marca_nombre ;
+                    //	}
+                },
+            },
+        }
         vm.grids = {
             gridSiniestrosOptions: {
                 dataSource: $scope.siniestros_source,

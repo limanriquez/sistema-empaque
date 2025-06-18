@@ -7,6 +7,7 @@ router = DefaultRouter()
 router.register('puesto',PuestoViewSet)
 router.register('zonaNotificacion',ZonaNotificacionViewSet)
 router.register('TipoProducto',TipoProductoViewSet)
+router.register('lugarEntrega',LugarEntregaViewSet)
 
 app_name = 'catalogos'
 urlpatterns = [

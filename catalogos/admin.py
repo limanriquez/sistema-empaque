@@ -178,6 +178,37 @@ class ZonaNotificacionAdmin(admin.ModelAdmin):
 
     def has_view_permission(self, request, obj=None):
         return True
+
+@admin.register(LugarEntrega)
+class LugarEntregaAdmin(admin.ModelAdmin):
+    # Columnas que se muestran en el listado del admin
+    list_display = ("id", "nombre", "activo")
+
+    # Campos por los que se puede buscar
+    search_fields = ("nombre",)
+
+    # Filtro lateral en el admin
+    list_filter = ("activo",)
+
+    # Establece los campos clicables
+    list_display_links = ("id", "nombre")
+
+    # No permitir eliminar el objeto desde el admin
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    # Sí permitir modificar (por ejemplo, cambiar estado activo/inactivo)
+    def has_change_permission(self, request, obj=None):
+        return True
+
+    # Permitir agregar nuevos registros
+    def has_add_permission(self, request):
+        return True
+
+    # Permitir visualizar registros
+    def has_view_permission(self, request, obj=None):
+        return True
+
 # Con el decorador de la clase se sustituye esto
 
 # Registrar el modelo y la configuración del admin

@@ -2,7 +2,8 @@
 {% load staticfiles %}
 {% load general_tags %}
 {% block ng_app %}
-<html class="no-js" lang="es" ng-app="operaciones.operacion" ng-init="usuario='{{usuario}}'">
+<html class="no-js" lang="es" ng-app="operaciones.operacion"
+    ng-init="empresaId={{ empresa.id }}; nombrePersonal='{{ nombre_personal|escapejs }}'">
 {% endblock ng_app %}
 {% block head_title %} {{ title }} {% endblock head_title %}
 
@@ -93,6 +94,20 @@
     {% initial_loader %}
     <div class="content dx-viewport" {% initial_loader_hide %}>
         <!-- Contenedor fila que contiene columna 8 + columna 4 -->
+
+        <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+            <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+                    <span>Mesa:</span>
+                    <div dx-lookup="vm.lookup.CmbMesaOptions"></div>
+                </div>
+                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+
+                    <div dx-button="vm.button.BtnCrearVentaOptions"></div>
+                </div>
+            </div>
+        </div>
+
         <div class="row justify-content-center" style="margin-top:15px;">
 
             <!-- Columna 8: listado o filtrado -->
@@ -121,8 +136,9 @@
                                         ng-style="{'background-color': producto.color}"
                                         ng-click="vm.mostrarAlertId(producto.id)">
                                         <strong>{[{producto.nombre}]}</strong><br />
-                                            ID: {[{producto.id}]}
-                                        
+                                        ID: {[{producto.id}]}<br />
+                                        Empresa: {[{producto.empresa}]}<br />
+                                        Precio $: {[{producto.precio}]}
                                     </div>
                                 </div>
                             </div>
@@ -138,9 +154,10 @@
                             <div class="card-like" ng-repeat="producto in vm.prediosFiltrados() track by producto.id"
                                 ng-style="{'background-color': producto.color || '#f0f0f0'}"
                                 ng-click="vm.mostrarAlertId(producto.id)">
-                                <strong>{[{producto.nombre}]}</strong><br />
-                                ID: {[{producto.id}]}
-                                
+                                <strong>{[{producto.nombre}]} -${[{producto.precio}]}</strong><br />
+                                ID: {[{producto.id}]}<br />
+                                Empresa: {[{producto.empresa}]}<br />
+                                Precio $: {[{producto.precio}]}
                             </div>
                         </div>
                     </div>
@@ -159,13 +176,32 @@
 
             <!-- Columna 4: filtro + grid SIEMPRE visibles -->
             <div class="col-md-4">
-                <input type="text" ng-model="vm.filtro" placeholder="Filtrar por nombre, ID"
-                    class="form-control" style="margin-bottom: 8px;" />
+                  <!-- Contenido de los tab de ventas -->
+                <ul class="nav nav-tabs">
+                    <li ng-repeat="venta in ventas" ng-class="{active: ventaActiva === venta}">
+                        <a href="" ng-click="setVentaActiva(venta); consultarVenta(venta)">
+                            {[{ venta }]}
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Contenido mínimo para cada venta -->
+                <div class="tab-content" style="margin-top:15px;">
+                    <div class="tab-pane fade" ng-repeat="venta in ventas"
+                        ng-class="{'active': ventaActiva === venta, 'in': ventaActiva === venta}"
+                        ng-show="ventaActiva === venta">
+                        <p>Detalles mínimos de la venta {[{ venta }]}</p>
+                    </div>
+                </div>
+                <!-- Contenido de los tab de ventas-->
+
+                <input type="text" ng-model="vm.filtro" placeholder="Filtrar por nombre, ID" class="form-control"
+                    style="margin-bottom: 8px;" />
 
                 <div class="row" style="margin-left: 0px; margin-right: 0px;" id="gridSiniestros">
                     <div class="rowdgr" style="margin-top: 0px; padding: 5px 20px 5px 30px; margin-bottom: 10px;">
                         <span>Pagos:</span>
-                        <div class="row" style="padding-right: 15px; height: 635px; overflow-y: auto;">
+                        <div class="row" style="padding-right: 15px; height: 440px; overflow-y: auto;">
                             <div dx-data-grid="vm.grids.gridSiniestrosOptions" style="height: 620px;"></div>
                         </div>
                     </div>

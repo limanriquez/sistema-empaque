@@ -59,7 +59,6 @@ def clientes(request):
 def punto_de_venta(request):
     user = request.user.personal
     empresa = user.empresa
-    print(empresa.nombre)
     # Verificar si el usuario tiene un corte abierto
     corte_abierto = CorteCaja.objects.filter(
         estatus = 1,
@@ -71,7 +70,9 @@ def punto_de_venta(request):
         return redirect(reverse('admin:%s_%s_add' % (CorteCaja._meta.app_label, CorteCaja._meta.model_name)))
 
     return render(request, 'operaciones/punto_venta.html', {
-        'title': "Punto de venta"
+        'title': "Punto de venta",
+        'empresa': empresa,
+        'nombre_personal': f"{user.nombre} {user.apellido_paterno} {user.apellido_materno}"
     })
 
 @login_required
