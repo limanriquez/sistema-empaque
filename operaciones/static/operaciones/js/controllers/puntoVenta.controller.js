@@ -8,10 +8,11 @@
     PuntoVentaController.$inject = ['$http', '$scope', '$filter'];
 
     function PuntoVentaController($http, $scope, $filter) {
-        var gridSiniestrosInstance, CmbMesaInstance, BtnCrearVentaInstance;
+        var gridSiniestrosInstance, CmbMesaInstance, BtnCrearVentaInstance, CmbClienteInstance;
         var ArraySiniestros = [];
         var ArrayMesa = [];
         var ArrayEmpresasVenta = [];
+        var ArrayClientes = [];
         var strEmpresasVenta = ""
         var vm = this;
         var tab = 0;
@@ -22,6 +23,8 @@
 
         vm.empresaId = $scope.empresaId;
         vm.nombrePersonal = $scope.nombrePersonal;
+        vm.corteCajaId = 1;//$scope.corteCajaId;
+        console.log(vm.corteCajaId);
 
         // console.log("Empresa:", vm.empresaId);
         //  console.log("Nombre:", vm.nombrePersonal);
@@ -96,6 +99,48 @@
             );
         };
 
+
+        function getVentasAbiertasCorteEmpresas() {
+            const params = new URLSearchParams({
+                corteCaja: vm.corteCajaId,
+            });
+            $scope.isLoadPanelVisible = true;
+            const url = `/ventas_abiertas_corte_empresas/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    ArrayEmpresasVenta.length = 0;
+                    for (let i = 0; i < response.data.length; i++) {
+                        ArrayEmpresasVenta.push(response.data[i]);
+                        agregarVenta(response.data[i].id);  // <--- AQUI las fusionas
+                    }
+                    $scope.isLoadPanelVisible = false;
+                }, function (response) {
+                }
+            );
+        };
+
+        function getClientes() {
+            const params = new URLSearchParams({
+                empresa: vm.empresaId,
+                estatus: true,
+            });
+            $scope.isLoadPanelVisible = true;
+            const url = `/clientes_por_empresa/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    ArrayClientes.length = 0;
+                    for (let i = 0; i < response.data.length; i++) {
+                        ArrayClientes.push(response.data[i]);
+                    }
+                    $scope.cliente_source.load().done(function (response) {
+                        $scope.cmbCliente = 1;
+                    });
+                    $scope.isLoadPanelVisible = false;
+                }, function (response) {
+                }
+            );
+        };
+
         function empresasVenta() {
             $scope.isLoadPanelVisible = true;
             const params = new URLSearchParams({
@@ -116,6 +161,8 @@
         function inicializarProductos() {
             empresasVenta()
             getMesas();
+            getClientes();
+            getVentasAbiertasCorteEmpresas();
             //cargarCategorias();
             // 
         }
@@ -214,6 +261,14 @@
         $scope.mesa_source = new DevExpress.data.DataSource({
             store: ArrayMesa
         });
+        $scope.cliente_source = new DevExpress.data.DataSource({
+            store: ArrayClientes
+        });
+
+        $scope.ventas_source = new DevExpress.data.DataSource({
+            store:ArrayEmpresasVenta
+
+        });
 
         vm.button = {
             BtnCrearVentaOptions: {
@@ -250,6 +305,35 @@
                 },
                 onInitialized: function (e) {
                     CmbMesaInstance = e.component;
+                },
+                onValueChanged: function (e) {
+                    //var selectedId = e.value; // id del modelo seleccionado
+                    //	var selectedModelo = ArrayModelo.find(function(item) {
+                    //      return item.id === selectedId;
+                    // });
+                    //	if (selectedModelo) {
+                    //		$scope.txtMarca = selectedModelo.marca_nombre ;
+                    //	}
+                },
+            },
+            CmbClienteOptions: {
+                dataSource: $scope.cliente_source,
+                searchEnabled: true,
+                placeholder: 'Seleccione el cliente',
+                displayExpr: 'full_name',
+                valueExpr: 'id',
+                value: '',
+                dropDownOptions: {
+                    title: 'Cliente',
+                },
+                cancelButtonText: 'Cancelar',
+                searchPlaceholder: 'Buscar cliente',
+                noDataText: "Sin datos",
+                bindingOptions: {
+                    value: 'cmbCliente',
+                },
+                onInitialized: function (e) {
+                    CmbClienteInstance = e.component;
                 },
                 onValueChanged: function (e) {
                     //var selectedId = e.value; // id del modelo seleccionado

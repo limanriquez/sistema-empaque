@@ -3,7 +3,7 @@
 {% load general_tags %}
 {% block ng_app %}
 <html class="no-js" lang="es" ng-app="operaciones.operacion"
-    ng-init="empresaId={{ empresa.id }}; nombrePersonal='{{ nombre_personal|escapejs }}'">
+    ng-init="empresaId={{ empresa.id }}; nombrePersonal='{{ nombre_personal|escapejs }}; corteCajaId={{corte_caja.id}}'">
 {% endblock ng_app %}
 {% block head_title %} {{ title }} {% endblock head_title %}
 
@@ -97,6 +97,10 @@
 
         <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
             <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+                 <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+                    <span>Cliente:</span>
+                    <div dx-lookup="vm.lookup.CmbClienteOptions"></div>
+                </div>
                 <div class="col-md-2 form-group" style="margin-bottom: 0px;">
                     <span>Mesa:</span>
                     <div dx-lookup="vm.lookup.CmbMesaOptions"></div>

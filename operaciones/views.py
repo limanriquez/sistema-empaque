@@ -72,6 +72,7 @@ def punto_de_venta(request):
     return render(request, 'operaciones/punto_venta.html', {
         'title': "Punto de venta",
         'empresa': empresa,
+        'corte_caja':corte_abierto,
         'nombre_personal': f"{user.nombre} {user.apellido_paterno} {user.apellido_materno}"
     })
 
@@ -87,3 +88,23 @@ def existeTelefono(request, telefono):
     # Retornar la respuesta en formato JSON con el estado de existencia del teléfono
     return JsonResponse({"Existe": existe})
 	
+
+@login_required
+def ventasAbiertasCorteEmpresas(request):
+    corte_caja = request.GET.get('corteCaja')
+    ventas = Ventas.objects.filter(corte_caja = corte_caja, activo = True)
+    ventas_data = []
+    for v in ventas:
+        ventas_data.append({
+            "id": v.id,
+            "cliente_id": v.cliente_id,
+            "corte_caja_id": v.corte_caja_id,
+            "fecha_venta": v.fecha_venta.isoformat() if v.fecha_venta else None,
+            "total": str(v.total),
+            "lugar_entrega_id": v.lugar_entrega_id,
+            "atencion_id": v.atencion_id,
+            "observaciones": v.observaciones,
+            "activo": v.activo,
+        })
+
+    return JsonResponse(ventas_data, safe=False)

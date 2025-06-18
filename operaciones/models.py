@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from empresa.models import Personal, Empresa, Cliente
 from inventarios.models import Producto
-from catalogos.models import ZonaNotificacion
+from catalogos.models import ZonaNotificacion, LugarEntrega
 
 class CorteCaja(models.Model):
     ABIERTO = 1
@@ -62,6 +62,9 @@ class Ventas(models.Model):
     corte_caja = models.ForeignKey(CorteCaja, on_delete=models.PROTECT, related_name='ventas')
     fecha_venta = models.DateTimeField(auto_now_add=True)
     total = models.DecimalField(max_digits=12, decimal_places=2)
+    cambio = models.DecimalField(max_digits=12, decimal_places=2)
+    lugar_entrega = models.ForeignKey(LugarEntrega, on_delete=models.PROTECT, related_name='ventas',null=True,blank=True)
+    atencion = models.ForeignKey(Personal, on_delete=models.PROTECT, related_name='ventas_atendidas') #Mesero que levanta la comanda
     observaciones = models.TextField(blank=True, null=True)
     activo = models.BooleanField(default=True)  # Para manejo lógico de borrado
 
