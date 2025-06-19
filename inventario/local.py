@@ -27,6 +27,7 @@ print(Bienvenido al sistema punto de venta dinámico)
 # Application definition
 
 INSTALLED_APPS = [
+    "jazzmin",  # <= debe ir antes que admin
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

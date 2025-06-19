@@ -27,6 +27,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    "jazzmin",  # <= debe ir antes que admin
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -79,7 +80,37 @@ TEMPLATES = [
     },
 ]
 
+JAZZMIN_SETTINGS = {
 
+    "site_brand": "Pollo en Gordito",
+    "site_title": "LASSER",
+    "welcome_sign": "Bienvenido al Panel Administrativo",
+
+    # Para renombrar el label "catalogos" a "Catálogos"
+    # ... otras configuraciones ...
+    # Habilita la barra lateral derecha (Right Sidebar)
+    "show_sidebar": True,  # activa barra lateral izquierda (default)
+    "show_ui_builder": True,  # agrega botón para personalizar admin
+
+    # Habilita panel de personalización (barra derecha)
+    "right_sidebar": True,
+
+    # Puedes configurar si quieres que la barra derecha esté oculta o visible al cargar
+    "right_sidebar_collapsed": False,  # false para mostrarla por defecto
+
+    # Configura qué widgets aparecen en la barra lateral derecha
+    # Por ejemplo, configuración de tema y otras opciones
+    "custom_widgets": [
+        "jazzmin.widgets.ThemePicker",
+        "jazzmin.widgets.UserWidget",
+        "jazzmin.widgets.QuickLinks",
+    ],
+
+    
+
+    "copyright": "Derechos reservados a lasser",  # Para quitar el texto, déjalo vacío
+    # También puedes agregar tus propios widgets personalizados aquí
+}
 
 WSGI_APPLICATION = 'inventario.wsgi.application'
 

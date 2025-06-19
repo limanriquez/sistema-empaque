@@ -3,7 +3,7 @@
 {% load general_tags %}
 {% block ng_app %}
 <html class="no-js" lang="es" ng-app="operaciones.operacion"
-    ng-init="empresaId={{ empresa.id }}; nombrePersonal='{{ nombre_personal|escapejs }}; corteCajaId={{corte_caja.id}}'">
+    ng-init="empresaId={{ empresa.id }}; nombrePersonal='{{ nombre_personal|escapejs }}'; corteCajaId={{ corte_caja }}; personaId={{ corte_caja }}">
 {% endblock ng_app %}
 {% block head_title %} {{ title }} {% endblock head_title %}
 
@@ -194,7 +194,7 @@
                     <div class="tab-pane fade" ng-repeat="venta in ventas"
                         ng-class="{'active': ventaActiva === venta, 'in': ventaActiva === venta}"
                         ng-show="ventaActiva === venta">
-                        <p>Detalles mínimos de la venta {[{ venta }]}</p>
+                        <p>Actualmente se encuenta la venta seleccionada No. : {[{ venta }]}</p>
                     </div>
                 </div>
                 <!-- Contenido de los tab de ventas-->

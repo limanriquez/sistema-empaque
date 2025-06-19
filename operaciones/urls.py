@@ -7,6 +7,8 @@ from rest_framework.routers import DefaultRouter
 #router.register('catalogoElementoInventario',CatalogoElementoInventarioViewSet)
 router = DefaultRouter()
 router.register('clientes',ClientesViewSet)
+router.register('ventas',VentasViewSet)
+
 
 app_name = 'operaciones'
 urlpatterns = [

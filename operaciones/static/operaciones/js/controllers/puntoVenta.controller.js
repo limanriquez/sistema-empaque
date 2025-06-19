@@ -9,23 +9,18 @@
 
     function PuntoVentaController($http, $scope, $filter) {
         var gridSiniestrosInstance, CmbMesaInstance, BtnCrearVentaInstance, CmbClienteInstance;
-        var ArraySiniestros = [];
-        var ArrayMesa = [];
-        var ArrayEmpresasVenta = [];
-        var ArrayClientes = [];
+        var ArraySiniestros = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [];
         var strEmpresasVenta = ""
         var vm = this;
         var tab = 0;
-
+        var idVentaActiva = 0;
         $scope.ventas = [];
         $scope.ventaActiva = null;
 
-
         vm.empresaId = $scope.empresaId;
         vm.nombrePersonal = $scope.nombrePersonal;
-        vm.corteCajaId = 1;//$scope.corteCajaId;
-        console.log(vm.corteCajaId);
-
+        vm.corteCajaId = $scope.corteCajaId;
+        vm.personaId = $scope.personaId;
         // console.log("Empresa:", vm.empresaId);
         //  console.log("Nombre:", vm.nombrePersonal);
 
@@ -48,20 +43,6 @@
                                 productos: []
                             };
                         });
-                        // Opcional: luego cargar productos para cada categoría
-                        //   vm.categorias.forEach(function (cat,index) {
-                        //      const color = vm.coloresCategoria[index % vm.coloresCategoria.length];
-                        //    getProductosPorCategoria(1, cat.id, color);
-                        //  getProductosPorCategoria(2, cat.id, color);
-                        // });
-
-                        //  for (let index = 0; index < vm.categorias.length; index++) {
-                        //    const cat = vm.categorias[index];
-                        //  const color = vm.coloresCategoria[index % vm.coloresCategoria.length];
-
-                        //getProductosPorCategoria(1, cat.id, color);
-                        // getProductosPorCategoria(2, cat.id, color);
-                        // }
                         cargarProductosSecuencialmente();
                     } else {
                         vm.categorias = [];
@@ -78,8 +59,6 @@
                 const color = vm.coloresCategoria[index % vm.coloresCategoria.length];
                 await getProductosPorCategoria(cat.id, color);  // espera a que termine antes de continuar
             }
-
-            console.log("Se completó la carga de productos por categoría.");
         }
 
         function getMesas() {
@@ -98,7 +77,30 @@
                 }
             );
         };
+        function getCrearVenta() {
+            const ventaData = {
+                cliente: $scope.cmbCliente,
+                corte_caja: vm.corteCajaId,
+                total: 0,
+                cambio: 0,
+                atencion: vm.personaId,
+                lugar_entrega_id: $scope.cmbMesa,
+                observaciones: 'Ninguna'
+            };
 
+            if (!ventaData.cliente || !ventaData.atencion || !ventaData.lugar_entrega_id) {
+                Swal.fire('Campos incompletos', 'Revisa cliente, atención o mesa', 'warning');
+                return;
+            }
+            $http.post('/api/v1/ventas/', ventaData)
+                .then(function (response) {
+                    getVentasAbiertasCorteEmpresas();
+                })
+                .catch(function (error) {
+                    console.error("Error creando venta:", error);
+                    Swal.fire('Error', 'No se pudo crear la venta', 'error');
+                });
+        }
 
         function getVentasAbiertasCorteEmpresas() {
             const params = new URLSearchParams({
@@ -108,6 +110,7 @@
             const url = `/ventas_abiertas_corte_empresas/?${params.toString()}`;
             $http.get(url).then(
                 function (response) {
+                    $scope.ventas = [];
                     ArrayEmpresasVenta.length = 0;
                     for (let i = 0; i < response.data.length; i++) {
                         ArrayEmpresasVenta.push(response.data[i]);
@@ -195,7 +198,7 @@
                             data: producto
                         }));
                     } else {
-                        DevExpress.ui.notify("La consulta no generó información, intente con otros parámetros", "warning", 3500);
+                       // DevExpress.ui.notify("La consulta no generó información, intente con otros parámetros", "warning", 3500);
                     }
                 },
                 function (error) {
@@ -245,14 +248,54 @@
 
         $scope.setVentaActiva = function (idVenta) {
             $scope.ventaActiva = idVenta;
+            $scope.ventaActiva = idVenta;
         };
 
         $scope.consultarVenta = function (ventaId) {
             alertify.success("Venta seleccionada: " + ventaId);
+            $scope.ventaActiva = ventaId;
         };
         // Función para mostrar alertify con el id del predio
         vm.mostrarAlertId = function (id) {
-            DevExpress.ui.notify("El ID seleccionado es: " + id, "success", 3500);
+            if ($scope.ventaActiva > 0) {
+                DevExpress.ui.notify("Se puede vender " + id, "success", 3500);
+            } else {
+                Swal.fire({
+                        title: '¿Iniciar venta?',
+                        text: 'Se va a iniciar una venta.',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí',
+                        cancelButtonText: 'No',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            const popup = Swal.getPopup();
+                            if (popup) {
+                                popup.style.fontSize = '1.2rem';
+                                popup.style.padding = '2rem';
+                                popup.style.width = '400px';
+                            }
+
+                            const confirmBtn = Swal.getConfirmButton();
+                            const cancelBtn = Swal.getCancelButton();
+
+                            if (confirmBtn) {
+                                confirmBtn.style.fontSize = '1.5rem';
+                                confirmBtn.style.padding = '0.75rem 2rem';
+                            }
+                            if (cancelBtn) {
+                                cancelBtn.style.fontSize = '1.5rem';
+                                cancelBtn.style.padding = '0.75rem 2rem';
+                            }
+                        }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        getCrearVenta();
+                    }
+                });
+            }
+                
         };
 
         $scope.siniestros_source = new DevExpress.data.DataSource({
@@ -266,7 +309,7 @@
         });
 
         $scope.ventas_source = new DevExpress.data.DataSource({
-            store:ArrayEmpresasVenta
+            store: ArrayEmpresasVenta
 
         });
 
@@ -281,8 +324,40 @@
                     BtnCrearVentaInstance = e.component;
                 },
                 onClick: function () {
-                    tab = tab + 1;
-                    agregarVenta(tab);
+                    Swal.fire({
+                        title: '¿Iniciar venta?',
+                        text: 'Se va a iniciar una venta.',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí',
+                        cancelButtonText: 'No',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            const popup = Swal.getPopup();
+                            if (popup) {
+                                popup.style.fontSize = '1.2rem';
+                                popup.style.padding = '2rem';
+                                popup.style.width = '400px';
+                            }
+
+                            const confirmBtn = Swal.getConfirmButton();
+                            const cancelBtn = Swal.getCancelButton();
+
+                            if (confirmBtn) {
+                                confirmBtn.style.fontSize = '1.5rem';
+                                confirmBtn.style.padding = '0.75rem 2rem';
+                            }
+                            if (cancelBtn) {
+                                cancelBtn.style.fontSize = '1.5rem';
+                                cancelBtn.style.padding = '0.75rem 2rem';
+                            }
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            getCrearVenta();
+                        }
+                    });
                 }
             },
         }
@@ -307,13 +382,7 @@
                     CmbMesaInstance = e.component;
                 },
                 onValueChanged: function (e) {
-                    //var selectedId = e.value; // id del modelo seleccionado
-                    //	var selectedModelo = ArrayModelo.find(function(item) {
-                    //      return item.id === selectedId;
-                    // });
-                    //	if (selectedModelo) {
-                    //		$scope.txtMarca = selectedModelo.marca_nombre ;
-                    //	}
+
                 },
             },
             CmbClienteOptions: {

@@ -5,10 +5,15 @@ from operaciones.models import *
 class ClientesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cliente
-        exclude = []
+        fields = '__all__'
     
 class NotificacionZonaSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificacionZona
-        exclude = []
+        fields = '__all__'
+
     
+class VentasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ventas
+        fields = '__all__'

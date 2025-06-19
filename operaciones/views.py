@@ -23,6 +23,10 @@ class ClientesViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+class VentasViewSet(viewsets.ModelViewSet):
+    queryset = Ventas.objects.all()
+    serializer_class = VentasSerializer
+
 
 class NotificacionZonaSerializerViewSet(viewsets.ModelViewSet):
     queryset = NotificacionZona.objects.all()
@@ -63,7 +67,7 @@ def punto_de_venta(request):
     corte_abierto = CorteCaja.objects.filter(
         estatus = 1,
         empresa = empresa.id
-    ).exists()
+    ).first()
     if not corte_abierto:
         messages.warning(request, "No tienes un corte de caja abierto. Ábrelo en el administrador.")
         # Redirige directamente a la vista de agregar CorteCaja en el admin
@@ -72,7 +76,8 @@ def punto_de_venta(request):
     return render(request, 'operaciones/punto_venta.html', {
         'title': "Punto de venta",
         'empresa': empresa,
-        'corte_caja':corte_abierto,
+        'corte_caja':corte_abierto.id,
+        'personaId':user.id,
         'nombre_personal': f"{user.nombre} {user.apellido_paterno} {user.apellido_materno}"
     })
 
@@ -105,6 +110,7 @@ def ventasAbiertasCorteEmpresas(request):
             "atencion_id": v.atencion_id,
             "observaciones": v.observaciones,
             "activo": v.activo,
+            "personal": f"{v.atencion.nombre} {v.atencion.apellido_paterno} {v.atencion.apellido_materno}"
         })
 
     return JsonResponse(ventas_data, safe=False)
