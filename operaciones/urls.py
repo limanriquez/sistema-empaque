@@ -17,5 +17,8 @@ urlpatterns = [
     path('punto_de_venta/', punto_de_venta, name="punto_de_venta"),
     path('existeTelefono/<str:telefono>/', existeTelefono, name="existeTelefono"),
     path('ventas_abiertas_corte_empresas/', ventasAbiertasCorteEmpresas, name='ventasAbiertasCorteEmpresas'),
+    path('transaccion_venta_producto/', transaccionVentaProducto, name='transaccionVentaProducto'),
+
+    
   #  path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]

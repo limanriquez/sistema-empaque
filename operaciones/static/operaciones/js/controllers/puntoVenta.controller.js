@@ -98,7 +98,27 @@
                 })
                 .catch(function (error) {
                     console.error("Error creando venta:", error);
-                    Swal.fire('Error', 'No se pudo crear la venta', 'error');
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se pudo crear la venta',
+                        icon: 'error',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            const popup = Swal.getPopup();
+                            if (popup) {
+                                popup.style.fontSize = '1.2rem';
+                                popup.style.padding = '2rem';
+                                popup.style.width = '400px';
+                            }
+
+                            const confirmBtn = Swal.getConfirmButton();
+                            if (confirmBtn) {
+                                confirmBtn.style.fontSize = '1.5rem';
+                                confirmBtn.style.padding = '0.75rem 2rem';
+                            }
+                        }
+                    });
                 });
         }
 
@@ -121,6 +141,53 @@
                 }
             );
         };
+
+        function transaccionVentaProducto(idProducto, idVenta) {
+            const productoEncontrado = findProductoById(vm.categorias, idProducto);
+            if(productoEncontrado) {
+                console.log(productoEncontrado.data.empresa);
+            }
+            let localPrecio  = 0;
+            let localEmpresa = 0;
+            let descuento = 0;
+            let observaciones = "Sin observaciones";
+            if(productoEncontrado) {
+                localPrecio = productoEncontrado.precio
+                localEmpresa = productoEncontrado.data.empresa
+            }
+
+            const params = new URLSearchParams({
+                producto: idProducto,
+                venta: idVenta,
+                precio: localPrecio,
+                descuento: descuento,
+                empresa: localEmpresa,
+                observaciones: observaciones,
+            });
+            $scope.isLoadPanelVisible = true;
+            const url = `/transaccion_venta_producto/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    console.log(response);
+                    var mensaje = response.data.success;
+                    $scope.isLoadPanelVisible = false;
+                }, function (response) {
+                }
+            );
+        };
+        //Metodo que busca por medio del id del produucto en el arreglo y regresa la información del mismo para evitar petición al server
+        function findProductoById(categorias, productoId) {
+            for (let categoria of categorias) {
+                if (categoria.productos && categoria.productos.length) {
+                    for (let producto of categoria.productos) {
+                        if (producto.id === productoId) {
+                            return producto;
+                        }
+                    }
+                }
+            }
+            return null; // no encontrado
+        }
 
         function getClientes() {
             const params = new URLSearchParams({
@@ -198,7 +265,7 @@
                             data: producto
                         }));
                     } else {
-                       // DevExpress.ui.notify("La consulta no generó información, intente con otros parámetros", "warning", 3500);
+                        // DevExpress.ui.notify("La consulta no generó información, intente con otros parámetros", "warning", 3500);
                     }
                 },
                 function (error) {
@@ -258,44 +325,45 @@
         // Función para mostrar alertify con el id del predio
         vm.mostrarAlertId = function (id) {
             if ($scope.ventaActiva > 0) {
+                transaccionVentaProducto(id, $scope.ventaActiva)
                 DevExpress.ui.notify("Se puede vender " + id, "success", 3500);
             } else {
                 Swal.fire({
-                        title: '¿Iniciar venta?',
-                        text: 'Se va a iniciar una venta.',
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonText: 'Sí',
-                        cancelButtonText: 'No',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        didOpen: () => {
-                            const popup = Swal.getPopup();
-                            if (popup) {
-                                popup.style.fontSize = '1.2rem';
-                                popup.style.padding = '2rem';
-                                popup.style.width = '400px';
-                            }
-
-                            const confirmBtn = Swal.getConfirmButton();
-                            const cancelBtn = Swal.getCancelButton();
-
-                            if (confirmBtn) {
-                                confirmBtn.style.fontSize = '1.5rem';
-                                confirmBtn.style.padding = '0.75rem 2rem';
-                            }
-                            if (cancelBtn) {
-                                cancelBtn.style.fontSize = '1.5rem';
-                                cancelBtn.style.padding = '0.75rem 2rem';
-                            }
+                    title: '¿Iniciar venta?',
+                    text: 'Se va a iniciar una venta.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí',
+                    cancelButtonText: 'No',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        const popup = Swal.getPopup();
+                        if (popup) {
+                            popup.style.fontSize = '1.2rem';
+                            popup.style.padding = '2rem';
+                            popup.style.width = '400px';
                         }
+
+                        const confirmBtn = Swal.getConfirmButton();
+                        const cancelBtn = Swal.getCancelButton();
+
+                        if (confirmBtn) {
+                            confirmBtn.style.fontSize = '1.5rem';
+                            confirmBtn.style.padding = '0.75rem 2rem';
+                        }
+                        if (cancelBtn) {
+                            cancelBtn.style.fontSize = '1.5rem';
+                            cancelBtn.style.padding = '0.75rem 2rem';
+                        }
+                    }
                 }).then((result) => {
                     if (result.isConfirmed) {
                         getCrearVenta();
                     }
                 });
             }
-                
+
         };
 
         $scope.siniestros_source = new DevExpress.data.DataSource({

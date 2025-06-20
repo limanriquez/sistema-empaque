@@ -48,7 +48,9 @@ class PrecioProducto(models.Model):
     def __str__(self):
         return f"{self.producto.nombre} - {self.tipo_precio.nombre}: ${self.precio}"
 
-
+#Este mantiene el stock actual en inventario, este modelo se usa en BOM para integrar con sus elementos 
+#Un producto, es decir bom se conforma de items, y en bom se le indica al producto compuesto
+#Cuales y cuantos elementos de stokItem llevaria.
 class StockItem(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     existencia = models.PositiveIntegerField(default=0)  # No puede ser negativo

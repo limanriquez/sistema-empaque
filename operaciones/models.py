@@ -71,6 +71,23 @@ class Ventas(models.Model):
     def __str__(self):
         return f"Venta #{self.id} - Cliente: {self.cliente.nombre} - Total: {self.total}"
 
+class DesgloseVenta(models.Model):
+    venta = models.ForeignKey(Ventas, on_delete=models.CASCADE, related_name='desglose')
+    producto = models.ForeignKey(Producto, on_delete=models.PROTECT, related_name='ventas_detalle')
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    descuento = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=12, decimal_places=2)  # Se guarda explícitamente
+    empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT, related_name='desglose_venta')
+    observaciones = models.TextField(blank=True, null=True)
+
+
+    class Meta:
+        verbose_name = 'Desglose de Venta'
+        verbose_name_plural = 'Desgloses de Ventas'
+
+    def __str__(self):
+        return f"{self.producto.nombre} - ${self.total:.2f} (Venta #{self.venta_id})"
+
 """
 Registra las notificaciones generadas para cada producto vendido en las diferentes zonas de preparación.
 Permite rastrear el estado de cada notificación (pendiente, entregada, cancelada) para una gestión eficiente

@@ -77,6 +77,7 @@ class TipoPrecio(models.Model):
     def __str__(self):
         return self.nombre  # Muestra el nombre del tipo de precio
 
+#Es la mesa por ejemplo o dirección si es para llevar
 class LugarEntrega(models.Model):
     nombre = models.CharField(max_length=100)
     activo = models.BooleanField(default=True)

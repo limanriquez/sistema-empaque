@@ -127,6 +127,7 @@ class BOMAdmin(admin.ModelAdmin):
     list_display = ('id', 'producto_nombre', 'stock_item_nombre', 'cantidad')
     list_display_links = ('producto_nombre', 'stock_item_nombre')
     search_fields = ('producto__nombre', 'stock_item__nombre')
+    list_filter = ('producto', 'stock_item') 
 
     def producto_nombre(self, obj):
         return obj.producto.nombre

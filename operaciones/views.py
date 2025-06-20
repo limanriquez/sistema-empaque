@@ -1,13 +1,24 @@
-from django.contrib.auth.decorators import login_required
+# Librerías estándar de Python
+from decimal import Decimal, InvalidOperation
+
+# Librerías de Django
 from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.http import JsonResponse,HttpResponse
-from operaciones.serializer import *
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+
+# Django REST Framework
 from rest_framework import viewsets
+from rest_framework.decorators import action
+
+# Importaciones propias / locales
+from inventarios.models import Producto, BOM, StockItem
+from operaciones.models import DesgloseVenta, Ventas
+from operaciones.serializer import *
 from inventario.permissions import IsAdminOrReadOnly
 from authentication.decoradores import require_personal
-from rest_framework.decorators import action
-from django.urls import reverse
 
 class ClientesViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
@@ -114,3 +125,73 @@ def ventasAbiertasCorteEmpresas(request):
         })
 
     return JsonResponse(ventas_data, safe=False)
+
+
+@login_required
+def transaccionVentaProducto(request):
+    producto_id = request.GET.get('producto')
+    venta_id = request.GET.get('venta')
+    precio_venta = request.GET.get('precio')
+    descuento_raw = request.GET.get('descuento', '0.00')
+    empresa = request.GET.get('empresa')
+    observaciones = request.GET.get('observaciones', '')
+
+    if not producto_id or not venta_id or not precio_venta:
+        return HttpResponseBadRequest("Faltan parámetros obligatorios")
+
+    try:
+        producto_id = int(producto_id)
+        venta_id = int(venta_id)
+        precio_unitario = Decimal(precio_venta)
+        descuento = Decimal(descuento_raw)
+
+        if precio_unitario < 0 or descuento < 0:
+            return JsonResponse({'error': 'El precio y el descuento deben ser mayores o iguales a 0'})
+        if descuento > precio_unitario:
+            return JsonResponse({'error': 'El descuento no puede ser mayor al precio'})
+    except (ValueError, InvalidOperation):
+        return HttpResponseBadRequest("Parámetros inválidos")
+
+    boms = BOM.objects.select_related('stock_item').filter(producto_id=producto_id)
+    if not boms.exists():
+        return JsonResponse({'error': 'El producto no es compuesto o no tiene componentes'})
+
+    # Validar stock antes de la transacción
+    for bom in boms:
+        if bom.stock_item.existencia < bom.cantidad:
+            return JsonResponse({'error': f'Stock insuficiente para {bom.stock_item.nombre}'})
+
+    producto = get_object_or_404(Producto, pk=producto_id)
+    venta = get_object_or_404(Ventas, pk=venta_id)
+
+    total = precio_unitario - descuento
+
+    with transaction.atomic():
+        # Bloquear stock items para evitar condición de carrera
+        stock_items = StockItem.objects.select_for_update().filter(
+            id__in=[bom.stock_item_id for bom in boms]
+        )
+        stock_map = {si.id: si for si in stock_items}
+
+        # Actualizar stock y verificar de nuevo dentro del lock
+        for bom in boms:
+            stock_item = stock_map[bom.stock_item_id]
+            stock_item.existencia -= bom.cantidad
+            if stock_item.existencia < 0:
+                transaction.set_rollback(True)
+                return JsonResponse({'error': f'Stock insuficiente para {stock_item.nombre} (concurrency)'})
+            stock_item.save()
+
+        # Registrar desglose
+        DesgloseVenta.objects.create(
+            venta = venta,
+            producto = producto,
+            precio_unitario = precio_unitario,
+            descuento = descuento,
+            total = total,
+            empresa_id = empresa,
+            observaciones = observaciones or None
+        )
+
+    return JsonResponse({'success': 'Producto vendido y registrado correctamente'})
+            
