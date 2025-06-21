@@ -61,15 +61,16 @@
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 15vh;
-        background-color: #f8f9fa;
+        height: 9vh;
+        /* Cambiar este valor para el ancho de la barra de abajo */
+        background-color: #dedede;
         border-top: 1px solid #ddd;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 0 20px;
-        box-sizing: border-box;
-        z-index: 1050;
+        padding: 0px;
+        /*box-sizing: border-box;
+        z-index: 1050;*/
     }
 
     .fixed-bottom-paragraph p {
@@ -97,7 +98,12 @@
 
         <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
             <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
-                 <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <span>Buscar producto:</span>
+                    <input type="text" ng-model="vm.filtro" placeholder="Filtrar por nombre, ID" class="form-control"
+                        style="margin-bottom: 8px;" />
+                </div>
+                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
                     <span>Cliente:</span>
                     <div dx-lookup="vm.lookup.CmbClienteOptions"></div>
                 </div>
@@ -105,10 +111,11 @@
                     <span>Mesa:</span>
                     <div dx-lookup="vm.lookup.CmbMesaOptions"></div>
                 </div>
-                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
-
+                <div class="col-md-2 form-group" style="margin-bottom: 0; margin-top: 20px; display: flex; gap: 10px;">
                     <div dx-button="vm.button.BtnCrearVentaOptions"></div>
+                    <div dx-button="vm.button.BtnCobrarVentaOptions"></div>
                 </div>
+
             </div>
         </div>
 
@@ -180,7 +187,7 @@
 
             <!-- Columna 4: filtro + grid SIEMPRE visibles -->
             <div class="col-md-4">
-                  <!-- Contenido de los tab de ventas -->
+                <!-- Contenido de los tab de ventas -->
                 <ul class="nav nav-tabs">
                     <li ng-repeat="venta in ventas" ng-class="{active: ventaActiva === venta}">
                         <a href="" ng-click="setVentaActiva(venta); consultarVenta(venta)">
@@ -199,14 +206,10 @@
                 </div>
                 <!-- Contenido de los tab de ventas-->
 
-                <input type="text" ng-model="vm.filtro" placeholder="Filtrar por nombre, ID" class="form-control"
-                    style="margin-bottom: 8px;" />
-
                 <div class="row" style="margin-left: 0px; margin-right: 0px;" id="gridSiniestros">
                     <div class="rowdgr" style="margin-top: 0px; padding: 5px 20px 5px 30px; margin-bottom: 10px;">
-                        <span>Pagos:</span>
-                        <div class="row" style="padding-right: 15px; height: 440px; overflow-y: auto;">
-                            <div dx-data-grid="vm.grids.gridSiniestrosOptions" style="height: 620px;"></div>
+                        <div class="row" style="padding-right: 15px; height: 530px; overflow-y: auto;">
+                            <div dx-data-grid="vm.grids.gridDesgloseventaOptions" style="height: 620px;"></div>
                         </div>
                     </div>
                 </div>
@@ -214,11 +217,91 @@
 
         </div>
         <!-- Párrafo fijo abajo -->
+
+
         <div class="fixed-bottom-paragraph">
-            <p>
-                Aquí va tu párrafo que estará anclado abajo y ocupará el 15% de la pantalla.
-            </p>
+            <div class="container-fluid" style="padding: 0px;">
+                <div class="row w-100 text-center" style="text-align: right;">
+                    <div class="col-3">Columna 1</div>
+                    <div class="col-3">Columna 2</div>
+                    <div class="col-3">Columna 3</div>
+                    <div class="col-3" style="padding: 0px;">
+                        <div class="row w-100">
+                            <div class="col-4">
+                                <span>Sub-Total</span>
+                                <div dx-text-box="vm.textBox.TxtSubtotalOptions"></div>
+                            </div>
+                            <div class="col-4">
+                                <span>Descuento</span>
+                                <div dx-text-box="vm.textBox.TxtDescuentoOptions"></div>
+                            </div>
+                            <div class="col-4">
+                                <span>Total</span>
+                                <div dx-text-box="vm.textBox.TxtTotalOptions"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <div dx-popup="vm.popups.popPagosOptions">
+            <div dx-button="vm.button.BtnRegresarOptions"
+                style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+
+            <div class="rowdgr" style="margin-top: 10px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 10px;">
+                <div class="row w-100 text-center" style="text-align: right;">
+                    <div class="col-md-4" style="padding-left: 20px;">
+                        <span>Sub-Total</span>
+                        <div dx-text-box="vm.textBox.TxtSubtotalOptions"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <span>Descuento</span>
+                        <div dx-text-box="vm.textBox.TxtDescuentoOptions"></div>
+                    </div>
+                    <div class="col-md-4" style="padding: 0px;">
+                        <span>Total</span>
+                        <div dx-text-box="vm.textBox.TxtTotalOptions"></div>
+                    </div>
+                </div>
+
+                <div class="row w-100" style="text-align: left; padding-top: 10px;">
+                    <div class="col-md-4" style="padding-left: 20px;">
+
+                    </div>
+                    <div class="col-md-4">
+                        <span>Pendiente de Pago</span>
+                        <div dx-text-box="vm.textBox.TxtTotalOptions"></div>
+                    </div>
+                    <div class="col-md-4" style="padding: 0px;">
+                        <span>Pagado</span>
+                        <div dx-text-box="vm.textBox.TxtTotalOptions"></div>
+                    </div>
+                </div>
+
+                <div class="row w-100" style="text-align: left; padding-top: 10px;">
+                    <div class="col-md-4" style="padding-left: 20px;">
+                        <span>Metodo de pago:</span>
+                        <div dx-lookup="vm.lookup.CmbModeloOptions"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <span>Pago</span>
+                        <div dx-text-box="vm.textBox.TxtTotalOptions"></div>
+                    </div>
+                    <div class="col-md-4" style="padding: 0px;">
+                        <span>Cambio</span>
+                        <div dx-text-box="vm.textBox.TxtTotalOptions"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rowdgr" style="margin-top: 15px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 20px;">
+                <div class="row" style="padding-top: 5px; padding-left: 0px; padding-right: 5px;">
+                    <div dx-data-grid="vm.grid.grdPagosAgregadosOptions"></div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 

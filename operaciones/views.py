@@ -195,3 +195,64 @@ def transaccionVentaProducto(request):
 
     return JsonResponse({'success': 'Producto vendido y registrado correctamente'})
             
+@login_required
+def transaccionCancelarDesgloseVenta(request):
+    desglose_id = request.GET.get('idDesgloce')
+
+    if not desglose_id:
+        return HttpResponseBadRequest("Falta el ID del desglose")
+
+    try:
+        desglose_id = int(desglose_id)
+    except ValueError:
+        return HttpResponseBadRequest("ID inválido")
+
+    desglose = get_object_or_404(DesgloseVenta, pk=desglose_id)
+    producto = desglose.producto
+
+    # Validar que el producto sea compuesto
+  #  if not producto.es_compuesto:
+   #     return JsonResponse({'error': 'El producto no es compuesto, no se puede revertir stock por BOM'})
+
+    # Obtener los componentes BOM
+    boms = BOM.objects.select_related('stock_item').filter(producto=producto)
+    if not boms.exists():
+        return JsonResponse({'error': 'No hay componentes registrados en el BOM para este producto'})
+
+    with transaction.atomic():
+        # Bloquear los stock_items que serán modificados
+        stock_items = StockItem.objects.select_for_update().filter(
+            id__in=[bom.stock_item_id for bom in boms]
+        )
+        stock_map = {si.id: si for si in stock_items}
+
+        # Revertir el stock según la definición BOM
+        for bom in boms:
+            stock_item = stock_map[bom.stock_item_id]
+            stock_item.existencia += bom.cantidad  # Aumenta la cantidad usada en la venta
+            stock_item.save()
+
+        # Eliminar el desglose
+        desglose.delete()
+
+    return JsonResponse({'success': 'Desglose anulado y stock revertido correctamente'})
+
+
+@login_required
+def productosVenta(request):
+    venta_id = request.GET.get('venta')
+    # Traer todos los registros del desglose de una venta específica, incluyendo el producto
+    desglose = DesgloseVenta.objects.select_related('producto').filter(venta_id=venta_id)
+    # Ejemplo: construir una respuesta JSON con datos de producto
+    desglose_data = []
+    for item in desglose:
+        desglose_data.append({
+            'id_desglose': item.id,
+            'producto_id': item.producto.id,
+            'producto_nombre': item.producto.nombre,
+            'precio_unitario': float(item.precio_unitario),
+            'descuento': float(item.descuento),
+            'total': float(item.total),
+        })
+
+    return JsonResponse(desglose_data, safe=False)

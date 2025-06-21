@@ -8,12 +8,17 @@
     PuntoVentaController.$inject = ['$http', '$scope', '$filter'];
 
     function PuntoVentaController($http, $scope, $filter) {
-        var gridSiniestrosInstance, CmbMesaInstance, BtnCrearVentaInstance, CmbClienteInstance;
-        var ArraySiniestros = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [];
+        var gridDesgloseVentaInstance, CmbMesaInstance, BtnCrearVentaInstance, CmbClienteInstance, PopPagosInstance,
+        BtnRegresarInstance;
+        var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [];
         var strEmpresasVenta = ""
         var vm = this;
         var tab = 0;
         var idVentaActiva = 0;
+        var desgloseVentaSeleccionado;
+        var subTotal = 0;
+        var descuento = 0;
+        var total = 0;
         $scope.ventas = [];
         $scope.ventaActiva = null;
 
@@ -136,22 +141,56 @@
                         ArrayEmpresasVenta.push(response.data[i]);
                         agregarVenta(response.data[i].id);  // <--- AQUI las fusionas
                     }
+                    if ($scope.ventaActiva > 0) {
+                        productosVenta($scope.ventaActiva)
+                    }
                     $scope.isLoadPanelVisible = false;
                 }, function (response) {
                 }
             );
         };
 
+        function productosVenta(venta) {
+            const params = new URLSearchParams({
+                venta: venta,
+            });
+            $scope.isLoadPanelVisible = true;
+            const url = `/productos_venta/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    subTotal = 0;
+                    descuento = 0;
+                    total = 0;
+                    ArrayDesgloseVenta.length = 0;
+                    for (let i = 0; i < response.data.length; i++) {
+                        ArrayDesgloseVenta.push(response.data[i]);
+                        subTotal = subTotal + response.data[i].precio_unitario;
+                        descuento = descuento + response.data[i].descuento;
+                        total = total + response.data[i].total;
+                    }
+                    $scope.txtSubtotal = $filter('currency')(subTotal, '$', 2);
+                    $scope.txtDescuento = $filter('currency')(descuento, '$', 2);
+                    $scope.txtTotal = $filter('currency')(total, '$', 2);
+
+                    gridDesgloseVentaInstance.refresh();
+                    $scope.isLoadPanelVisible = false;
+                }, function (response) {
+                }
+            );
+        };
+
+
+
         function transaccionVentaProducto(idProducto, idVenta) {
             const productoEncontrado = findProductoById(vm.categorias, idProducto);
-            if(productoEncontrado) {
+            if (productoEncontrado) {
                 console.log(productoEncontrado.data.empresa);
             }
-            let localPrecio  = 0;
+            let localPrecio = 0;
             let localEmpresa = 0;
             let descuento = 0;
             let observaciones = "Sin observaciones";
-            if(productoEncontrado) {
+            if (productoEncontrado) {
                 localPrecio = productoEncontrado.precio
                 localEmpresa = productoEncontrado.data.empresa
             }
@@ -169,6 +208,7 @@
             $http.get(url).then(
                 function (response) {
                     console.log(response);
+                    productosVenta(idVenta);
                     var mensaje = response.data.success;
                     $scope.isLoadPanelVisible = false;
                 }, function (response) {
@@ -210,6 +250,23 @@
                 }
             );
         };
+
+        function transaccionEliminarProductoVenta(idDesgloce) {
+            const params = new URLSearchParams({
+                idDesgloce: idDesgloce,
+            });
+            $scope.isLoadPanelVisible = true;
+            const url = `/transaccion_cancelar_desglose_venta/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    console.log(response);
+                    productosVenta($scope.ventaActiva);
+                    $scope.isLoadPanelVisible = false;
+                }, function (response) {
+
+                }
+            );
+        }
 
         function empresasVenta() {
             $scope.isLoadPanelVisible = true;
@@ -315,12 +372,13 @@
 
         $scope.setVentaActiva = function (idVenta) {
             $scope.ventaActiva = idVenta;
-            $scope.ventaActiva = idVenta;
+            //  $scope.ventaActiva = idVenta;
         };
 
         $scope.consultarVenta = function (ventaId) {
             alertify.success("Venta seleccionada: " + ventaId);
             $scope.ventaActiva = ventaId;
+            productosVenta($scope.ventaActiva)
         };
         // Función para mostrar alertify con el id del predio
         vm.mostrarAlertId = function (id) {
@@ -366,8 +424,8 @@
 
         };
 
-        $scope.siniestros_source = new DevExpress.data.DataSource({
-            store: ArraySiniestros
+        $scope.desglose_venta_source = new DevExpress.data.DataSource({
+            store: ArrayDesgloseVenta
         });
         $scope.mesa_source = new DevExpress.data.DataSource({
             store: ArrayMesa
@@ -380,13 +438,65 @@
             store: ArrayEmpresasVenta
 
         });
-
+        vm.textBox = {
+            TxtSubtotalOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'txtSubtotal'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            TxtDescuentoOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'txtDescuento'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            TxtTotalOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'txtTotal'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            }
+        }
         vm.button = {
             BtnCrearVentaOptions: {
                 icon: 'fas fa-plus',
                 type: 'default',
                 width: 135,
-                text: 'Crear',
+                text: 'Venta',
                 disabled: false,
                 onInitialized: function (e) {
                     BtnCrearVentaInstance = e.component;
@@ -426,6 +536,38 @@
                             getCrearVenta();
                         }
                     });
+                }
+            },
+            BtnCobrarVentaOptions: {
+                icon: 'fa fa-credit-card',
+                type: 'success',
+                width: 135,
+                text: 'Cobrar',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnCrearVentaInstance = e.component;
+                },
+                onClick: function () {
+                    if(total > 0){
+                        PopPagosInstance.show();
+                    }else{
+                        DevExpress.ui.notify("No existe cuenta por cobrar", "warning", 5000);
+                    }
+                    
+                }
+            },
+
+            BtnRegresarOptions: {
+                icon: 'fa fa-arrow-left',
+                type: 'success',
+                width: 125,
+                text: 'Regresar',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnRegresarInstance = e.component;
+                },
+                onClick: function () {
+                    PopPagosInstance.hide();
                 }
             },
         }
@@ -484,14 +626,14 @@
             },
         }
         vm.grids = {
-            gridSiniestrosOptions: {
-                dataSource: $scope.siniestros_source,
+            gridDesgloseventaOptions: {
+                dataSource: $scope.desglose_venta_source,
                 paging: {
-                    pageSize: 14
+                    pageSize: 1000
                 },
                 pager: {
                     showPageSizeSelector: true,
-                    allowedPageSizes: [10, 14, 20],
+                    allowedPageSizes: [1000, 2000, 6000],
                     showInfo: true
                 },
                 selection: {
@@ -504,58 +646,88 @@
                 showBorders: true,
 
                 columns: [
-                    { visible: true, cellTemplate: '<div class="btn btn-success">Add imagen</div>', cssClass: 'sin-padding', headerCellTemplate: "<i class='fa fa-cogs' aria-hidden='true'></i>", width: '105px', allowSorting: false },
+                    { visible: true, cellTemplate: '<div class="btn btn-danger">Eliminar</div>', cssClass: 'sin-padding', headerCellTemplate: "<i class='fa fa-cogs' aria-hidden='true'></i>", width: '85px', allowSorting: false },
+                    { dataField: 'id_desglose', caption: 'Id', width: 40, visible: true, },
+                    { dataField: 'producto_nombre', caption: 'Producto', width: 170 },
+                    { dataField: 'precio_unitario', caption: 'Precio', width: 80, format: { type: 'fixedPoint', precision: 2 } },
+                    { dataField: 'descuento', caption: 'Desc.', width: 80, format: { type: 'fixedPoint', precision: 2 } },
                     {
-                        headerCellTemplate: "<i class='fa fa-cogs' aria-hidden='true'></i>",
+                        dataField: 'total',
+                        caption: 'Total',
+                        width: 80,
+                        format: { type: 'fixedPoint', precision: 2 },
                         cellTemplate: function (container, options) {
-                            $("<div>")
-                                .append($("<button>")
-                                    .addClass("btn btn-primary")
-                                    .attr("style", "width: 100px; height: 34px; color: #fff; background-color: #337ab7; border-color: #2e6da4; padding: 0 !important;") // Agregamos la propiedad padding en línea con !important
-                                    .text("Ver imagenes")
-                                    .dxButton({
-                                        visible: options.data.Imagen,
-                                        onClick: function (e) {
-                                            get_imagenes_por_siniestro(options.data.IdSiniestro)
-                                        }
-                                    })
-                                )
-                                .appendTo(container);
-                        },
-                        cssClass: 'sin-padding',
-                        width: '102px',
+                            container.css({
+                                'background-color': '#50b3d3',
+                                'color': '#003366',
+                                'font-weight': 'bold'
+                            });
+                            container.text(options.text);
+                        }
                     },
-                    { dataField: 'IdSiniestro', caption: 'Id. siniestro', visible: true },
-                    { dataField: 'IdConstancia', caption: 'Id. constancia' },
-                    { dataField: 'ConsecutivoConstancia', caption: 'No. constancia' },
-                    { dataField: 'Asegurado', caption: 'Asegurado' },
-                    { dataField: 'Cultivo', caption: 'Cultivo' },
-                    { dataField: 'TipoCultivo', caption: 'Tipo cultivo' },
-                    { dataField: 'MetodoEvaluacion', caption: 'Metodo de evaluación' },
-                    { dataField: 'Indemnizacion', caption: 'Indemnizacion', format: { type: 'currency', precision: 2 }, dataType: 'number' },
-                    { dataField: 'Observaciones', caption: 'Observaciones' },
-
+                    { dataField: 't', caption: ' ', width: 20 },
                 ],
                 onInitialized: function (e) {
-                    gridSiniestrosInstance = e.component;
+                    gridDesgloseVentaInstance = e.component;
                 },
                 onCellClick: function (e) {
                     if (e.columnIndex == 0) {
                         if (e.rowIndex > -1) {
-                            siniestroSeleccionado = e.data;
-                            if (siniestroSeleccionado.NoImagenes < 5) {
-                                vm.id = siniestroSeleccionado.IdSiniestro;
-                                $scope.seleccionado = true;
-                                alertify.success('Seleccione la imagen en el componente para continuar')
-                            } else {
-                                DevExpress.ui.notify("Este inciso ya alcanzo el limite de 5 imagenes cargadas, imposible continuar", "warning", 3500);
-                            }
+                            desgloseVentaSeleccionado = e.data;
+                            Swal.fire({
+                                title: '¿Eliminar producto?',
+                                text: 'Se va a eliminar el producto.',
+                                icon: 'question',
+                                showCancelButton: true,
+                                confirmButtonText: 'Sí',
+                                cancelButtonText: 'No',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                didOpen: () => {
+                                    const popup = Swal.getPopup();
+                                    if (popup) {
+                                        popup.style.fontSize = '1.2rem';
+                                        popup.style.padding = '2rem';
+                                        popup.style.width = '400px';
+                                    }
 
+                                    const confirmBtn = Swal.getConfirmButton();
+                                    const cancelBtn = Swal.getCancelButton();
+
+                                    if (confirmBtn) {
+                                        confirmBtn.style.fontSize = '1.5rem';
+                                        confirmBtn.style.padding = '0.75rem 2rem';
+                                    }
+                                    if (cancelBtn) {
+                                        cancelBtn.style.fontSize = '1.5rem';
+                                        cancelBtn.style.padding = '0.75rem 2rem';
+                                    }
+                                }
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    transaccionEliminarProductoVenta(desgloseVentaSeleccionado.id_desglose);
+                                }
+                            });
                         }
                     }
                 },
                 onRowClick: function (e) {
 
+                },
+                onContentReady: function (e) {
+                    const grid = e.component;
+                    const totalCount = grid.totalCount();
+
+                    if (totalCount > 0) {
+                        // Seleccionar la última fila
+                        grid.selectRowsByIndexes([totalCount - 1]);
+
+                        // Mover scroll vertical al fondo
+                        const scrollable = grid.getScrollable();
+                        if (scrollable) {
+                            scrollable.scrollTo({ y: scrollable.scrollHeight() });
+                        }
+                    }
                 },
                 noDataText: "Sin datos",
                 scrolling: {
@@ -567,7 +739,26 @@
                 },
                 columnAutoWidth: true,
                 allowColumnResizing: true,
+                height: 515,
+                rowAlternationEnabled: true,
+                showRowLines: true
             },
         }
+        vm.popups = {
+            popPagosOptions: {
+                showTitle: true,
+                width: 800,
+                height: 600,
+                title: "Pagar cuenta",
+                dragEnabled: false,
+                closeOnOutsideClick: false,
+                bindingOptions: {
+                    visible: "showPopPagos",
+                },
+                onInitialized: function (e) {
+                    PopPagosInstance = e.component;//Se inicializa el popup para poder darle funcionalidad
+                }
+            },
+        };
     }
 })();

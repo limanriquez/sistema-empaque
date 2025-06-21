@@ -137,6 +137,11 @@ class BOMAdmin(admin.ModelAdmin):
         return obj.stock_item.nombre
     stock_item_nombre.short_description = 'Stock Item'
 
+    def has_delete_permission(self, request, obj=None):
+        if obj is not None and obj.producto.es_compuesto is False:
+            return False
+        return super().has_delete_permission(request, obj)
+
 @admin.register(ProductoZonaNotificacion)
 class ProductoZonaNotificacionAdmin(admin.ModelAdmin):
     list_display = ('id', 'producto', 'zona', 'activo')
