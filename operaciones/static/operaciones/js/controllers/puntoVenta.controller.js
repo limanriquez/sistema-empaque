@@ -9,8 +9,8 @@
 
     function PuntoVentaController($http, $scope, $filter) {
         var gridDesgloseVentaInstance, CmbMesaInstance, BtnCrearVentaInstance, CmbClienteInstance, PopPagosInstance,
-        BtnRegresarInstance;
-        var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [];
+            BtnRegresarInstance, CmbMetodoPagoInstance;
+        var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [];
         var strEmpresasVenta = ""
         var vm = this;
         var tab = 0;
@@ -19,6 +19,7 @@
         var subTotal = 0;
         var descuento = 0;
         var total = 0;
+        var cobroSubTotal, cobroDescuento, cobroTotal, cobroPendientePago, cobroPagado, coboMetodoPago, cobroPago, cobroCambio;
         $scope.ventas = [];
         $scope.ventaActiva = null;
 
@@ -65,6 +66,24 @@
                 await getProductosPorCategoria(cat.id, color);  // espera a que termine antes de continuar
             }
         }
+
+        function getmetodoPago() {
+            $scope.isLoadPanelVisible = true;
+            $http.get('/api/v1/metodoPago/activos/').then(
+                function (response) {
+                    ArrayMetodoPago.length = 0;
+                    for (let i = 0; i < response.data.length; i++) {
+                        console.log(response.data[i])
+                        ArrayMetodoPago.push(response.data[i]);
+                    }
+                    $scope.metodo_pago_source.load().done(function (response) {
+                    $scope.cmbMetodoPago = 1;
+                    });
+                    $scope.isLoadPanelVisible = false;
+                }, function (response) {
+                }
+            );
+        };
 
         function getMesas() {
             $scope.isLoadPanelVisible = true;
@@ -438,7 +457,133 @@
             store: ArrayEmpresasVenta
 
         });
+
+        $scope.metodo_pago_source = new DevExpress.data.DataSource({
+            store: ArrayMetodoPago
+        });
+
+
+
         vm.textBox = {
+            TxtCobroCambioOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'txtCobroCambio'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            TxtCobroPagoOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'txtCobroPago'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            TxtCobroPagadoOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'txtCobroPagado'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            TxtCobroPendienteOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'txtCobroPendiente'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            TxtCobroTotalOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'txtCobroTotal'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            TxtCobroDescuentoOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'txtCobroDescuento'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            TxtCobroSubtotalOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'txtCobroSubTotal'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
             TxtSubtotalOptions: {
                 readOnly: true,
                 showClearButton: true,
@@ -548,12 +693,12 @@
                     BtnCrearVentaInstance = e.component;
                 },
                 onClick: function () {
-                    if(total > 0){
+                    if (total > 0) {
                         PopPagosInstance.show();
-                    }else{
+                    } else {
                         DevExpress.ui.notify("No existe cuenta por cobrar", "warning", 5000);
                     }
-                    
+
                 }
             },
 
@@ -572,6 +717,29 @@
             },
         }
         vm.lookup = {
+            CmbMetodoPagoOptions: {
+                dataSource: $scope.metodo_pago_source,
+                searchEnabled: true,
+                placeholder: 'Seleccione el metodo de pago',
+                displayExpr: 'nombre',
+                valueExpr: 'id',
+                value: '',
+                dropDownOptions: {
+                    title: 'Metodo de pago',
+                },
+                cancelButtonText: 'Cancelar',
+                searchPlaceholder: 'Buscar metodo',
+                noDataText: "Sin datos",
+                bindingOptions: {
+                    value: 'cmbMetodoPago',
+                },
+                onInitialized: function (e) {
+                    CmbMetodoPagoInstance = e.component;
+                },
+                onValueChanged: function (e) {
+
+                },
+            },
             CmbMesaOptions: {
                 dataSource: $scope.mesa_source,
                 searchEnabled: true,
@@ -757,6 +925,9 @@
                 },
                 onInitialized: function (e) {
                     PopPagosInstance = e.component;//Se inicializa el popup para poder darle funcionalidad
+                },
+                onContentReady: function (e) {
+                   getmetodoPago();
                 }
             },
         };

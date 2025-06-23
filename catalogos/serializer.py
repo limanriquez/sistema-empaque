@@ -20,3 +20,8 @@ class LugarEntregaSerializer(serializers.ModelSerializer):
     class Meta:
         model = LugarEntrega
         fields = "__all__"
+
+class MetodoPagoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetodoPago
+        fields = "__all__"

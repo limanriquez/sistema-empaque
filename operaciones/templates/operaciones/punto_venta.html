@@ -253,48 +253,47 @@
                 <div class="row w-100 text-center" style="text-align: right;">
                     <div class="col-md-4" style="padding-left: 20px;">
                         <span>Sub-Total</span>
-                        <div dx-text-box="vm.textBox.TxtSubtotalOptions"></div>
+                        <div dx-text-box="vm.textBox.TxtCobroSubtotalOptions"></div>
                     </div>
                     <div class="col-md-4">
                         <span>Descuento</span>
-                        <div dx-text-box="vm.textBox.TxtDescuentoOptions"></div>
+                        <div dx-text-box="vm.textBox.TxtCobroDescuentoOptions"></div>
                     </div>
                     <div class="col-md-4" style="padding: 0px;">
                         <span>Total</span>
-                        <div dx-text-box="vm.textBox.TxtTotalOptions"></div>
+                        <div dx-text-box="vm.textBox.TxtCobroTotalOptions"></div>
                     </div>
                 </div>
-
+        
                 <div class="row w-100" style="text-align: left; padding-top: 10px;">
                     <div class="col-md-4" style="padding-left: 20px;">
 
                     </div>
                     <div class="col-md-4">
                         <span>Pendiente de Pago</span>
-                        <div dx-text-box="vm.textBox.TxtTotalOptions"></div>
+                        <div dx-text-box="vm.textBox.TxtCobroPendienteOptions"></div>
                     </div>
                     <div class="col-md-4" style="padding: 0px;">
                         <span>Pagado</span>
-                        <div dx-text-box="vm.textBox.TxtTotalOptions"></div>
+                        <div dx-text-box="vm.textBox.TxtCobroPagadoOptions"></div>
                     </div>
                 </div>
 
                 <div class="row w-100" style="text-align: left; padding-top: 10px;">
                     <div class="col-md-4" style="padding-left: 20px;">
                         <span>Metodo de pago:</span>
-                        <div dx-lookup="vm.lookup.CmbModeloOptions"></div>
+                        <div dx-lookup="vm.lookup.CmbMetodoPagoOptions"></div>
                     </div>
                     <div class="col-md-4">
                         <span>Pago</span>
-                        <div dx-text-box="vm.textBox.TxtTotalOptions"></div>
+                        <div dx-text-box="vm.textBox.TxtCobroPagoOptions"></div>
                     </div>
                     <div class="col-md-4" style="padding: 0px;">
                         <span>Cambio</span>
-                        <div dx-text-box="vm.textBox.TxtTotalOptions"></div>
+                        <div dx-text-box="vm.textBox.TxtCobroCambioOptions"></div>
                     </div>
                 </div>
             </div>
-
             <div class="rowdgr" style="margin-top: 15px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 20px;">
                 <div class="row" style="padding-top: 5px; padding-left: 0px; padding-right: 5px;">
                     <div dx-data-grid="vm.grid.grdPagosAgregadosOptions"></div>

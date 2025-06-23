@@ -2,8 +2,8 @@ from django.shortcuts import render
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import viewsets
-from .models import Puesto, ZonaNotificacion, TipoProducto, LugarEntrega
-from .serializer import PuestoSerializer, ZonaNotificacionSerializer, TipoProductoSerializer, LugarEntregaSerializer
+from .models import Puesto, ZonaNotificacion, TipoProducto, LugarEntrega, MetodoPago
+from .serializer import PuestoSerializer, ZonaNotificacionSerializer, TipoProductoSerializer, LugarEntregaSerializer, MetodoPagoSerializer
 
 class PuestoViewSet(viewsets.ModelViewSet):
     queryset = Puesto.objects.all()
@@ -38,7 +38,16 @@ class LugarEntregaViewSet(viewsets.ModelViewSet):
         activos = self.queryset.filter(activo=True)
         serializer = self.get_serializer(activos, many=True)
         return Response(serializer.data)
+    
+class MetodoPagoViewSet(viewsets.ModelViewSet):
+    queryset = MetodoPago.objects.all()
+    serializer_class = MetodoPagoSerializer
 
+    @action(detail=False, methods=['get'])
+    def activos(self, request):
+        activos = self.queryset.filter(activo=True)
+        serializer = self.get_serializer(activos, many=True)
+        return Response(serializer.data)
     
 
         

@@ -8,6 +8,8 @@ router.register('puesto',PuestoViewSet)
 router.register('zonaNotificacion',ZonaNotificacionViewSet)
 router.register('TipoProducto',TipoProductoViewSet)
 router.register('lugarEntrega',LugarEntregaViewSet)
+router.register('metodoPago',MetodoPagoViewSet)
+
 
 app_name = 'catalogos'
 urlpatterns = [
