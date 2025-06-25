@@ -229,15 +229,15 @@
                         <div class="row w-100">
                             <div class="col-4">
                                 <span>Sub-Total</span>
-                                <div dx-text-box="vm.textBox.TxtSubtotalOptions"></div>
+                                <div dx-number-box="vm.numberBox.NbrSubtotalOptions"></div>
                             </div>
                             <div class="col-4">
                                 <span>Descuento</span>
-                                <div dx-text-box="vm.textBox.TxtDescuentoOptions"></div>
+                                <div dx-number-box="vm.numberBox.NbrDescuentoOptions"></div>
                             </div>
                             <div class="col-4">
                                 <span>Total</span>
-                                <div dx-text-box="vm.textBox.TxtTotalOptions"></div>
+                                <div dx-number-box="vm.numberBox.NbrTotalOptions"></div>
                             </div>
                         </div>
                     </div>
@@ -248,20 +248,23 @@
         <div dx-popup="vm.popups.popPagosOptions">
             <div dx-button="vm.button.BtnRegresarOptions"
                 style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+            
+            <div dx-button="vm.button.BtnPagarOptions"
+                style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
 
             <div class="rowdgr" style="margin-top: 10px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 10px;">
                 <div class="row w-100 text-center" style="text-align: right;">
                     <div class="col-md-4" style="padding-left: 20px;">
                         <span>Sub-Total</span>
-                        <div dx-text-box="vm.textBox.TxtCobroSubtotalOptions"></div>
+                        <div dx-number-box="vm.numberBox.NbrCobroSubtotalOptions"></div>
                     </div>
                     <div class="col-md-4">
                         <span>Descuento</span>
-                        <div dx-text-box="vm.textBox.TxtCobroDescuentoOptions"></div>
+                        <div dx-number-box="vm.numberBox.NbrCobroDescuentoOptions"></div>
                     </div>
                     <div class="col-md-4" style="padding: 0px;">
                         <span>Total</span>
-                        <div dx-text-box="vm.textBox.TxtCobroTotalOptions"></div>
+                        <div dx-number-box="vm.numberBox.NbrCobroTotalOptions"></div>
                     </div>
                 </div>
         
@@ -271,11 +274,11 @@
                     </div>
                     <div class="col-md-4">
                         <span>Pendiente de Pago</span>
-                        <div dx-text-box="vm.textBox.TxtCobroPendienteOptions"></div>
+                        <div dx-number-box="vm.numberBox.NbrCobroPendienteOptions"></div>
                     </div>
                     <div class="col-md-4" style="padding: 0px;">
                         <span>Pagado</span>
-                        <div dx-text-box="vm.textBox.TxtCobroPagadoOptions"></div>
+                        <div dx-number-box="vm.numberBox.NbrCobroPagadoOptions"></div>
                     </div>
                 </div>
 
@@ -286,11 +289,11 @@
                     </div>
                     <div class="col-md-4">
                         <span>Pago</span>
-                        <div dx-text-box="vm.textBox.TxtCobroPagoOptions"></div>
+                        <div dx-number-box="vm.numberBox.NbrCobroPagoOptions"></div>
                     </div>
                     <div class="col-md-4" style="padding: 0px;">
                         <span>Cambio</span>
-                        <div dx-text-box="vm.textBox.TxtCobroCambioOptions"></div>
+                        <div dx-number-box="vm.numberBox.NbrCobroCambioOptions"></div>
                     </div>
                 </div>
             </div>

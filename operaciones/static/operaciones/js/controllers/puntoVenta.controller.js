@@ -9,7 +9,7 @@
 
     function PuntoVentaController($http, $scope, $filter) {
         var gridDesgloseVentaInstance, CmbMesaInstance, BtnCrearVentaInstance, CmbClienteInstance, PopPagosInstance,
-            BtnRegresarInstance, CmbMetodoPagoInstance;
+            BtnRegresarInstance, CmbMetodoPagoInstance, BtnPagarInstance;
         var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [];
         var strEmpresasVenta = ""
         var vm = this;
@@ -73,12 +73,21 @@
                 function (response) {
                     ArrayMetodoPago.length = 0;
                     for (let i = 0; i < response.data.length; i++) {
-                        console.log(response.data[i])
                         ArrayMetodoPago.push(response.data[i]);
                     }
                     $scope.metodo_pago_source.load().done(function (response) {
-                    $scope.cmbMetodoPago = 1;
+                        $scope.cmbMetodoPago = 1;
                     });
+                    $scope.numberCobroPagado = 0;
+                    cobroPagado = 0;
+                    $scope.numberCobroPendiente = cobroPendientePago; //$filter('currency')(cobroPendientePago, '$', 2);
+                    $scope.numberCobroSubTotal = subTotal;
+                    $scope.numberCobroDescuento = descuento;
+                    $scope.numberCobroTotal = cobroTotal;
+                    cobroCambio = 0;
+                    $scope.numberCobroCambio = cobroCambio;
+                    cobroPago = 0;
+                    $scope.numberCobroPago = 0;
                     $scope.isLoadPanelVisible = false;
                 }, function (response) {
                 }
@@ -187,10 +196,14 @@
                         descuento = descuento + response.data[i].descuento;
                         total = total + response.data[i].total;
                     }
-                    $scope.txtSubtotal = $filter('currency')(subTotal, '$', 2);
-                    $scope.txtDescuento = $filter('currency')(descuento, '$', 2);
-                    $scope.txtTotal = $filter('currency')(total, '$', 2);
-
+                    //descuento = 150;
+                    cobroSubTotal = subTotal;
+                    cobroDescuento = descuento;
+                    cobroTotal = total - descuento;
+                    cobroPendientePago = total - descuento;
+                    $scope.numberSubtotal = subTotal;
+                    $scope.numberDescuento = descuento;
+                    $scope.numberTotal = cobroTotal;
                     gridDesgloseVentaInstance.refresh();
                     $scope.isLoadPanelVisible = false;
                 }, function (response) {
@@ -287,6 +300,33 @@
             );
         }
 
+        function pagar() {
+            //$scope.cmbMetodoPago = 1;
+            // $scope.txtCobroPagado = $filter('currency')(0, '$', 2);
+            // cobroPagado = 0;
+            // $scope.txtCobroPendiente = $filter('currency')(cobroPendientePago, '$', 2);
+            // $scope.txtCobroSubTotal = $scope.txtSubtotal;
+            // $scope.txtCobroDescuento = $scope.txtDescuento;
+            // $scope.txtCobroTotal = $scope.txtTotal;
+            // cobroCambio = 0;
+            // $scope.txtCobroCambio = $filter('currency')(cobroCambio, '$', 2);
+            cobroPagado = cobroPagado + $scope.numberCobroPago;
+            //cobroCambio = cobroTotal - cobroPagado;
+            if (cobroTotal - cobroPagado >= 0) {
+                cobroPendientePago = cobroTotal - cobroPagado;
+                cobroCambio = 0;
+                $scope.numberCobroCambio = 0;
+            } else {
+                cobroCambio = cobroPagado - cobroTotal
+                $scope.numberCobroCambio = cobroCambio;
+                cobroPendientePago = 0;
+            }
+
+            $scope.numberCobroPagado = cobroPagado;
+            $scope.numberCobroPendiente = cobroPendientePago;
+
+
+        }
         function empresasVenta() {
             $scope.isLoadPanelVisible = true;
             const params = new URLSearchParams({
@@ -462,17 +502,138 @@
             store: ArrayMetodoPago
         });
 
+        vm.numberBox = {
+            NbrCobroPagoOptions: {
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'numberCobroPago'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                min: 0, // evita valores negativos si aplica
+                step: 1, // paso de incremento opcional
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            NbrCobroPendienteOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'numberCobroPendiente'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                //  min: 0, // evita valores negativos si aplica
+                // step: 1, // paso de incremento opcional
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            NbrCobroPagadoOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'numberCobroPagado'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            NbrCobroCambioOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'numberCobroCambio'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            NbrCobroTotalOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'numberCobroTotal'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            NbrCobroDescuentoOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'numberCobroDescuento'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
+            NbrCobroSubtotalOptions: {
+                readOnly: true,
+                showClearButton: true,
+                inputAttr: {
+                    style: "text-align: right; font-weight: bold; font-size: 18px;"
+                },
+                bindingOptions: {
+                    value: 'numberCobroSubTotal'
+                },
+                format: {
+                    type: "currency",
+                    precision: 2
+                },
+                onValueChanged: function (data) {
+                    // Lógica adicional si se requiere
+                }
+            },
 
-
-        vm.textBox = {
-            TxtCobroCambioOptions: {
+            NbrSubtotalOptions: {
                 readOnly: true,
                 showClearButton: true,
                 inputAttr: {
                     style: "text-align: right; font-weight: bold; font-size: 18px;"
                 },
                 bindingOptions: {
-                    value: 'txtCobroCambio'
+                    value: 'numberSubtotal'
                 },
                 format: {
                     type: "currency",
@@ -482,14 +643,14 @@
                     // Lógica adicional si se requiere
                 }
             },
-            TxtCobroPagoOptions: {
+            NbrDescuentoOptions: {
                 readOnly: true,
                 showClearButton: true,
                 inputAttr: {
                     style: "text-align: right; font-weight: bold; font-size: 18px;"
                 },
                 bindingOptions: {
-                    value: 'txtCobroPago'
+                    value: 'numberDescuento'
                 },
                 format: {
                     type: "currency",
@@ -499,133 +660,14 @@
                     // Lógica adicional si se requiere
                 }
             },
-            TxtCobroPagadoOptions: {
+            NbrTotalOptions: {
                 readOnly: true,
                 showClearButton: true,
                 inputAttr: {
                     style: "text-align: right; font-weight: bold; font-size: 18px;"
                 },
                 bindingOptions: {
-                    value: 'txtCobroPagado'
-                },
-                format: {
-                    type: "currency",
-                    precision: 2
-                },
-                onValueChanged: function (data) {
-                    // Lógica adicional si se requiere
-                }
-            },
-            TxtCobroPendienteOptions: {
-                readOnly: true,
-                showClearButton: true,
-                inputAttr: {
-                    style: "text-align: right; font-weight: bold; font-size: 18px;"
-                },
-                bindingOptions: {
-                    value: 'txtCobroPendiente'
-                },
-                format: {
-                    type: "currency",
-                    precision: 2
-                },
-                onValueChanged: function (data) {
-                    // Lógica adicional si se requiere
-                }
-            },
-            TxtCobroTotalOptions: {
-                readOnly: true,
-                showClearButton: true,
-                inputAttr: {
-                    style: "text-align: right; font-weight: bold; font-size: 18px;"
-                },
-                bindingOptions: {
-                    value: 'txtCobroTotal'
-                },
-                format: {
-                    type: "currency",
-                    precision: 2
-                },
-                onValueChanged: function (data) {
-                    // Lógica adicional si se requiere
-                }
-            },
-            TxtCobroDescuentoOptions: {
-                readOnly: true,
-                showClearButton: true,
-                inputAttr: {
-                    style: "text-align: right; font-weight: bold; font-size: 18px;"
-                },
-                bindingOptions: {
-                    value: 'txtCobroDescuento'
-                },
-                format: {
-                    type: "currency",
-                    precision: 2
-                },
-                onValueChanged: function (data) {
-                    // Lógica adicional si se requiere
-                }
-            },
-            TxtCobroSubtotalOptions: {
-                readOnly: true,
-                showClearButton: true,
-                inputAttr: {
-                    style: "text-align: right; font-weight: bold; font-size: 18px;"
-                },
-                bindingOptions: {
-                    value: 'txtCobroSubTotal'
-                },
-                format: {
-                    type: "currency",
-                    precision: 2
-                },
-                onValueChanged: function (data) {
-                    // Lógica adicional si se requiere
-                }
-            },
-            TxtSubtotalOptions: {
-                readOnly: true,
-                showClearButton: true,
-                inputAttr: {
-                    style: "text-align: right; font-weight: bold; font-size: 18px;"
-                },
-                bindingOptions: {
-                    value: 'txtSubtotal'
-                },
-                format: {
-                    type: "currency",
-                    precision: 2
-                },
-                onValueChanged: function (data) {
-                    // Lógica adicional si se requiere
-                }
-            },
-            TxtDescuentoOptions: {
-                readOnly: true,
-                showClearButton: true,
-                inputAttr: {
-                    style: "text-align: right; font-weight: bold; font-size: 18px;"
-                },
-                bindingOptions: {
-                    value: 'txtDescuento'
-                },
-                format: {
-                    type: "currency",
-                    precision: 2
-                },
-                onValueChanged: function (data) {
-                    // Lógica adicional si se requiere
-                }
-            },
-            TxtTotalOptions: {
-                readOnly: true,
-                showClearButton: true,
-                inputAttr: {
-                    style: "text-align: right; font-weight: bold; font-size: 18px;"
-                },
-                bindingOptions: {
-                    value: 'txtTotal'
+                    value: 'numberTotal'
                 },
                 format: {
                     type: "currency",
@@ -635,6 +677,11 @@
                     // Lógica adicional si se requiere
                 }
             }
+
+        };
+
+        vm.textBox = {
+
         }
         vm.button = {
             BtnCrearVentaOptions: {
@@ -704,7 +751,7 @@
 
             BtnRegresarOptions: {
                 icon: 'fa fa-arrow-left',
-                type: 'success',
+                type: 'default',
                 width: 125,
                 text: 'Regresar',
                 disabled: false,
@@ -715,6 +762,20 @@
                     PopPagosInstance.hide();
                 }
             },
+            BtnPagarOptions: {
+                icon: 'fa fa-credit-card',
+                type: 'success',
+                width: 125,
+                text: 'Pagar',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnPagarInstance = e.component;
+                },
+                onClick: function () {
+                    pagar();
+                }
+            },
+
         }
         vm.lookup = {
             CmbMetodoPagoOptions: {
@@ -927,7 +988,7 @@
                     PopPagosInstance = e.component;//Se inicializa el popup para poder darle funcionalidad
                 },
                 onContentReady: function (e) {
-                   getmetodoPago();
+                    getmetodoPago();
                 }
             },
         };
