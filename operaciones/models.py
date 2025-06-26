@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from empresa.models import Personal, Empresa, Cliente
 from inventarios.models import Producto
-from catalogos.models import ZonaNotificacion, LugarEntrega
+from catalogos.models import ZonaNotificacion, LugarEntrega, MetodoPago
 
 class CorteCaja(models.Model):
     ABIERTO = 1
@@ -61,6 +61,7 @@ class Ventas(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name='ventas')
     corte_caja = models.ForeignKey(CorteCaja, on_delete=models.PROTECT, related_name='ventas')
     fecha_venta = models.DateTimeField(auto_now_add=True)
+    descuento = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=12, decimal_places=2)
     cambio = models.DecimalField(max_digits=12, decimal_places=2)
     lugar_entrega = models.ForeignKey(LugarEntrega, on_delete=models.PROTECT, related_name='ventas',null=True,blank=True)
@@ -118,3 +119,19 @@ class NotificacionZona(models.Model):
     def __str__(self):
         return f"{self.cantidad} x {self.producto.nombre} en {self.zona.nombre} para orden {self.orden.id} - Estado: {self.get_estado_display()}"
 
+class PagoVenta(models.Model):
+    venta = models.ForeignKey(Ventas, on_delete=models.PROTECT, related_name='pagos')
+    metodo_pago = models.ForeignKey(MetodoPago, on_delete=models.PROTECT, related_name='pagos')
+    monto = models.DecimalField(max_digits=12, decimal_places=2)
+    referencia = models.CharField(max_length=100, blank=True, null=True)  # Opcional, útil para tarjeta o transferencia
+    fecha_pago = models.DateTimeField(auto_now_add=True)
+    observaciones = models.TextField(blank=True, null=True)
+    activo = models.BooleanField(default=True)  # Lógica de anulación o activación
+    
+    class Meta:
+        verbose_name = "Pago de Venta"
+        verbose_name_plural = "Pagos de Venta"
+        ordering = ['fecha_pago']
+
+    def __str__(self):
+        return f"{self.metodo_pago.nombre} - ${self.monto} (Venta #{self.venta_id})"

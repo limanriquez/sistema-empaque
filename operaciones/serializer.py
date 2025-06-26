@@ -17,3 +17,11 @@ class VentasSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ventas
         fields = '__all__'
+
+
+class PagoVentaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PagoVenta
+        fields = '__all__'
+
+        

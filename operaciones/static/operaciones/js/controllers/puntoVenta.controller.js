@@ -9,13 +9,16 @@
 
     function PuntoVentaController($http, $scope, $filter) {
         var gridDesgloseVentaInstance, CmbMesaInstance, BtnCrearVentaInstance, CmbClienteInstance, PopPagosInstance,
-            BtnRegresarInstance, CmbMetodoPagoInstance, BtnPagarInstance;
-        var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [];
+            BtnRegresarInstance, CmbMetodoPagoInstance, BtnPagarInstance, gridDesglosePagoVentaInstance;
+
+        var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [],
+            ArrayPagosPorVenta = [];
         var strEmpresasVenta = ""
         var vm = this;
         var tab = 0;
         var idVentaActiva = 0;
         var desgloseVentaSeleccionado;
+        var pagoSeleccionado;
         var subTotal = 0;
         var descuento = 0;
         var total = 0;
@@ -67,7 +70,7 @@
             }
         }
 
-        function getmetodoPago() {
+        function getMetodoPago() {
             $scope.isLoadPanelVisible = true;
             $http.get('/api/v1/metodoPago/activos/').then(
                 function (response) {
@@ -78,21 +81,57 @@
                     $scope.metodo_pago_source.load().done(function (response) {
                         $scope.cmbMetodoPago = 1;
                     });
-                    $scope.numberCobroPagado = 0;
-                    cobroPagado = 0;
-                    $scope.numberCobroPendiente = cobroPendientePago; //$filter('currency')(cobroPendientePago, '$', 2);
-                    $scope.numberCobroSubTotal = subTotal;
-                    $scope.numberCobroDescuento = descuento;
-                    $scope.numberCobroTotal = cobroTotal;
-                    cobroCambio = 0;
-                    $scope.numberCobroCambio = cobroCambio;
-                    cobroPago = 0;
-                    $scope.numberCobroPago = 0;
                     $scope.isLoadPanelVisible = false;
                 }, function (response) {
                 }
             );
         };
+
+        function getPagosPorVenta(venta) {
+            $scope.isLoadPanelVisible = true;
+
+            const params = new URLSearchParams({
+                venta: venta,
+            });
+            const url = `/pagos_por_venta/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    cobroPagado = 0;
+                    cobroCambio = 0;
+                    cobroPago = 0;
+                    $scope.numberCobroPago = 0;
+                    ArrayPagosPorVenta.length = 0;
+                    for (let i = 0; i < response.data.length; i++) {
+                        console.log(response.data[i]);
+                        ArrayPagosPorVenta.push(response.data[i]);
+                        cobroPagado = cobroPagado + response.data[i].monto;
+                    }
+
+                    gridDesglosePagoVentaInstance.refresh();
+
+                    $scope.numberCobroSubTotal = subTotal;
+                    $scope.numberCobroDescuento = descuento;
+                    $scope.numberCobroTotal = cobroTotal;
+                    $scope.isLoadPanelVisible = false;
+                    if (cobroTotal - cobroPagado >= 0) {
+                        cobroPendientePago = total - descuento - cobroPagado;
+                        cobroCambio = 0;
+                        $scope.numberCobroCambio = 0;
+                    } else {
+                        cobroCambio = cobroPagado - cobroTotal
+                        $scope.numberCobroCambio = cobroCambio;
+                        cobroPendientePago = 0;
+                    }
+                    $scope.numberCobroPendiente = cobroPendientePago;
+                    $scope.numberCobroPagado = cobroPagado;
+
+                },
+                function (error) {
+                    console.error("Error al obtener pagos por venta:", error);
+                    $scope.isLoadPanelVisible = false;
+                }
+            );
+        }
 
         function getMesas() {
             $scope.isLoadPanelVisible = true;
@@ -134,6 +173,44 @@
                     Swal.fire({
                         title: 'Error',
                         text: 'No se pudo crear la venta',
+                        icon: 'error',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            const popup = Swal.getPopup();
+                            if (popup) {
+                                popup.style.fontSize = '1.2rem';
+                                popup.style.padding = '2rem';
+                                popup.style.width = '400px';
+                            }
+
+                            const confirmBtn = Swal.getConfirmButton();
+                            if (confirmBtn) {
+                                confirmBtn.style.fontSize = '1.5rem';
+                                confirmBtn.style.padding = '0.75rem 2rem';
+                            }
+                        }
+                    });
+                });
+        }
+
+        function getCrearPago() {
+            const pagoData = {
+                venta: $scope.ventaActiva,                 // ID de la venta asociada
+                metodo_pago: $scope.cmbMetodoPago,      // ID del método de pago seleccionado
+                monto: $scope.numberCobroPago,   // Valor decimal del pago
+                referencia: null, // Para tarjetas, transferencias, etc.
+                observaciones: null, // Opcional
+                // activo: true                           // Puede omitirse si el backend lo setea por defecto
+            };
+            $http.post('/api/v1/pagoVenta/', pagoData)
+                .then(function (response) {
+                    getPagosPorVenta($scope.ventaActiva)
+                })
+                .catch(function (error) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se pudo crear el pago',
                         icon: 'error',
                         allowOutsideClick: false,
                         allowEscapeKey: false,
@@ -200,7 +277,6 @@
                     cobroSubTotal = subTotal;
                     cobroDescuento = descuento;
                     cobroTotal = total - descuento;
-                    cobroPendientePago = total - descuento;
                     $scope.numberSubtotal = subTotal;
                     $scope.numberDescuento = descuento;
                     $scope.numberTotal = cobroTotal;
@@ -210,8 +286,6 @@
                 }
             );
         };
-
-
 
         function transaccionVentaProducto(idProducto, idVenta) {
             const productoEncontrado = findProductoById(vm.categorias, idProducto);
@@ -298,34 +372,6 @@
 
                 }
             );
-        }
-
-        function pagar() {
-            //$scope.cmbMetodoPago = 1;
-            // $scope.txtCobroPagado = $filter('currency')(0, '$', 2);
-            // cobroPagado = 0;
-            // $scope.txtCobroPendiente = $filter('currency')(cobroPendientePago, '$', 2);
-            // $scope.txtCobroSubTotal = $scope.txtSubtotal;
-            // $scope.txtCobroDescuento = $scope.txtDescuento;
-            // $scope.txtCobroTotal = $scope.txtTotal;
-            // cobroCambio = 0;
-            // $scope.txtCobroCambio = $filter('currency')(cobroCambio, '$', 2);
-            cobroPagado = cobroPagado + $scope.numberCobroPago;
-            //cobroCambio = cobroTotal - cobroPagado;
-            if (cobroTotal - cobroPagado >= 0) {
-                cobroPendientePago = cobroTotal - cobroPagado;
-                cobroCambio = 0;
-                $scope.numberCobroCambio = 0;
-            } else {
-                cobroCambio = cobroPagado - cobroTotal
-                $scope.numberCobroCambio = cobroCambio;
-                cobroPendientePago = 0;
-            }
-
-            $scope.numberCobroPagado = cobroPagado;
-            $scope.numberCobroPendiente = cobroPendientePago;
-
-
         }
         function empresasVenta() {
             $scope.isLoadPanelVisible = true;
@@ -501,6 +547,12 @@
         $scope.metodo_pago_source = new DevExpress.data.DataSource({
             store: ArrayMetodoPago
         });
+
+        $scope.pagos_por_venta_source = new DevExpress.data.DataSource({
+            store: ArrayPagosPorVenta
+        });
+
+
 
         vm.numberBox = {
             NbrCobroPagoOptions: {
@@ -772,7 +824,7 @@
                     BtnPagarInstance = e.component;
                 },
                 onClick: function () {
-                    pagar();
+                    getCrearPago();
                 }
             },
 
@@ -972,12 +1024,115 @@
                 rowAlternationEnabled: true,
                 showRowLines: true
             },
+            gridDesglosePagoVentaOptions: {
+                dataSource: $scope.pagos_por_venta_source,
+                paging: {
+                    pageSize: 1000
+                },
+                pager: {
+                    showPageSizeSelector: true,
+                    allowedPageSizes: [1000, 2000, 6000],
+                    showInfo: true
+                },
+                selection: {
+                    mode: 'single'
+                },
+                filterRow: {
+                    visible: true,
+                    applyFilter: "auto"
+                },
+                showBorders: true,
+
+                columns: [
+                    { visible: true, cellTemplate: '<div class="btn btn-danger">Eliminar</div>', cssClass: 'sin-padding', headerCellTemplate: "<i class='fa fa-cogs' aria-hidden='true'></i>", width: '85px', allowSorting: false },
+                    { dataField: 'id_pago', caption: 'Id', width: 40, visible: true, },
+                    { dataField: 'metodo_pago_nombre', caption: 'Metodo de pago', width: 170 },
+                    {
+                        dataField: 'monto',
+                        caption: 'Monto',
+                        width: 80,
+                        format: { type: 'fixedPoint', precision: 2 },
+                        cellTemplate: function (container, options) {
+                            container.css({
+                                'background-color': '#50b3d3',
+                                'color': '#003366',
+                                'font-weight': 'bold'
+                            });
+                            container.text(options.text);
+                        }
+                    },
+                    { dataField: 't', caption: ' ', width: 20 },
+                ],
+                onInitialized: function (e) {
+                    gridDesglosePagoVentaInstance = e.component;
+                },
+                onCellClick: function (e) {
+                    if (e.columnIndex == 0) {
+                        if (e.rowIndex > -1) {
+                            pagoSeleccionado = e.data;
+                            Swal.fire({
+                                title: '¿Eliminar pago?',
+                                text: 'Se va a eliminar el pago.',
+                                icon: 'question',
+                                showCancelButton: true,
+                                confirmButtonText: 'Sí',
+                                cancelButtonText: 'No',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                didOpen: () => {
+                                    const popup = Swal.getPopup();
+                                    if (popup) {
+                                        popup.style.zIndex = '9999';
+                                        popup.style.fontSize = '1.2rem';
+                                        popup.style.padding = '2rem';
+                                        popup.style.width = '400px';
+                                    }
+
+                                    const confirmBtn = Swal.getConfirmButton();
+                                    const cancelBtn = Swal.getCancelButton();
+
+                                    if (confirmBtn) {
+                                        confirmBtn.style.fontSize = '1.5rem';
+                                        confirmBtn.style.padding = '0.75rem 2rem';
+                                    }
+                                    if (cancelBtn) {
+                                        cancelBtn.style.fontSize = '1.5rem';
+                                        cancelBtn.style.padding = '0.75rem 2rem';
+                                    }
+                                }
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    //EliminarPago;
+                                }
+                            });
+                        }
+                    }
+                },
+                onRowClick: function (e) {
+
+                },
+                onContentReady: function (e) {
+                },
+                noDataText: "Sin datos",
+                scrolling: {
+                    mode: 'standar',
+                    showScrollbar: 'always'
+                },
+                columnFixing: {
+                    enabled: true
+                },
+                columnAutoWidth: true,
+                allowColumnResizing: true,
+                height: 400,
+                rowAlternationEnabled: true,
+                showRowLines: true
+            },
         }
         vm.popups = {
             popPagosOptions: {
                 showTitle: true,
                 width: 800,
-                height: 600,
+                height: 800,
                 title: "Pagar cuenta",
                 dragEnabled: false,
                 closeOnOutsideClick: false,
@@ -988,7 +1143,8 @@
                     PopPagosInstance = e.component;//Se inicializa el popup para poder darle funcionalidad
                 },
                 onContentReady: function (e) {
-                    getmetodoPago();
+                    getMetodoPago();
+                    getPagosPorVenta($scope.ventaActiva);
                 }
             },
         };

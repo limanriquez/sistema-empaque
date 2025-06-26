@@ -8,7 +8,7 @@ from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 router.register('clientes',ClientesViewSet)
 router.register('ventas',VentasViewSet)
-
+router.register('pagoVenta',PagoVentaViewSet)
 
 app_name = 'operaciones'
 urlpatterns = [
@@ -20,5 +20,6 @@ urlpatterns = [
     path('transaccion_venta_producto/', transaccionVentaProducto, name='transaccionVentaProducto'),
     path('transaccion_cancelar_desglose_venta/', transaccionCancelarDesgloseVenta, name='transaccionCancelarDesgloseVenta'),
     path('productos_venta/', productosVenta, name='productosVenta'),
+    path('pagos_por_venta/', pagosPorVenta, name='pagosPorVenta'),
   #  path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]

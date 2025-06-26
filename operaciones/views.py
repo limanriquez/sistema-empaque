@@ -38,6 +38,16 @@ class VentasViewSet(viewsets.ModelViewSet):
     queryset = Ventas.objects.all()
     serializer_class = VentasSerializer
 
+class PagoVentaViewSet(viewsets.ModelViewSet):
+    queryset = PagoVenta.objects.all()
+    serializer_class = PagoVentaSerializer
+
+    @action(detail=False, methods=['get'], url_path='activos')
+    def activos(self, request):
+        pagos_activos = self.get_queryset().filter(activo=True)
+        serializer = self.get_serializer(pagos_activos, many=True)
+        return Response(serializer.data)
+
 
 class NotificacionZonaSerializerViewSet(viewsets.ModelViewSet):
     queryset = NotificacionZona.objects.all()
@@ -256,3 +266,26 @@ def productosVenta(request):
         })
 
     return JsonResponse(desglose_data, safe=False)
+
+@login_required
+def pagosPorVenta(request):
+    venta_id = request.GET.get('venta')
+    if not venta_id:
+        return JsonResponse({'error': "Parámetro 'venta' es requerido."}, status=400)
+
+    # Traer todos los pagos relacionados con la venta_id, incluyendo el método de pago
+    pagos = PagoVenta.objects.select_related('metodo_pago').filter(venta_id=venta_id, activo=True)
+
+    pagos_data = []
+    for pago in pagos:
+        pagos_data.append({
+            'id_pago': pago.id,
+            'metodo_pago_id': pago.metodo_pago.id,
+            'metodo_pago_nombre': pago.metodo_pago.nombre,
+            'monto': float(pago.monto),
+            'referencia': pago.referencia,
+            'fecha_pago': pago.fecha_pago.isoformat(),
+            'observaciones': pago.observaciones,
+        })
+
+    return JsonResponse(pagos_data, safe=False)
