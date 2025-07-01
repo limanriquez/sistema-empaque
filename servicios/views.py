@@ -4,6 +4,8 @@ from django.db import transaction
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+import hashlib
+import os
 # Create your views here.
 import ftplib
 
@@ -21,44 +23,41 @@ def subirImagenFtp(request):
         return JsonResponse({'status': 400, 'mensaje': 'Falta imagen o método no permitido'}, status=400)
 
     imagen = request.FILES['imagen']
-    nombre_archivo = imagen.name  # Nombre original de la imagen
 
-    # ↓ Validación deshabilitada por decisión del usuario
-    # tipo = obtener_tipo_imagen(imagen.file)
-    # if tipo not in ['jpg', 'png']:
-    #     return JsonResponse({'status': 400, 'mensaje': 'Tipo de imagen no permitido'}, status=400)
+    # Leer contenido para el hash y luego volver a colocar el puntero
+    contenido = imagen.read()
+    hash_completo = hashlib.sha256(contenido).hexdigest()
+    hash_corto = hash_completo[:16]  # 16 caracteres es un buen balance
+
+    # Obtener extensión
+    _, extension = os.path.splitext(imagen.name)
+    nombre_archivo = f"{hash_corto}{extension}"
+
+    # Volver a posicionar el cursor para poder leer el archivo al subir
+    imagen.seek(0)
 
     try:
-        # Conexión FTP
         servidor = 'ftp.niidia.com'
         usuario = 'servicios@niidia.com'
         contrasena = 'WkNKypDag*Z0y!1j'
-        # directorio_remoto = 'niidia.com/data/'  # ← Puedes habilitar esto si usas carpetas
+        # directorio_remoto = 'niidia.com/data/'
 
         ftp = ftplib.FTP(servidor)
         ftp.login(usuario, contrasena)
-        # ftp.cwd(directorio_remoto)  # ← Cambiar si necesitas un subdirectorio
+        # ftp.cwd(directorio_remoto)
 
-        # Subir la imagen al FTP
         ftp.storbinary(f'STOR {nombre_archivo}', imagen.file)
 
-        # Registrar nombre en archivo .txt
         archivo_txt = 'imagenes_subidas.txt'
-
         try:
-            # Descargar archivo .txt si ya existe
             ftp.retrbinary(f"RETR {archivo_txt}", open(archivo_txt, 'wb').write)
         except ftplib.error_perm:
-            # Si no existe, se omite el error
             pass
 
-        # Escribir el nuevo nombre de imagen al final
         with open(archivo_txt, 'a') as f:
             f.write(f'{nombre_archivo}\n')
 
-        # Subir de nuevo el archivo .txt actualizado
         ftp.storbinary(f'STOR {archivo_txt}', open(archivo_txt, 'rb'))
-
         ftp.quit()
 
         return JsonResponse({
