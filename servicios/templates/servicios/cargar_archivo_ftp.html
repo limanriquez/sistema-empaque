@@ -51,8 +51,9 @@
           <div style="margin: 20px;">
             <!-- Botón visible -->
             <div dx-button="vm.buttons.btnSubirImagenOptions"></div>
-            <!-- Input oculto para cámara/selector -->
-            <input type="file" id="inputImagen" accept="image/*" capture="camera" style="display:none;" />
+            <input type="file" accept="image/*" capture="false" style="display:none;" />
+            <!-- Input oculto para cámara/selector 
+            <input type="file" id="inputImagen" accept="image/*" capture="camera" style="display:none;" />-->
           </div>
         </div>
       </div>
