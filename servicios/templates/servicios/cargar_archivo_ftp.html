@@ -65,6 +65,10 @@
 {% endblock contenido %}
 
 {% block scripts_js %}
+  <script type="text/javascript">
+    // Inyectar token CSRF para AngularJS
+    window.CSRF_TOKEN = '{{ csrf_token }}';
+  </script>
   <script type="text/javascript" src="{% static 'javascripts/inventarios.config.js' %}"></script>
   <script type="text/javascript" src="{% static 'servicios/js/servicio.module.js' %}"></script>
   <script type="text/javascript" src="{% static 'servicios/js/controllers/servicios.controller.js' %}"></script>

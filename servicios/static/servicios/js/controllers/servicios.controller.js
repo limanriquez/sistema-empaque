@@ -49,7 +49,10 @@
 
 			$http.post('/subir-imagen/', formData, {
 				transformRequest: angular.identity,
-				headers: { 'Content-Type': undefined }
+				headers: { 
+					'Content-Type': undefined,
+					'X-CSRFToken': window.CSRF_TOKEN // Token CSRF enviado aquí
+				}
 			}).then(function (response) {
 				DevExpress.ui.notify("Imagen subida correctamente: " + response.data.nombre_archivo, "success", 3000);
 				$scope.isLoadPanelVisible = false;
