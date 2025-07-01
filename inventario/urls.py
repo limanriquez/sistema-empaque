@@ -24,6 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),
   #  path('',include('personas.urls')),
+    path('',include('servicios.urls',namespace='servicios')),
     path('',include('operaciones.urls',namespace='operaciones')),
     path('',include('inventarios.urls',namespace='inventarios')),
     path('',include('usuarios.urls',namespace='usuarios')),
