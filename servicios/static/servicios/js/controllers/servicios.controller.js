@@ -81,7 +81,7 @@
 
         vm.buttons = {
             btnSubirImagenOptions: {
-                text: "💖 Compartir una linda imagen",
+                text: "💖 Compartir",
                 width: 400,
                 type: 'default',
                 elementAttr: {
