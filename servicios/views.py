@@ -13,28 +13,28 @@ def loadImage(request):
 			'title':"Mis Dulces VI"})
 
 def subirImagenFtp(request):
-	if request.method != 'POST' or 'imagen' not in request.FILES:
-		return JsonResponse({'status': 400, 'mensaje': 'Falta imagen o método no permitido'}, status=400)
+    if request.method != 'POST' or 'imagen' not in request.FILES:
+        return JsonResponse({'status': 400, 'mensaje': 'Falta imagen o método no permitido'}, status=400)
 
-	imagen = request.FILES['imagen']
-	nombre_archivo = imagen.name  # Nombre de la imagen
-	tipo = obtener_tipo_imagen(imagen.file)
+    imagen = request.FILES['imagen']
+    nombre_archivo = imagen.name  # Nombre de la imagen
+    tipo = obtener_tipo_imagen(imagen.file)
 
-	#if tipo not in ['jpg', 'png']:
-	#	return JsonResponse({'status': 400, 'mensaje': 'Tipo de imagen no permitido'}, status=400)
-	#else:
+    # if tipo not in ['jpg', 'png']:
+    #     return JsonResponse({'status': 400, 'mensaje': 'Tipo de imagen no permitido'}, status=400)
+    # else:
     try:
         # Conexión FTP
         servidor = 'ftp.niidia.com'
-        usuario = 'servicios@niidia.com' #'dnhrcomm'
-        contrasena = 'WkNKypDag*Z0y!1j' #'YlE1Fr8$m2jA'
-        #directorio_remoto = 'niidia.com/data/'  # Directorio donde se suben las imágenes
+        usuario = 'servicios@niidia.com'  # 'dnhrcomm'
+        contrasena = 'WkNKypDag*Z0y!1j'  # 'YlE1Fr8$m2jA'
+        # directorio_remoto = 'niidia.com/data/'  # Directorio donde se suben las imágenes
 
         # Conectarse al servidor FTP
         ftp = ftplib.FTP(servidor)
         ftp.login(usuario, contrasena)
-        #ftp.mkd("data")
-        #ftp.cwd(directorio_remoto)  # Cambiar al directorio deseado
+        # ftp.mkd("data")
+        # ftp.cwd(directorio_remoto)  # Cambiar al directorio deseado
 
         # Subir la imagen
         ftp.storbinary(f'STOR {nombre_archivo}', imagen.file)
@@ -64,6 +64,7 @@ def subirImagenFtp(request):
 
     except Exception as e:
         return JsonResponse({'status': 500, 'error': str(e)}, status=500)
+
 
 
 def obtener_tipo_imagen(file_obj):
