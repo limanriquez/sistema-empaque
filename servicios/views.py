@@ -12,58 +12,64 @@ def loadImage(request):
 	return render(request, 'servicios/cargar_archivo_ftp.html',{
 			'title':"Mis Dulces VI"})
 
+import ftplib
+from django.http import JsonResponse
+# from .utils import obtener_tipo_imagen  # ← Comentado: no lo necesitas si no validas el tipo
+
 def subirImagenFtp(request):
     if request.method != 'POST' or 'imagen' not in request.FILES:
         return JsonResponse({'status': 400, 'mensaje': 'Falta imagen o método no permitido'}, status=400)
 
     imagen = request.FILES['imagen']
-    nombre_archivo = imagen.name  # Nombre de la imagen
-    tipo = obtener_tipo_imagen(imagen.file)
+    nombre_archivo = imagen.name  # Nombre original de la imagen
 
+    # ↓ Validación deshabilitada por decisión del usuario
+    # tipo = obtener_tipo_imagen(imagen.file)
     # if tipo not in ['jpg', 'png']:
     #     return JsonResponse({'status': 400, 'mensaje': 'Tipo de imagen no permitido'}, status=400)
-    # else:
+
     try:
         # Conexión FTP
         servidor = 'ftp.niidia.com'
-        usuario = 'servicios@niidia.com'  # 'dnhrcomm'
-        contrasena = 'WkNKypDag*Z0y!1j'  # 'YlE1Fr8$m2jA'
-        # directorio_remoto = 'niidia.com/data/'  # Directorio donde se suben las imágenes
+        usuario = 'servicios@niidia.com'
+        contrasena = 'WkNKypDag*Z0y!1j'
+        # directorio_remoto = 'niidia.com/data/'  # ← Puedes habilitar esto si usas carpetas
 
-        # Conectarse al servidor FTP
         ftp = ftplib.FTP(servidor)
         ftp.login(usuario, contrasena)
-        # ftp.mkd("data")
-        # ftp.cwd(directorio_remoto)  # Cambiar al directorio deseado
+        # ftp.cwd(directorio_remoto)  # ← Cambiar si necesitas un subdirectorio
 
-        # Subir la imagen
+        # Subir la imagen al FTP
         ftp.storbinary(f'STOR {nombre_archivo}', imagen.file)
 
-        # Nombre del archivo .txt donde se guardarán los registros de imágenes
+        # Registrar nombre en archivo .txt
         archivo_txt = 'imagenes_subidas.txt'
 
-        # Leer el archivo .txt si ya existe, sino crear uno nuevo
         try:
-            # Descargar el archivo existente (si lo hay) para agregar la nueva imagen
+            # Descargar archivo .txt si ya existe
             ftp.retrbinary(f"RETR {archivo_txt}", open(archivo_txt, 'wb').write)
         except ftplib.error_perm:
-            # Si el archivo no existe, no hace nada
+            # Si no existe, se omite el error
             pass
 
-        # Agregar el nombre de la nueva imagen al archivo .txt
+        # Escribir el nuevo nombre de imagen al final
         with open(archivo_txt, 'a') as f:
             f.write(f'{nombre_archivo}\n')
 
-        # Subir el archivo .txt con el registro de imágenes
+        # Subir de nuevo el archivo .txt actualizado
         ftp.storbinary(f'STOR {archivo_txt}', open(archivo_txt, 'rb'))
 
-        # Cerrar la conexión FTP
         ftp.quit()
 
-        return JsonResponse({'status': 200, 'nombre_archivo': nombre_archivo, 'mensaje': 'Imagen subida correctamente y archivo .txt actualizado'})
+        return JsonResponse({
+            'status': 200,
+            'nombre_archivo': nombre_archivo,
+            'mensaje': 'Imagen subida correctamente y archivo .txt actualizado'
+        })
 
     except Exception as e:
         return JsonResponse({'status': 500, 'error': str(e)}, status=500)
+
 
 
 
