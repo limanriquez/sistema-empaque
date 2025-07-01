@@ -31,6 +31,9 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
 <link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/alertify.min.css' %}" />
 <link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/themes/default.min.css' %}" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
 
 <div ng-controller="CargarArchivoFtpController as vm">
     {% initial_loader %}
@@ -48,7 +51,7 @@
 
         <div class="flex justify-center mt-0">
             <img src="https://www.niidia.com/Image.jpg" alt="Dulces XVI"
-                class="w-full max-w-sm h-auto rounded-xl shadow-lg" />
+                class="w-full max-w-sm h-auto rounded-xl shadow-lg animate__animated animate__fadeIn animate__slow" />
         </div>
 
         <div class="flex justify-center px-4">
@@ -82,4 +85,5 @@
 <script type="text/javascript" src="{% static 'javascripts/inventarios.config.js' %}"></script>
 <script type="text/javascript" src="{% static 'servicios/js/servicio.module.js' %}"></script>
 <script type="text/javascript" src="{% static 'servicios/js/controllers/servicios.controller.js' %}"></script>
+
 {% endblock scripts_js %}

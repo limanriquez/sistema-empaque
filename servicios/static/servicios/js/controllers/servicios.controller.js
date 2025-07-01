@@ -54,7 +54,13 @@
                     'X-CSRFToken': window.CSRF_TOKEN // Token CSRF enviado aquí
                 }
             }).then(function (response) {
-                DevExpress.ui.notify("Imagen subida correctamente: " + response.data.nombre_archivo, "success", 3000);
+                Swal.fire({
+                    title: '📸 Imagen subida',
+                    text: 'Tu imagen se ha subido correctamente.',
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    backdrop: true
+                });
                 $scope.isLoadPanelVisible = false;
             }, function (error) {
                 const msg = error.status === 413
