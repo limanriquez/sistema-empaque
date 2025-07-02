@@ -9,6 +9,9 @@ import os
 # Create your views here.
 import ftplib
 
+def guestBook(request):
+	return render(request, 'servicios/guest_book.html',{
+			'title':"Mis Dulces XVI"})
 
 def loadImage(request):
 	return render(request, 'servicios/cargar_archivo_ftp.html',{
