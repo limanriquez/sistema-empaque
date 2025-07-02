@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'users',
     'operaciones',
     'servicios',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -53,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
    # 'authentication.middleware.CheckUserHasPersonalMiddleware',
 ]
 
@@ -215,6 +217,13 @@ LANGUAGES = [
 ]
 
 
+CORS_ALLOW_ALL_ORIGINS = True
+
+# Para que el CSRF acepte otros orígenes
+CSRF_TRUSTED_ORIGINS = [
+    "https://niidia.com",
+    "http://127.0.0.1:8080",       # otro posible host
+]
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 

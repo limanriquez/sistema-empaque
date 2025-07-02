@@ -8,6 +8,7 @@ import hashlib
 import os
 # Create your views here.
 import ftplib
+from django.views.decorators.csrf import csrf_exempt
 
 
 def loadImage(request):
@@ -18,6 +19,7 @@ import ftplib
 from django.http import JsonResponse
 # from .utils import obtener_tipo_imagen  # ← Comentado: no lo necesitas si no validas el tipo
 
+@csrf_exempt
 def subirImagenFtp(request):
     if request.method != 'POST' or 'imagen' not in request.FILES:
         return JsonResponse({'status': 400, 'mensaje': 'Falta imagen o método no permitido'}, status=400)
