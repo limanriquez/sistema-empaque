@@ -11,6 +11,7 @@ from .models import *
 # Create your views here.
 import ftplib
 from .serializer import MensajeSerializer
+from rest_framework.permissions import AllowAny
 
 def guestBook(request):
 	return render(request, 'servicios/guest_book.html',{
@@ -24,6 +25,7 @@ def loadImage(request):
 class MensajeViewSet(viewsets.ModelViewSet):
     queryset = Mensaje.objects.all()
     serializer_class = MensajeSerializer
+    permission_classes = [AllowAny]  # Permite que cualquier usuario acceda
 
 def subirImagenFtp(request):
     if request.method != 'POST' or 'imagen' not in request.FILES:
