@@ -22,8 +22,7 @@ SECRET_KEY = 'django-insecure-89mf!75ryr!c@au1etf22iz6_r&7dmy=ytij556&c&!m@z73$h
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = ['44.245.248.8', 'niidia.com', 'tu.dominio.backend']
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -44,11 +43,9 @@ INSTALLED_APPS = [
     'users',
     'operaciones',
     'servicios',
-    'corsheaders',
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -89,37 +86,59 @@ JAZZMIN_SETTINGS = {
     "site_title": "LASSER",
     "welcome_sign": "Bienvenido al Panel Administrativo",
 
-    "show_sidebar": True,
-    "show_ui_builder": True,
+    # Para renombrar el label "catalogos" a "Catálogos"
+    # ... otras configuraciones ...
+    # Habilita la barra lateral derecha (Right Sidebar)
+    "show_sidebar": True,  # activa barra lateral izquierda (default)
+    "show_ui_builder": True,  # agrega botón para personalizar admin
 
+    # Habilita panel de personalización (barra derecha)
     "right_sidebar": True,
-    "right_sidebar_collapsed": False,
 
+    # Puedes configurar si quieres que la barra derecha esté oculta o visible al cargar
+    "right_sidebar_collapsed": False,  # false para mostrarla por defecto
+
+    # Configura qué widgets aparecen en la barra lateral derecha
+    # Por ejemplo, configuración de tema y otras opciones
     "custom_widgets": [
         "jazzmin.widgets.ThemePicker",
         "jazzmin.widgets.UserWidget",
         "jazzmin.widgets.QuickLinks",
     ],
 
-    "copyright": "Derechos reservados a lasser",
+    
+
+    "copyright": "Derechos reservados a lasser",  # Para quitar el texto, déjalo vacío
+    # También puedes agregar tus propios widgets personalizados aquí
 }
 
 WSGI_APPLICATION = 'inventario.wsgi.application'
 
 
 # Database
+# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'MainPuntoVenta',
         'USER': 'root',
         'PASSWORD': 'HaHd=82VLWjz',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'HOST': 'localhost',  # Cambia esto si tu MySQL está en un host remoto
+        'PORT': '3306',       # Puerto predeterminado de MySQL
     }
 }
+#DATABASES = {
+ #   'default': {
+  #      'ENGINE': 'django.db.backends.sqlite3',
+   #     'NAME': BASE_DIR / 'db.sqlite3',
+   # }
+#}
 
+
+#AUTH_USER_MODEL = 'authentication.Account'
 LOGIN_URL = '/login/'
+
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -127,7 +146,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',  # Solo habilitado para los administradores
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
@@ -135,23 +154,55 @@ REST_FRAMEWORK = {
     ],
 }
 
+#REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+  #  'DEFAULT_PERMISSION_CLASSES': [
+   #     'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+   # ],
+   # 'DEFAULT_RENDERED_CLASSES':['rest_framework.renderers.JSONRenderer',]
+#}
+
+
+
+# Password validation
+# https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
+
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
 
+# Internationalization
+# https://docs.djangoproject.com/en/5.0/topics/i18n/
+
+#LANGUAGE_CODE = 'en-us'
 LANGUAGE_CODE = 'es-mx'
 TIME_ZONE = 'America/Mexico_City'
 USE_I18N = True
 USE_TZ = True
 
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
+
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/4.1/howto/static-files/
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), "dist", "static")
+STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), "dist","static")
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "dist", "media")
+MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "dist","media")
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
@@ -162,22 +213,15 @@ LANGUAGES = [
     ('en', 'English'),
 ]
 
-# CORS settings
-CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = [
-    "https://niidia.com",
-]
 
-CORS_ALLOW_CREDENTIALS = True
 
-# CSRF settings
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True
+# Para que el CSRF acepte otros orígenes
+# Default primary key field type
+# https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.User'
-
 # Límites para uploads (20MB)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20 MB
