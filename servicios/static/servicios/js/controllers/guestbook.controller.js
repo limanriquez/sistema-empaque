@@ -42,7 +42,7 @@
                     Swal.fire({
                         icon: 'error',  // Tipo de alerta (error)
                         title: 'Error al guardar el mensaje',
-                        text: 'Hubo un problema al intentar guardar la información del ensaje.',
+                        text: 'Hubo un problema al intentar guardar la información del mensaje.',
                         confirmButtonText: 'Aceptar'
                     });
                 });
