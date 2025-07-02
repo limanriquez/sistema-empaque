@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 #BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -43,11 +44,11 @@ INSTALLED_APPS = [
     'users',
     'operaciones',
     'servicios',
-    'corsheaders',
+    'corsheaders',  # corsheaders debe estar en installed apps
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # debe ser el primero en la lista
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -83,39 +84,22 @@ TEMPLATES = [
 ]
 
 JAZZMIN_SETTINGS = {
-
     "site_brand": "Pollo en Gordito",
     "site_title": "LASSER",
     "welcome_sign": "Bienvenido al Panel Administrativo",
-
-    # Para renombrar el label "catalogos" a "Catálogos"
-    # ... otras configuraciones ...
-    # Habilita la barra lateral derecha (Right Sidebar)
-    "show_sidebar": True,  # activa barra lateral izquierda (default)
-    "show_ui_builder": True,  # agrega botón para personalizar admin
-
-    # Habilita panel de personalización (barra derecha)
+    "show_sidebar": True,
+    "show_ui_builder": True,
     "right_sidebar": True,
-
-    # Puedes configurar si quieres que la barra derecha esté oculta o visible al cargar
-    "right_sidebar_collapsed": False,  # false para mostrarla por defecto
-
-    # Configura qué widgets aparecen en la barra lateral derecha
-    # Por ejemplo, configuración de tema y otras opciones
+    "right_sidebar_collapsed": False,
     "custom_widgets": [
         "jazzmin.widgets.ThemePicker",
         "jazzmin.widgets.UserWidget",
         "jazzmin.widgets.QuickLinks",
     ],
-
-    
-
-    "copyright": "Derechos reservados a lasser",  # Para quitar el texto, déjalo vacío
-    # También puedes agregar tus propios widgets personalizados aquí
+    "copyright": "Derechos reservados a lasser",
 }
 
 WSGI_APPLICATION = 'inventario.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
@@ -126,21 +110,19 @@ DATABASES = {
         'NAME': 'MainPuntoVenta',
         'USER': 'root',
         'PASSWORD': 'HaHd=82VLWjz',
-        'HOST': 'localhost',  # Cambia esto si tu MySQL está en un host remoto
-        'PORT': '3306',       # Puerto predeterminado de MySQL
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
-#DATABASES = {
- #   'default': {
-  #      'ENGINE': 'django.db.backends.sqlite3',
-   #     'NAME': BASE_DIR / 'db.sqlite3',
-   # }
-#}
+# Si prefieres SQLite, descomenta y comenta el bloque anterior
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
-
-#AUTH_USER_MODEL = 'authentication.Account'
 LOGIN_URL = '/login/'
-
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -148,7 +130,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',  # Solo habilitado para los administradores
+        'rest_framework.renderers.BrowsableAPIRenderer',  # solo para admins
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
@@ -156,50 +138,18 @@ REST_FRAMEWORK = {
     ],
 }
 
-#REST_FRAMEWORK = {
-    # Use Django's standard `django.contrib.auth` permissions,
-    # or allow read-only access for unauthenticated users.
-  #  'DEFAULT_PERMISSION_CLASSES': [
-   #     'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-   # ],
-   # 'DEFAULT_RENDERED_CLASSES':['rest_framework.renderers.JSONRenderer',]
-#}
-
-
-
-# Password validation
-# https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
 ]
 
-# Internationalization
-# https://docs.djangoproject.com/en/5.0/topics/i18n/
-
-#LANGUAGE_CODE = 'en-us'
 LANGUAGE_CODE = 'es-mx'
 TIME_ZONE = 'America/Mexico_City'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.1/howto/static-files/
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), "dist","static")
 
@@ -215,22 +165,40 @@ LANGUAGES = [
     ('en', 'English'),
 ]
 
+# CORS config para aceptar cualquier origen con credentials (cookies, auth headers, etc)
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGIN_REGEXES = [r".*"]  # acepta cualquier origen
+CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+]
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
 # Para que el CSRF acepte otros orígenes
 CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "https://niidia.com",
-]
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.User'
+
 # Límites para uploads (20MB)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20 MB
