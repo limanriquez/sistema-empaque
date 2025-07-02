@@ -1,13 +1,16 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from rest_framework import viewsets
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 import hashlib
 import os
+from .models import *
 # Create your views here.
 import ftplib
+from .serializer import MensajeSerializer
 
 def guestBook(request):
 	return render(request, 'servicios/guest_book.html',{
@@ -16,6 +19,11 @@ def guestBook(request):
 def loadImage(request):
 	return render(request, 'servicios/cargar_archivo_ftp.html',{
 			'title':"Mis Dulces XVI"})
+
+
+class MensajeViewSet(viewsets.ModelViewSet):
+    queryset = Mensaje.objects.all()
+    serializer_class = MensajeSerializer
 
 def subirImagenFtp(request):
     if request.method != 'POST' or 'imagen' not in request.FILES:
