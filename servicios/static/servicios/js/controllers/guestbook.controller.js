@@ -12,8 +12,8 @@
         
         vm.textArea = {
 			TxtMensajeOptions: {
-				height: 53,
-				maxLength: 200,
+				height: 80,
+				maxLength: 400,
 				placeholder: "Escribe tus deseos",
 				showClearButton: true,
 				autoResizeEnabled: true, // opcional
