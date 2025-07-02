@@ -10,7 +10,6 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 #BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,7 +22,8 @@ SECRET_KEY = 'django-insecure-89mf!75ryr!c@au1etf22iz6_r&7dmy=ytij556&c&!m@z73$h
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-ALLOWED_HOSTS = ['*']
+
+ALLOWED_HOSTS = ['44.245.248.8', 'niidia.com', 'tu.dominio.backend']
 
 # Application definition
 
@@ -44,11 +44,11 @@ INSTALLED_APPS = [
     'users',
     'operaciones',
     'servicios',
-    'corsheaders',  # corsheaders debe estar en installed apps
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # debe ser el primero en la lista
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -84,26 +84,30 @@ TEMPLATES = [
 ]
 
 JAZZMIN_SETTINGS = {
+
     "site_brand": "Pollo en Gordito",
     "site_title": "LASSER",
     "welcome_sign": "Bienvenido al Panel Administrativo",
+
     "show_sidebar": True,
     "show_ui_builder": True,
+
     "right_sidebar": True,
     "right_sidebar_collapsed": False,
+
     "custom_widgets": [
         "jazzmin.widgets.ThemePicker",
         "jazzmin.widgets.UserWidget",
         "jazzmin.widgets.QuickLinks",
     ],
+
     "copyright": "Derechos reservados a lasser",
 }
 
 WSGI_APPLICATION = 'inventario.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -114,13 +118,6 @@ DATABASES = {
         'PORT': '3306',
     }
 }
-# Si prefieres SQLite, descomenta y comenta el bloque anterior
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 
 LOGIN_URL = '/login/'
 
@@ -130,7 +127,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',  # solo para admins
+        'rest_framework.renderers.BrowsableAPIRenderer',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
@@ -151,10 +148,10 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), "dist","static")
+STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), "dist", "static")
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "dist","media")
+MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "dist", "media")
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
@@ -165,33 +162,15 @@ LANGUAGES = [
     ('en', 'English'),
 ]
 
-# CORS config para aceptar cualquier origen con credentials (cookies, auth headers, etc)
+# CORS settings
 CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGIN_REGEXES = [r".*"]  # acepta cualquier origen
+CORS_ALLOWED_ORIGINS = [
+    "https://niidia.com",
+]
+
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOW_METHODS = [
-    "GET",
-    "POST",
-    "PUT",
-    "PATCH",
-    "DELETE",
-    "OPTIONS",
-]
-
-CORS_ALLOW_HEADERS = [
-    "accept",
-    "accept-encoding",
-    "authorization",
-    "content-type",
-    "dnt",
-    "origin",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
-]
-
-# Para que el CSRF acepte otros orígenes
+# CSRF settings
 CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True
 
