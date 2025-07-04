@@ -16,8 +16,8 @@
         function guardarMensaje() {
             $scope.isLoadPanelVisible = true;
             var mensaje_json = {
-                nombre: $scope.txtNombre,
-                mensaje: $scope.txtAreaObservaciones,
+                nombre: $scope.txtNombre ? $scope.txtNombre.trim().substring(0, 100) : '',
+                mensaje: $scope.txtAreaObservaciones ? $scope.txtAreaObservaciones.trim() : '',
             };
 
             // Hacer el POST al backend con el JSON del cliente
@@ -62,8 +62,8 @@
                     value: 'txtAreaObservaciones'
                 },
                 onValueChanged: function (e) {
-                    let value = e.value || '';
-                    $scope.txtAreaObservaciones = value.toUpperCase();
+                    // let value = e.value || '';
+                    //  $scope.txtAreaObservaciones = value.toUpperCase();
                 },
                 onInitialized: function (e) {
                     txtAreaObservacionesInstance = e.component;
