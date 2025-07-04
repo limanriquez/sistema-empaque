@@ -28,11 +28,14 @@
 
                     // Usar SweetAlert2 para mostrar la notificación de éxito
                     Swal.fire({
-                        icon: 'success',  // Tipo de alerta (success, error, warning, info)
+                        icon: 'success',
                         title: 'Mensaje guardado exitosamente',
                         text: 'Tus deseos se han enviado',
-                        confirmButtonText: 'Aceptar',
-                        timer: 3500  // Duración de la alerta (en milisegundos)
+                        confirmButtonText: 'Aceptar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = 'https://kaylinsiloe.web.app/guestBook.html';
+                        }
                     });
                     limpiarCampos();
                     // Aquí puedes agregar otras acciones si es necesario (por ejemplo, habilitar botones, limpiar campos, etc.)

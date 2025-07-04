@@ -60,6 +60,10 @@
                     icon: 'success',
                     confirmButtonText: 'Aceptar',
                     backdrop: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.open('https://kaylinsiloe.web.app/album.html', '_blank');
+                    }
                 });
                 $scope.isLoadPanelVisible = false;
             }, function (error) {
