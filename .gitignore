@@ -18,3 +18,5 @@ local_settings.py
 # SQLite database files
 *.sqlite3
 
+# Django-specific: Archivo local de desarrollo
+inventario/developer.py
