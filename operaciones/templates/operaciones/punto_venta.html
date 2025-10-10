@@ -146,11 +146,15 @@
                                     <div class="card-like" ng-repeat="producto in cat.productos"
                                         ng-style="{'background-color': producto.color}"
                                         ng-click="vm.mostrarAlertId(producto.id)">
+                                        <!--  <img ng-src="https://picsum.photos/150" alt="{{producto.nombre}}"
+                                            style="width:100%; height:auto; border-radius:5px; margin-bottom:5px;" />-->
                                         <strong>{[{producto.nombre}]}</strong><br />
                                         ID: {[{producto.id}]}<br />
                                         Empresa: {[{producto.empresa}]}<br />
                                         Precio $: {[{producto.precio}]}
                                     </div>
+
+
                                 </div>
                             </div>
                         </div>
@@ -165,6 +169,8 @@
                             <div class="card-like" ng-repeat="producto in vm.prediosFiltrados() track by producto.id"
                                 ng-style="{'background-color': producto.color || '#f0f0f0'}"
                                 ng-click="vm.mostrarAlertId(producto.id)">
+                             <!--    <img ng-src="https://picsum.photos/150" alt="{{producto.nombre}}"
+                                    style="width:100%; height:auto; border-radius:5px; margin-bottom:5px;" />-->
                                 <strong>{[{producto.nombre}]} -${[{producto.precio}]}</strong><br />
                                 ID: {[{producto.id}]}<br />
                                 Empresa: {[{producto.empresa}]}<br />
@@ -248,9 +254,13 @@
         <div dx-popup="vm.popups.popPagosOptions">
             <div dx-button="vm.button.BtnRegresarOptions"
                 style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
-            
-            <div dx-button="vm.button.BtnPagarOptions"
-                style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+
+            <div dx-button="vm.button.BtnPagarOptions" style="margin-top: 0px; text-align: left; margin-bottom: 0px;">
+            </div>
+
+            <div dx-button="vm.button.BtnImprimirOptions"
+                style="margin-top: 0px; text-align: left; margin-bottom: 0px;">
+            </div>
 
             <div class="rowdgr" style="margin-top: 10px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 10px;">
                 <div class="row w-100 text-center" style="text-align: right;">
@@ -267,7 +277,7 @@
                         <div dx-number-box="vm.numberBox.NbrCobroTotalOptions"></div>
                     </div>
                 </div>
-        
+
                 <div class="row w-100" style="text-align: left; padding-top: 10px;">
                     <div class="col-md-4" style="padding-left: 20px;">
 

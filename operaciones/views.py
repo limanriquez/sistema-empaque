@@ -35,8 +35,15 @@ class ClientesViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class VentasViewSet(viewsets.ModelViewSet):
-    queryset = Ventas.objects.all()
+    queryset = Ventas.objects.all()  # necesario para que el router funcione
     serializer_class = VentasSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        venta_id = self.request.query_params.get('venta_id')
+        if venta_id:
+            queryset = queryset.filter(id=venta_id)
+        return queryset
 
 class PagoVentaViewSet(viewsets.ModelViewSet):
     queryset = PagoVenta.objects.all()
@@ -118,7 +125,7 @@ def existeTelefono(request, telefono):
 @login_required
 def ventasAbiertasCorteEmpresas(request):
     corte_caja = request.GET.get('corteCaja')
-    ventas = Ventas.objects.filter(corte_caja = corte_caja, activo = True)
+    ventas = Ventas.objects.filter(corte_caja = corte_caja, activo = True, pagada = False)
     ventas_data = []
     for v in ventas:
         ventas_data.append({

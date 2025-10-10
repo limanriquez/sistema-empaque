@@ -5,6 +5,12 @@ from empresa.models import Personal, Empresa, Cliente
 from inventarios.models import Producto
 from catalogos.models import ZonaNotificacion, LugarEntrega, MetodoPago
 
+from django.db.models.signals import post_save
+from django.db.models.signals import post_delete
+
+from django.dispatch import receiver
+from django.db.models import Sum
+
 class CorteCaja(models.Model):
     ABIERTO = 1
     CERRADO = 2
@@ -68,6 +74,8 @@ class Ventas(models.Model):
     atencion = models.ForeignKey(Personal, on_delete=models.PROTECT, related_name='ventas_atendidas') #Mesero que levanta la comanda
     observaciones = models.TextField(blank=True, null=True)
     activo = models.BooleanField(default=True)  # Para manejo lógico de borrado
+    pagada = models.BooleanField(default=False)  
+    abonada = models.BooleanField(default=False) 
 
     def __str__(self):
         return f"Venta #{self.id} - Cliente: {self.cliente.nombre} - Total: {self.total}"
@@ -135,3 +143,40 @@ class PagoVenta(models.Model):
 
     def __str__(self):
         return f"{self.metodo_pago.nombre} - ${self.monto} (Venta #{self.venta_id})"
+
+
+@receiver(post_save, sender=PagoVenta)
+def actualizar_venta_post_pago(sender, instance, created, **kwargs):
+    if created and instance.activo:
+        venta = instance.venta
+
+        # Recalcular total real de la venta a partir de los desgloses
+        total_desglose = venta.desglose.aggregate(total=Sum('total'))['total'] or 0
+        venta.total = total_desglose
+
+        # Marcar abonada si se creó cualquier pago activo
+        venta.abonada = True
+
+        # Marcar pagada si la suma de pagos activos >= total de la venta
+        total_pagos = venta.pagos.filter(activo=True).aggregate(total=Sum('monto'))['total'] or 0
+        venta.pagada = total_pagos >= venta.total
+
+        venta.save(update_fields=['total', 'abonada', 'pagada'])
+    
+@receiver(post_delete, sender=PagoVenta)
+def actualizar_venta_post_eliminar_pago(sender, instance, **kwargs):
+    venta = instance.venta
+
+    # Total real de la venta a partir de sus desgloses
+    total_venta = venta.desglose.aggregate(total=Sum('total'))['total'] or 0
+
+    # Suma de pagos activos restantes
+    total_pagos = venta.pagos.filter(activo=True).aggregate(total=Sum('monto'))['total'] or 0
+
+    # Si ya no hay pagos activos, abonada = False
+    venta.abonada = total_pagos > 0
+
+    # Si la suma de pagos < total de la venta, pagada = False
+    venta.pagada = total_pagos >= total_venta
+
+    venta.save(update_fields=['abonada', 'pagada'])

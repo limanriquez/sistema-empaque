@@ -9,7 +9,7 @@
 
     function PuntoVentaController($http, $scope, $filter) {
         var gridDesgloseVentaInstance, CmbMesaInstance, BtnCrearVentaInstance, CmbClienteInstance, PopPagosInstance,
-            BtnRegresarInstance, CmbMetodoPagoInstance, BtnPagarInstance, gridDesglosePagoVentaInstance;
+            BtnRegresarInstance, CmbMetodoPagoInstance, BtnPagarInstance, gridDesglosePagoVentaInstance, BtnImprimirInstance;
 
         var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [],
             ArrayPagosPorVenta = [];
@@ -17,6 +17,8 @@
         var vm = this;
         var tab = 0;
         var idVentaActiva = 0;
+        var existePago = false;
+        var fullVentaActiva = null;
         var desgloseVentaSeleccionado;
         var pagoSeleccionado;
         var subTotal = 0;
@@ -133,6 +135,70 @@
             );
         }
 
+        function getVentaPorNumero(ventaId) {
+            console.log(ventaId);
+            if (!ventaId) {
+                Swal.fire('Error', 'Debes proporcionar un número de venta', 'warning');
+                return;
+            }
+            $scope.isLoadPanelVisible = true;
+            $http.get(`/api/v1/ventas/?venta_id=${ventaId}`)
+                .then(function (response) {
+                    if (!response.data || response.data.length === 0) {
+                        Swal.fire('No encontrada', 'No existe venta con ese número', 'info');
+                        return;
+                    }
+
+                    fullVentaActiva = response.data[0];  // DRF devuelve lista, tomamos el primer elemento
+                    console.log(fullVentaActiva);
+                })
+                .catch(function (error) {
+                    console.error('❌ Error al obtener la venta:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se pudo obtener la venta',
+                        icon: 'error',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false
+                    });
+                })
+                .finally(function () {
+                    $scope.isLoadPanelVisible = false;
+                });
+        }
+        function getVentaPorNumeroDespuesDePago(ventaId) {
+            console.log(ventaId);
+            if (!ventaId) {
+                Swal.fire('Error', 'Debes proporcionar un número de venta', 'warning');
+                return;
+            }
+            $scope.isLoadPanelVisible = true;
+            $http.get(`/api/v1/ventas/?venta_id=${ventaId}`)
+                .then(function (response) {
+                    if (!response.data || response.data.length === 0) {
+                        Swal.fire('No encontrada', 'No existe venta con ese número', 'info');
+                        return;
+                    }
+                    fullVentaActiva = response.data[0];  // DRF devuelve lista, tomamos el primer elemento
+                    if (fullVentaActiva.pagada) {
+                        BtnPagarInstance.option("disabled", true);
+                        BtnImprimirInstance.option("disabled", false);
+                    }
+                })
+                .catch(function (error) {
+                    console.error('❌ Error al obtener la venta:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se pudo obtener la venta',
+                        icon: 'error',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false
+                    });
+                })
+                .finally(function () {
+                    $scope.isLoadPanelVisible = false;
+                });
+        }
         function getMesas() {
             $scope.isLoadPanelVisible = true;
             $http.get('/api/v1/lugarEntrega/activos/').then(
@@ -206,6 +272,7 @@
             $http.post('/api/v1/pagoVenta/', pagoData)
                 .then(function (response) {
                     getPagosPorVenta($scope.ventaActiva)
+                    getVentaPorNumeroDespuesDePago($scope.ventaActiva);//Se trae la data de la venta activa
                 })
                 .catch(function (error) {
                     Swal.fire({
@@ -232,6 +299,7 @@
                 });
         }
 
+
         function getVentasAbiertasCorteEmpresas() {
             const params = new URLSearchParams({
                 corteCaja: vm.corteCajaId,
@@ -247,13 +315,15 @@
                         agregarVenta(response.data[i].id);  // <--- AQUI las fusionas
                     }
                     if ($scope.ventaActiva > 0) {
-                        productosVenta($scope.ventaActiva)
+                        getVentaPorNumero($scope.ventaActiva);//Se trae la data de la venta activa
+                        productosVenta($scope.ventaActiva);
                     }
                     $scope.isLoadPanelVisible = false;
                 }, function (response) {
                 }
             );
         };
+
 
         function productosVenta(venta) {
             const params = new URLSearchParams({
@@ -482,14 +552,45 @@
 
         $scope.consultarVenta = function (ventaId) {
             alertify.success("Venta seleccionada: " + ventaId);
+            getVentaPorNumero(ventaId)
             $scope.ventaActiva = ventaId;
             productosVenta($scope.ventaActiva)
         };
+
+
         // Función para mostrar alertify con el id del predio
         vm.mostrarAlertId = function (id) {
             if ($scope.ventaActiva > 0) {
-                transaccionVentaProducto(id, $scope.ventaActiva)
-                DevExpress.ui.notify("Se puede vender " + id, "success", 3500);
+                if (fullVentaActiva.abonada == false && fullVentaActiva.pagada == false) {
+                    transaccionVentaProducto(id, $scope.ventaActiva)
+                    DevExpress.ui.notify("Se puede vender " + id, "success", 3500);
+                } else {
+                    Swal.fire({
+                        title: '❌ Imposible agregar el producto',
+                        html: `<p style="font-size:1.1rem;">No se puede agregar el producto a la venta, ya cuenta con pagos registrados.</p>`,
+                        icon: 'error',
+                        showConfirmButton: true,
+                        confirmButtonText: 'Aceptar',
+                        confirmButtonColor: '#d33',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            const popup = Swal.getPopup();
+                            if (popup) {
+                                popup.style.fontSize = '1.3rem';
+                                popup.style.padding = '2rem';
+                                popup.style.width = '450px';
+                                popup.style.textAlign = 'center';
+                            }
+                            const confirmBtn = Swal.getConfirmButton();
+                            if (confirmBtn) {
+                                confirmBtn.style.fontSize = '1.2rem';
+                                confirmBtn.style.padding = '0.8rem 2rem';
+                            }
+                        }
+                    });
+                }
+
             } else {
                 Swal.fire({
                     title: '¿Iniciar venta?',
@@ -528,6 +629,79 @@
             }
 
         };
+        function eliminarPago(pagoId) {
+            if (!pagoId) return;
+            $http.delete(`/api/v1/pagoVenta/${pagoId}/`)
+                .then(function (response) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Pago eliminado',
+                        text: 'El pago se eliminó correctamente',
+                        showConfirmButton: true,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            const popup = Swal.getPopup();
+                            const overlay = document.querySelector('.swal2-container');
+
+                            // Forzar que quede por encima de cualquier modal/popup
+                            if (popup) {
+                                popup.style.zIndex = '999999';
+                                popup.style.fontSize = '1.3rem';
+                                popup.style.padding = '2rem';
+                                popup.style.width = '450px';
+                                popup.style.textAlign = 'center';
+                            }
+                            if (overlay) {
+                                overlay.style.zIndex = '999998';
+                            }
+
+                            const confirmBtn = Swal.getConfirmButton();
+                            if (confirmBtn) {
+                                confirmBtn.style.fontSize = '1.2rem';
+                                confirmBtn.style.padding = '0.8rem 2rem';
+                            }
+                        }
+                    });
+                    BtnPagarInstance.option("disabled", false);
+                    BtnImprimirInstance.option("disabled", true);
+                    getPagosPorVenta($scope.ventaActiva); // refresca lista de pagos
+                })
+                .catch(function (error) {
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudo eliminar el pago',
+                        showConfirmButton: true,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            const popup = Swal.getPopup();
+                            const overlay = document.querySelector('.swal2-container');
+
+                            // Forzar que quede por encima de cualquier modal/popup
+                            if (popup) {
+                                popup.style.zIndex = '999999';
+                                popup.style.fontSize = '1.3rem';
+                                popup.style.padding = '2rem';
+                                popup.style.width = '450px';
+                                popup.style.textAlign = 'center';
+                            }
+                            if (overlay) {
+                                overlay.style.zIndex = '999998';
+                            }
+
+                            const confirmBtn = Swal.getConfirmButton();
+                            if (confirmBtn) {
+                                confirmBtn.style.fontSize = '1.2rem';
+                                confirmBtn.style.padding = '0.8rem 2rem';
+                            }
+                        }
+                    });
+                    console.error("Error al eliminar pago:", error);
+                });
+        }
 
         $scope.desglose_venta_source = new DevExpress.data.DataSource({
             store: ArrayDesgloseVenta
@@ -812,6 +986,20 @@
                 },
                 onClick: function () {
                     PopPagosInstance.hide();
+                    getVentasAbiertasCorteEmpresas();
+                }
+            },
+            BtnImprimirOptions: {
+                icon: 'fa fa-print',
+                type: 'default',
+                width: 125,
+                text: 'Imprimir',
+                disabled: true,
+                onInitialized: function (e) {
+                    BtnImprimirInstance = e.component;
+                },
+                onClick: function () {
+
                 }
             },
             BtnPagarOptions: {
@@ -824,7 +1012,41 @@
                     BtnPagarInstance = e.component;
                 },
                 onClick: function () {
-                    getCrearPago();
+                    if ($scope.numberCobroPago > 0) {
+                        getCrearPago();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Advertencia',
+                            text: 'El pago debe ser mayor a 0',
+                            showConfirmButton: true,
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => {
+                                const popup = Swal.getPopup();
+                                const overlay = document.querySelector('.swal2-container');
+
+                                // Forzar que quede por encima de cualquier modal/popup
+                                if (popup) {
+                                    popup.style.zIndex = '999999';
+                                    popup.style.fontSize = '1.3rem';
+                                    popup.style.padding = '2rem';
+                                    popup.style.width = '450px';
+                                    popup.style.textAlign = 'center';
+                                }
+                                if (overlay) {
+                                    overlay.style.zIndex = '999998';
+                                }
+
+                                const confirmBtn = Swal.getConfirmButton();
+                                if (confirmBtn) {
+                                    confirmBtn.style.fontSize = '1.2rem';
+                                    confirmBtn.style.padding = '0.8rem 2rem';
+                                }
+                            }
+                        });
+                    }
+
                 }
             },
 
@@ -955,40 +1177,69 @@
                     if (e.columnIndex == 0) {
                         if (e.rowIndex > -1) {
                             desgloseVentaSeleccionado = e.data;
-                            Swal.fire({
-                                title: '¿Eliminar producto?',
-                                text: 'Se va a eliminar el producto.',
-                                icon: 'question',
-                                showCancelButton: true,
-                                confirmButtonText: 'Sí',
-                                cancelButtonText: 'No',
-                                allowOutsideClick: false,
-                                allowEscapeKey: false,
-                                didOpen: () => {
-                                    const popup = Swal.getPopup();
-                                    if (popup) {
-                                        popup.style.fontSize = '1.2rem';
-                                        popup.style.padding = '2rem';
-                                        popup.style.width = '400px';
-                                    }
 
-                                    const confirmBtn = Swal.getConfirmButton();
-                                    const cancelBtn = Swal.getCancelButton();
+                            if (fullVentaActiva.abonada == false && fullVentaActiva.pagada == false) {
+                                Swal.fire({
+                                    title: '¿Eliminar producto?',
+                                    text: 'Se va a eliminar el producto.',
+                                    icon: 'question',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Sí',
+                                    cancelButtonText: 'No',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    didOpen: () => {
+                                        const popup = Swal.getPopup();
+                                        if (popup) {
+                                            popup.style.fontSize = '1.2rem';
+                                            popup.style.padding = '2rem';
+                                            popup.style.width = '400px';
+                                        }
 
-                                    if (confirmBtn) {
-                                        confirmBtn.style.fontSize = '1.5rem';
-                                        confirmBtn.style.padding = '0.75rem 2rem';
+                                        const confirmBtn = Swal.getConfirmButton();
+                                        const cancelBtn = Swal.getCancelButton();
+
+                                        if (confirmBtn) {
+                                            confirmBtn.style.fontSize = '1.5rem';
+                                            confirmBtn.style.padding = '0.75rem 2rem';
+                                        }
+                                        if (cancelBtn) {
+                                            cancelBtn.style.fontSize = '1.5rem';
+                                            cancelBtn.style.padding = '0.75rem 2rem';
+                                        }
                                     }
-                                    if (cancelBtn) {
-                                        cancelBtn.style.fontSize = '1.5rem';
-                                        cancelBtn.style.padding = '0.75rem 2rem';
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        transaccionEliminarProductoVenta(desgloseVentaSeleccionado.id_desglose);
                                     }
-                                }
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    transaccionEliminarProductoVenta(desgloseVentaSeleccionado.id_desglose);
-                                }
-                            });
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: '❌ Imposible eliminar el producto',
+                                    html: `<p style="font-size:1.1rem;">No se puede elliminar el producto de la venta, ya cuenta con pagos registrados.</p>`,
+                                    icon: 'error',
+                                    showConfirmButton: true,
+                                    confirmButtonText: 'Aceptar',
+                                    confirmButtonColor: '#d33',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    didOpen: () => {
+                                        const popup = Swal.getPopup();
+                                        if (popup) {
+                                            popup.style.fontSize = '1.3rem';
+                                            popup.style.padding = '2rem';
+                                            popup.style.width = '450px';
+                                            popup.style.textAlign = 'center';
+                                        }
+                                        const confirmBtn = Swal.getConfirmButton();
+                                        if (confirmBtn) {
+                                            confirmBtn.style.fontSize = '1.2rem';
+                                            confirmBtn.style.padding = '0.8rem 2rem';
+                                        }
+                                    }
+                                });
+                            }
+
                         }
                     }
                 },
@@ -1081,11 +1332,18 @@
                                 allowEscapeKey: false,
                                 didOpen: () => {
                                     const popup = Swal.getPopup();
+                                    const overlay = document.querySelector('.swal2-container');
+
+                                    // Forzar que quede por encima de cualquier otro popup/modal
                                     if (popup) {
-                                        popup.style.zIndex = '9999';
+                                        popup.style.zIndex = '999999';  // Muy alto
                                         popup.style.fontSize = '1.2rem';
                                         popup.style.padding = '2rem';
                                         popup.style.width = '400px';
+                                        popup.style.textAlign = 'center';
+                                    }
+                                    if (overlay) {
+                                        overlay.style.zIndex = '999998';
                                     }
 
                                     const confirmBtn = Swal.getConfirmButton();
@@ -1102,7 +1360,7 @@
                                 }
                             }).then((result) => {
                                 if (result.isConfirmed) {
-                                    //EliminarPago;
+                                    eliminarPago(pagoSeleccionado.id_pago)
                                 }
                             });
                         }
@@ -1136,6 +1394,7 @@
                 title: "Pagar cuenta",
                 dragEnabled: false,
                 closeOnOutsideClick: false,
+                showCloseButton: false, // <--- Aquí se quita la X
                 bindingOptions: {
                     visible: "showPopPagos",
                 },
