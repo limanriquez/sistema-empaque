@@ -85,6 +85,13 @@ class NotificacionZonaSerializerViewSet(viewsets.ModelViewSet):
 def clientes(request):
 	return render(request, 'operaciones/clientes.html',{
 			'title':"Clientes"})
+
+# Create your views here.
+@login_required()
+@require_personal
+def comandaPorZona(request):
+	return render(request, 'operaciones/comanda_por_zona.html',{
+			'title':"Comanda por zona"})
    
 @login_required()
 @require_personal
