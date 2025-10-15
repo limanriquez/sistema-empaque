@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from empresa.models import Personal, Empresa, Cliente
-from inventarios.models import Producto
+from inventarios.models import Producto, ProductoZonaNotificacion, BOM
 from catalogos.models import ZonaNotificacion, LugarEntrega, MetodoPago
 
 from django.db.models.signals import post_save
@@ -104,16 +104,22 @@ del proceso de cocción y despacho dentro de la orden.
 """
 class NotificacionZona(models.Model):
     ESTADO_PENDIENTE = 1
-    ESTADO_ENTREGADA = 2
-    ESTADO_CANCELADA = 3
+    ESTADO_PROCESO = 2
+    ESTADO_ENTREGADA = 3
+    ESTADO_CANCELADA = 4
 
     ESTADOS = [
         (ESTADO_PENDIENTE, 'Pendiente'),
+        (ESTADO_PROCESO, 'Proceso'),
         (ESTADO_ENTREGADA, 'Entregada'),
         (ESTADO_CANCELADA, 'Cancelada'),
     ]
 
-    venta = models.ForeignKey(Ventas, on_delete=models.CASCADE) 
+    desglose_venta = models.OneToOneField(
+        DesgloseVenta, 
+        on_delete=models.CASCADE, 
+        related_name='notificacion_zona'
+    )
     producto = models.ForeignKey(Producto, on_delete=models.PROTECT)
     zona = models.ForeignKey(ZonaNotificacion, on_delete=models.PROTECT)
     cantidad = models.PositiveIntegerField(default=1)
@@ -180,3 +186,29 @@ def actualizar_venta_post_eliminar_pago(sender, instance, **kwargs):
     venta.pagada = total_pagos >= total_venta
 
     venta.save(update_fields=['abonada', 'pagada'])
+
+
+@receiver(post_save, sender=DesgloseVenta)
+def crear_notificacion_zona(sender, instance, created, **kwargs):
+    if not created:
+        return  # Solo al crear un desglose
+
+    producto = instance.producto
+
+    # Obtenemos la zona activa del producto (asumimos 1 sola)
+    try:
+        zona_config = ProductoZonaNotificacion.objects.get(producto=producto, activo=True)
+    except ProductoZonaNotificacion.DoesNotExist:
+        # Si no hay zona configurada, no hacemos nada
+        return
+
+    # Opcional: generar notificaciones para cada componente del BOM
+   # bom_items = BOM.objects.filter(producto=producto)
+   # for item in bom_items:
+    NotificacionZona.objects.create(
+        desglose_venta=instance,
+        zona=zona_config.zona,
+        producto=producto,
+        cantidad=1,  # Escalar según BOM
+        estado=NotificacionZona.ESTADO_PENDIENTE
+    )
