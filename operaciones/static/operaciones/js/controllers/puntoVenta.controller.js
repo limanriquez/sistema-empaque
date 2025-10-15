@@ -9,7 +9,8 @@
 
     function PuntoVentaController($http, $scope, $filter) {
         var gridDesgloseVentaInstance, CmbMesaInstance, BtnCrearVentaInstance, CmbClienteInstance, PopPagosInstance,
-            BtnRegresarInstance, CmbMetodoPagoInstance, BtnPagarInstance, gridDesglosePagoVentaInstance, BtnImprimirInstance;
+            BtnRegresarInstance, CmbMetodoPagoInstance, BtnPagarInstance, gridDesglosePagoVentaInstance, BtnImprimirInstance,
+            BtnEnviarVentaInstance;
 
         var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [],
             ArrayPagosPorVenta = [];
@@ -34,7 +35,36 @@
         vm.personaId = $scope.personaId;
         // console.log("Empresa:", vm.empresaId);
         //  console.log("Nombre:", vm.nombrePersonal);
+        const firebaseConfig = {
+            apiKey: "AIzaSyCOmQFHQlVFPIiBUyx1k7eshNW4JM-Z-rg",
+            authDomain: "signals-test-lasser.firebaseapp.com",
+            projectId: "signals-test-lasser",
+            storageBucket: "signals-test-lasser.appspot.com",
+            messagingSenderId: "901814785470",
+            appId: "1:901814785470:web:221e517efbd5f4a40d15ef",
+            databaseURL: "https://signals-test-lasser-default-rtdb.firebaseio.com"
+        };
 
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const db = firebase.database();
+
+        // Nodo fijo
+        const nodo = db.ref('alertas/centro/');
+
+        function actualizarMensaje() {
+            const segundos = segundosDesdeMedianoche();
+            nodo.set({ mensaje: segundos })  // Actualiza el valor en Firebase
+                .then(() => console.log("Mensaje actualizado:", segundos))
+                .catch(err => console.error("Error al actualizar:", err));
+        }
+
+        function segundosDesdeMedianoche() {
+            const ahora = new Date();
+            return ahora.getHours() * 3600 + ahora.getMinutes() * 60 + ahora.getSeconds();
+        }
         vm.coloresCategoria = [
             '#d6e9f8', // azul claro
             '#d8f3dc', // verde claro
@@ -974,7 +1004,23 @@
 
                 }
             },
-
+            BtnEnviarVentaOptions: {
+                icon: 'fa fa-credit-card',
+                type: 'success',
+                width: 135,
+                text: 'Enviar comanda',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnEnviarVentaInstance = e.component;
+                },
+                onClick: function () {
+                    if (total > 0) {
+                        actualizarMensaje();
+                    } else {
+                        DevExpress.ui.notify("No existe comandas pora enviar", "warning", 5000);
+                    }
+                }
+            },
             BtnRegresarOptions: {
                 icon: 'fa fa-arrow-left',
                 type: 'default',

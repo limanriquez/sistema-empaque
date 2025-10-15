@@ -8,6 +8,9 @@ from django.db import transaction
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+from django.utils import timezone
+from pytz import timezone as pytz_timezone  # opcional si quieres zona específica
+
 
 # Django REST Framework
 from rest_framework import viewsets
@@ -303,3 +306,33 @@ def pagosPorVenta(request):
         })
 
     return JsonResponse(pagos_data, safe=False)
+
+
+@login_required
+def comandasPendientes(request):
+    notificaciones = NotificacionZona.objects.select_related(
+        'desglose_venta', 
+        'desglose_venta__venta',
+        'producto',
+        'zona'
+    ).filter(estado=1).order_by('id') 
+    
+    data = []
+    for n in notificaciones:
+        # Convertir a hora local de Django
+        hora_local = timezone.localtime(n.creada_en)  # usa la zona de Django settings
+        # o si quieres forzar México: 
+        # hora_local = n.creada_en.astimezone(pytz_timezone("America/Mexico_City"))
+        data.append({
+            "id": n.id,
+            "estado": n.get_estado_display(),
+            "cantidad": n.cantidad,
+            "creada_en": hora_local.isoformat(),
+            "hora_inicial": hora_local.strftime("%H:%M:%S"),
+            "zona": n.zona.id,
+            "producto": n.producto.nombre,
+            "desglose_venta": n.desglose_venta.id,
+            "venta_id": n.desglose_venta.venta.id
+        })
+
+    return JsonResponse(data, safe=False)

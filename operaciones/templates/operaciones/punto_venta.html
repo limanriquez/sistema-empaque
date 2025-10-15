@@ -113,6 +113,7 @@
                 </div>
                 <div class="col-md-2 form-group" style="margin-bottom: 0; margin-top: 20px; display: flex; gap: 10px;">
                     <div dx-button="vm.button.BtnCrearVentaOptions"></div>
+                    <div dx-button="vm.button.BtnEnviarVentaOptions"></div>
                     <div dx-button="vm.button.BtnCobrarVentaOptions"></div>
                 </div>
 
@@ -320,6 +321,9 @@
 {% endblock contenido %}
 
 {% block scripts_js %}
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script type="text/javascript" src="{% static 'javascripts/inventarios.config.js' %}"></script>
 <script type="text/javascript" src="{% static 'operaciones/js/operacion.module.js' %}"></script>
 <script type="text/javascript" src="{% static 'operaciones/js/controllers/puntoVenta.controller.js' %}"></script>
