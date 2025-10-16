@@ -159,6 +159,7 @@ class Telefonos(models.Model):
     Relaciona empresas líderes con empresas autorizadas para vender sus productos.
     Permite gestionar ventas multiempresa en un solo punto de venta, 
     controlando permisos sin eliminar datos con un campo 'activo'.
+    Por ejemplo Matriz autoriza a empresa Oscar en vender los productos de oscar en este punto de venta
 """
 class ProductosAutorizados(models.Model):
     empresa_lider = models.ForeignKey(

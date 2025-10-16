@@ -98,25 +98,32 @@
 
         <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
             <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
-                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                <!-- Buscar producto -->
+                <div class="col-12 col-md-4 form-group mb-0">
                     <span>Buscar producto:</span>
-                    <input type="text" ng-model="vm.filtro" placeholder="Filtrar por nombre, ID" class="form-control"
-                        style="margin-bottom: 8px;" />
+                    <input type="text" ng-model="vm.filtro" placeholder="Filtrar por nombre, ID"
+                        class="form-control mb-2" />
                 </div>
-                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+
+                <!-- Cliente -->
+                <div class="col-12 col-md-2 form-group mb-0">
                     <span>Cliente:</span>
                     <div dx-lookup="vm.lookup.CmbClienteOptions"></div>
                 </div>
-                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+
+                <!-- Mesa -->
+                <div class="col-12 col-md-2 form-group mb-0">
                     <span>Mesa:</span>
                     <div dx-lookup="vm.lookup.CmbMesaOptions"></div>
                 </div>
-                <div class="col-md-2 form-group" style="margin-bottom: 0; margin-top: 20px; display: flex; gap: 10px;">
+
+                <!-- Botones -->
+                <div class="col-12 col-md-4 form-group mt-3 d-flex flex-wrap gap-2">
                     <div dx-button="vm.button.BtnCrearVentaOptions"></div>
                     <div dx-button="vm.button.BtnEnviarVentaOptions"></div>
                     <div dx-button="vm.button.BtnCobrarVentaOptions"></div>
+                    <div dx-button="vm.button.BtnCancelarVentaOptions"></div>
                 </div>
-
             </div>
         </div>
 
@@ -170,7 +177,7 @@
                             <div class="card-like" ng-repeat="producto in vm.prediosFiltrados() track by producto.id"
                                 ng-style="{'background-color': producto.color || '#f0f0f0'}"
                                 ng-click="vm.mostrarAlertId(producto.id)">
-                             <!--    <img ng-src="https://picsum.photos/150" alt="{{producto.nombre}}"
+                                <!--    <img ng-src="https://picsum.photos/150" alt="{{producto.nombre}}"
                                     style="width:100%; height:auto; border-radius:5px; margin-bottom:5px;" />-->
                                 <strong>{[{producto.nombre}]} -${[{producto.precio}]}</strong><br />
                                 ID: {[{producto.id}]}<br />

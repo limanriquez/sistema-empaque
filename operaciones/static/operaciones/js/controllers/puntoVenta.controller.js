@@ -10,7 +10,7 @@
     function PuntoVentaController($http, $scope, $filter) {
         var gridDesgloseVentaInstance, CmbMesaInstance, BtnCrearVentaInstance, CmbClienteInstance, PopPagosInstance,
             BtnRegresarInstance, CmbMetodoPagoInstance, BtnPagarInstance, gridDesglosePagoVentaInstance, BtnImprimirInstance,
-            BtnEnviarVentaInstance;
+            BtnEnviarVentaInstance, BtnCancelarVentaInstance;
 
         var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [],
             ArrayPagosPorVenta = [];
@@ -121,7 +121,7 @@
 
         function getPagosPorVenta(venta) {
             $scope.isLoadPanelVisible = true;
-
+            console.log(venta);
             const params = new URLSearchParams({
                 venta: venta,
             });
@@ -166,7 +166,6 @@
         }
 
         function getVentaPorNumero(ventaId) {
-            console.log(ventaId);
             if (!ventaId) {
                 Swal.fire('Error', 'Debes proporcionar un número de venta', 'warning');
                 return;
@@ -180,7 +179,6 @@
                     }
 
                     fullVentaActiva = response.data[0];  // DRF devuelve lista, tomamos el primer elemento
-                    console.log(fullVentaActiva);
                 })
                 .catch(function (error) {
                     console.error('❌ Error al obtener la venta:', error);
@@ -197,7 +195,6 @@
                 });
         }
         function getVentaPorNumeroDespuesDePago(ventaId) {
-            console.log(ventaId);
             if (!ventaId) {
                 Swal.fire('Error', 'Debes proporcionar un número de venta', 'warning');
                 return;
@@ -344,6 +341,24 @@
                         ArrayEmpresasVenta.push(response.data[i]);
                         agregarVenta(response.data[i].id);  // <--- AQUI las fusionas
                     }
+                    if (ArrayEmpresasVenta.length == 0) {
+                        $scope.ventaActiva = null;
+                        ArrayDesgloseVenta.length = 0;
+                        total = 0
+                        cobroSubTotal = 0;
+                        cobroDescuento = 0;
+                        cobroTotal = 0;
+                        subTotal = 0;
+                        descuento = 0;
+                        $scope.numberSubtotal = 0;
+                        $scope.numberDescuento = 0;
+                        $scope.numberTotal = 0;
+                        BtnCancelarVentaInstance.option("disabled", true);
+                        if ($scope.desglose_venta_source && $scope.desglose_venta_source.reload) {
+                            $scope.desglose_venta_source.reload();
+                        }
+                        gridDesgloseVentaInstance.refresh();
+                    }
                     if ($scope.ventaActiva > 0) {
                         getVentaPorNumero($scope.ventaActiva);//Se trae la data de la venta activa
                         productosVenta($scope.ventaActiva);
@@ -372,6 +387,11 @@
                         subTotal = subTotal + response.data[i].precio_unitario;
                         descuento = descuento + response.data[i].descuento;
                         total = total + response.data[i].total;
+                    }
+                    if (ArrayDesgloseVenta == 0) {
+                        BtnCancelarVentaInstance.option("disabled", false);
+                    } else {
+                        BtnCancelarVentaInstance.option("disabled", true);
                     }
                     //descuento = 150;
                     cobroSubTotal = subTotal;
@@ -593,7 +613,7 @@
             if ($scope.ventaActiva > 0) {
                 if (fullVentaActiva.abonada == false && fullVentaActiva.pagada == false) {
                     transaccionVentaProducto(id, $scope.ventaActiva)
-                    DevExpress.ui.notify("Se puede vender " + id, "success", 3500);
+                    //  DevExpress.ui.notify("Se puede vender " + id, "success", 3500);
                 } else {
                     Swal.fire({
                         title: '❌ Imposible agregar el producto',
@@ -733,6 +753,25 @@
                 });
         }
 
+        function modificarVenta() {
+            const ventaData = {
+                activo: false
+            };
+
+            $http({
+                method: 'PATCH',
+                url: `/api/v1/ventas/${$scope.ventaActiva}/`,
+                data: ventaData
+            }).then(
+                function (response) {
+                    DevExpress.ui.notify('Venta eliminada satisfactoriamente', "success", 5000);
+                    getVentasAbiertasCorteEmpresas();
+                },
+                function (error) {
+                    DevExpress.ui.notify('No se pudo eliminar la venta', "error", 5000);
+                }
+            );
+        }
         $scope.desglose_venta_source = new DevExpress.data.DataSource({
             store: ArrayDesgloseVenta
         });
@@ -1005,10 +1044,10 @@
                 }
             },
             BtnEnviarVentaOptions: {
-                icon: 'fa fa-credit-card',
+                icon: 'fa fa-paper-plane',
                 type: 'success',
                 width: 135,
-                text: 'Enviar comanda',
+                text: 'Enviar',
                 disabled: false,
                 onInitialized: function (e) {
                     BtnEnviarVentaInstance = e.component;
@@ -1019,6 +1058,19 @@
                     } else {
                         DevExpress.ui.notify("No existe comandas pora enviar", "warning", 5000);
                     }
+                }
+            },
+            BtnCancelarVentaOptions: {
+                icon: 'fa fa-trash',
+                type: 'danger',
+                width: 135,
+                text: 'Cancelar',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnCancelarVentaInstance = e.component;
+                },
+                onClick: function () {
+                    modificarVenta();
                 }
             },
             BtnRegresarOptions: {
@@ -1447,10 +1499,26 @@
                 onInitialized: function (e) {
                     PopPagosInstance = e.component;//Se inicializa el popup para poder darle funcionalidad
                 },
-                onContentReady: function (e) {
+                onShowing: function (e) {
+                    // Esto se ejecuta cada vez que el popup se va a mostrar
                     getMetodoPago();
                     getPagosPorVenta($scope.ventaActiva);
-                }
+                    if (subTotal > 0) {
+                        BtnPagarInstance.option("disabled", false);
+                    } else {
+                        BtnPagarInstance.option("disabled", true);
+                    }
+                },
+                // onContentReady: function (e) {
+                //   getMetodoPago();
+                // getPagosPorVenta($scope.ventaActiva);
+                //if (subTotal > 0) {
+                //       BtnPagarInstance.option("disabled", false);
+                // } else {
+                //   BtnPagarInstance.option("disabled", true);
+                // }
+
+                //}
             },
         };
     }

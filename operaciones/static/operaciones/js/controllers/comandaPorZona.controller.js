@@ -10,6 +10,12 @@
     function ComandaPorZonaController($http, $scope, $timeout) {
         const vm = this;
         var arrayComandas = [];
+        var zonaSeleccionada = null;
+
+        vm.empresaId = $scope.empresaId;
+        vm.nombrePersonal = $scope.nombrePersonal;
+        vm.corteCajaId = $scope.corteCajaId;
+        
         const firebaseConfig = {
             apiKey: "AIzaSyCOmQFHQlVFPIiBUyx1k7eshNW4JM-Z-rg",
             authDomain: "signals-test-lasser.firebaseapp.com",
@@ -44,44 +50,45 @@
         // ========================
         function getComandasPendientes() {
             $scope.isLoadPanelVisible = true;
+            console.log(zonaSeleccionada);
             const url = "/comandas_pendientes/";
+            $http.get(url, { params: { zona: zonaSeleccionada, estado: 1, corteCaja: vm.corteCajaId, } })
+                .then(function (response) {
+                    arrayComandas.length = 0;
+                    grid.innerHTML = "";
+                    carousel.innerHTML = "";
 
-            $http.get(url).then(function (response) {
-                arrayComandas.length = 0;
-                grid.innerHTML = "";
-                carousel.innerHTML = "";
+                    for (let i = 0; i < response.data.length; i++) {
+                        const item = response.data[i];
 
-                for (let i = 0; i < response.data.length; i++) {
-                    const item = response.data[i];
+                        // Parse hora_inicial como fecha de hoy para calcular segundos transcurridos
+                        const [h, m, s] = item.hora_inicial.split(':');
+                        const horaCreacion = new Date();
+                        horaCreacion.setHours(parseInt(h), parseInt(m), parseInt(s), 0);
 
-                    // Parse hora_inicial como fecha de hoy para calcular segundos transcurridos
-                    const [h, m, s] = item.hora_inicial.split(':');
-                    const horaCreacion = new Date();
-                    horaCreacion.setHours(parseInt(h), parseInt(m), parseInt(s), 0);
+                        arrayComandas.push({
+                            id: item.id,
+                            zona: item.zona || "Zona",
+                            platillo: item.producto || "Platillo",
+                            fecha: item.fecha || new Date().toLocaleDateString(),
+                            horaCreacion: horaCreacion,
+                            venta_id: item.venta_id,
+                            desglose_venta: item.desglose_venta
+                        });
 
-                    arrayComandas.push({
-                        id: item.id,
-                        zona: item.zona || "Zona",
-                        platillo: item.producto || "Platillo",
-                        fecha: item.fecha || new Date().toLocaleDateString(),
-                        horaCreacion: horaCreacion,
-                        venta_id: item.venta_id,
-                        desglose_venta: item.desglose_venta
-                    });
+                        alertCount = Math.max(alertCount, item.id);
+                    }
 
-                    alertCount = Math.max(alertCount, item.id);
-                }
+                    if (arrayComandas.length > 0) {
+                        cargarPrediosIniciales();
+                    }
 
-                if (arrayComandas.length > 0) {
-                    cargarPrediosIniciales();
-                }
+                    $scope.isLoadPanelVisible = false;
 
-                $scope.isLoadPanelVisible = false;
-
-            }, function (error) {
-                console.error("Error cargando predios:", error);
-                $scope.isLoadPanelVisible = false;
-            });
+                }, function (error) {
+                    console.error("Error cargando predios:", error);
+                    $scope.isLoadPanelVisible = false;
+                });
         }
 
         // ========================
@@ -237,15 +244,26 @@
         // ========================
         // Firebase: escuchar cambios
         // ========================
+        // let lastValorMensaje = null;
+        //  nodo.child('mensaje').on('value', snapshot => {
+        //    const nuevoValor = snapshot.val();
+        //  if (nuevoValor !== null && nuevoValor !== lastValorMensaje) {
+        //    lastValorMensaje = nuevoValor;
+        //  getComandasPendientes();
+        // }
+        //});
         let lastValorMensaje = null;
         nodo.child('mensaje').on('value', snapshot => {
             const nuevoValor = snapshot.val();
             if (nuevoValor !== null && nuevoValor !== lastValorMensaje) {
                 lastValorMensaje = nuevoValor;
-                getComandasPendientes();
+
+                // 👇 Cambio aquí:
+                if (zonaSeleccionada) {
+                    getComandasPendientes(zonaSeleccionada);
+                }
             }
         });
-
         // ========================
         // Actualizar segundos y colores
         // ========================
@@ -267,6 +285,60 @@
         // ========================
         // Inicializar
         // ========================
-        getComandasPendientes();
+        // ========================
+        // SweetAlert para seleccionar zona
+        // ========================
+        function seleccionarZona() {
+            $http.get('/api/v1/zonaNotificacion/activos/')  // endpoint que devuelve las zonas
+                .then(function (response) {
+                    if (response.data && response.data.length) {
+                        // Mapear a objeto {id: nombre} para SweetAlert
+                        const inputOptions = {};
+                        response.data.forEach(z => {
+                            inputOptions[z.id] = z.nombre;
+                        });
+
+                        // Mostrar SweetAlert select
+                        Swal.fire({
+                            title: 'Selecciona la zona',
+                            input: 'select',
+                            inputOptions: inputOptions,
+                            inputPlaceholder: 'Elige una zona',
+                            confirmButtonText: 'Aceptar',
+                            showCancelButton: false,
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            inputValidator: (value) => {
+                                if (!value) {
+                                    return 'Debes seleccionar al menos una zona';
+                                }
+                            }
+                        }).then(result => {
+                            if (result.value) {
+                                zonaSeleccionada = result.value;
+                                getComandasPendientes();
+                            }
+                        });
+
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No se encontraron zonas disponibles.'
+                        });
+                    }
+                }, function (error) {
+                    console.error("Error al cargar zonas", error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudieron cargar las zonas.'
+                    });
+                });
+        }
+
+
+        seleccionarZona();
+        //  getComandasPendientes();
     }
 })();

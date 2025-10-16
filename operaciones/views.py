@@ -93,8 +93,23 @@ def clientes(request):
 @login_required()
 @require_personal
 def comandaPorZona(request):
-	return render(request, 'operaciones/comanda_por_zona.html',{
-			'title':"Comanda por zona"})
+    user = request.user.personal
+    empresa = user.empresa
+
+    # Verificar si el usuario tiene un corte abierto
+    corte_abierto = CorteCaja.objects.filter(
+        estatus=1,
+        empresa=empresa.id
+    ).first()
+    print(empresa)
+    return render(request, 'operaciones/comanda_por_zona.html', {
+        'title': "Comanda por zona",
+        'empresa': empresa,
+        'corte_caja': corte_abierto.id if corte_abierto else None,
+        'personaId': user.id,
+        'nombre_personal': f"{user.nombre} {user.apellido_paterno} {user.apellido_materno}"
+    })
+
    
 @login_required()
 @require_personal
@@ -114,8 +129,9 @@ def punto_de_venta(request):
     return render(request, 'operaciones/punto_venta.html', {
         'title': "Punto de venta",
         'empresa': empresa,
+        'empresa_id':empresa.id,
         'corte_caja':corte_abierto.id,
-        'personaId':user.id,
+        'personal_id':user.id,
         'nombre_personal': f"{user.nombre} {user.apellido_paterno} {user.apellido_materno}"
     })
 
@@ -310,12 +326,19 @@ def pagosPorVenta(request):
 
 @login_required
 def comandasPendientes(request):
+    zona_id = request.GET.get('zona')
+    estado = request.GET.get('estado')
+    corteCaja = request.GET.get('corteCaja')
     notificaciones = NotificacionZona.objects.select_related(
         'desglose_venta', 
         'desglose_venta__venta',
         'producto',
         'zona'
-    ).filter(estado=1).order_by('id') 
+    ).filter(
+        estado=int(estado),
+        zona_id=int(zona_id),
+        desglose_venta__venta__corte_caja_id=int(corteCaja)
+    ).order_by('id')
     
     data = []
     for n in notificaciones:
