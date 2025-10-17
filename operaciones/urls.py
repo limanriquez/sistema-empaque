@@ -15,6 +15,7 @@ urlpatterns = [
     path('api/v1/',include(router.urls)),
     path('clientes/', clientes, name="clientes"),
     path('comandaPorZona/', comandaPorZona, name="comandaPorZona"),
+    path('imprimir_ticket_venta/', imprimirTicketVenta, name="imprimirTicketVenta"),
     path('punto_de_venta/', punto_de_venta, name="punto_de_venta"),
     path('existeTelefono/<str:telefono>/', existeTelefono, name="existeTelefono"),
     path('ventas_abiertas_corte_empresas/', ventasAbiertasCorteEmpresas, name='ventasAbiertasCorteEmpresas'),

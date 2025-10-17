@@ -2,6 +2,12 @@ from django.db import models
 from catalogos.validators import validar_rfc, validar_telefono
 from django.core.validators import MinLengthValidator
 
+class GoHome(models.Model):
+    class Meta:
+        verbose_name = "A inicio"
+        verbose_name_plural = "A inicio"
+        managed = False  # No crea tabla
+        
 # Modelo de Almacen
 class Almacen(models.Model):
     nombre = models.CharField(max_length=100)

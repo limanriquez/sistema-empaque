@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Ticket de Venta</title>
+<style>
+    body {
+        width: 80mm; 
+        font-family: monospace;
+        font-size: 12px;
+        line-height: 1.4;
+        margin: 0;
+        padding: 5px;
+        color: #000;
+    }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .bold { font-weight: bold; }
+    .line { border-top: 1px dashed #000; margin: 5px 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 2px 0; }
+    th { text-align: left; }
+    .totales td { font-weight: bold; }
+</style>
+</head>
+<body>
+    <!-- Cabecera del negocio -->
+    <div class="center bold">
+        <h2>Mi Negocio</h2>
+        Calle Falsa 123<br>
+        Tel: 555-1234567
+    </div>
+    <div class="line"></div>
+
+    <!-- Datos de la venta -->
+    <table>
+        <tr>
+            <td>Cliente:</td>
+            <td class="right">{{ venta.cliente.nombre }}</td>
+        </tr>
+        <tr>
+            <td>Fecha:</td>
+            <td class="right">{{ venta.fecha_venta|date:"d/m/Y H:i" }}</td>
+        </tr>
+        <tr>
+            <td>Vendedor:</td>
+            <td class="right">{{ venta.atencion.nombre }}</td>
+        </tr>
+    </table>
+    <div class="line"></div>
+
+    <!-- Productos -->
+    <table>
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th class="right">Precio</th>
+                <th class="right">Cant</th>
+                <th class="right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in desglose %}
+            <tr>
+                <td>{{ item.producto.nombre }}</td>
+                <td class="right">{{ item.precio_unitario|floatformat:2 }}</td>
+                <td class="right">{{ item.cantidad|default:1 }}</td>
+                <td class="right">{{ item.total|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="line"></div>
+
+    <!-- Totales -->
+    <table class="totales">
+        <tr>
+            <td>Subtotal:</td>
+            <td class="right">{{ subtotal|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td>Descuento:</td>
+            <td class="right">{{ descuento|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td>Total:</td>
+            <td class="right">{{ total|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td>Pago:</td>
+            <td class="right">{{ venta.total_pagado|default:total|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td>Cambio:</td>
+            <td class="right">{{ cambio|floatformat:2 }}</td>
+        </tr>
+    </table>
+    <div class="line"></div>
+
+    <!-- Mensaje de agradecimiento -->
+    <div class="center bold">
+        ¡Gracias por su compra!
+    </div>
+</body>
+</html>

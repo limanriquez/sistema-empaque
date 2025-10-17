@@ -10,7 +10,7 @@
     function PuntoVentaController($http, $scope, $filter) {
         var gridDesgloseVentaInstance, CmbMesaInstance, BtnCrearVentaInstance, CmbClienteInstance, PopPagosInstance,
             BtnRegresarInstance, CmbMetodoPagoInstance, BtnPagarInstance, gridDesglosePagoVentaInstance, BtnImprimirInstance,
-            BtnEnviarVentaInstance, BtnCancelarVentaInstance;
+            BtnEnviarVentaInstance, BtnCancelarVentaInstance, BtnBuscarVentaInstance;
 
         var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [],
             ArrayPagosPorVenta = [];
@@ -326,6 +326,34 @@
                 });
         }
 
+        function imprimirTicketVenta() {
+            if (!$scope.ventaActiva) {
+                console.warn("No hay venta seleccionada para imprimir.");
+                return;
+            }
+            $scope.isLoadPanelVisible = true;
+            $http.get('/imprimir_ticket_venta/', {
+                params: { venta_id: $scope.ventaActiva }
+                //params: { venta_id: 60 }
+            }).then(
+                function (response) {
+                    // HTML del ticket desde Django
+                    const ticketHTML = response.data;
+
+                    // Abrir ventana de impresión
+                    const printWindow = window.open('', '_blank');
+                    printWindow.document.write(ticketHTML);
+                    printWindow.document.close();
+                    printWindow.focus();
+                    printWindow.print();
+                    $scope.isLoadPanelVisible = false;
+                },
+                function (error) {
+                    console.error("Error al obtener ticket:", error);
+                    $scope.isLoadPanelVisible = false;
+                }
+            );
+        };
 
         function getVentasAbiertasCorteEmpresas() {
             const params = new URLSearchParams({
@@ -982,9 +1010,11 @@
             BtnCrearVentaOptions: {
                 icon: 'fas fa-plus',
                 type: 'default',
-                width: 135,
+                width: 110,
                 text: 'Venta',
                 disabled: false,
+                hint: 'Iniciar una nueva venta',  // <-- texto del tooltip
+                showTooltip: true,                // <-- activa el tooltip
                 onInitialized: function (e) {
                     BtnCrearVentaInstance = e.component;
                 },
@@ -1028,8 +1058,10 @@
             BtnCobrarVentaOptions: {
                 icon: 'fa fa-credit-card',
                 type: 'success',
-                width: 135,
+                width: 110,
                 text: 'Cobrar',
+                hint: 'Cobrar la venta',  // <-- texto del tooltip
+                showTooltip: true,                // <-- activa el tooltip
                 disabled: false,
                 onInitialized: function (e) {
                     BtnCrearVentaInstance = e.component;
@@ -1046,8 +1078,10 @@
             BtnEnviarVentaOptions: {
                 icon: 'fa fa-paper-plane',
                 type: 'success',
-                width: 135,
+                width: 110,
                 text: 'Enviar',
+                hint: 'Enviar comandas',  // <-- texto del tooltip
+                showTooltip: true,                // <-- activa el tooltip
                 disabled: false,
                 onInitialized: function (e) {
                     BtnEnviarVentaInstance = e.component;
@@ -1063,14 +1097,31 @@
             BtnCancelarVentaOptions: {
                 icon: 'fa fa-trash',
                 type: 'danger',
-                width: 135,
-                text: 'Cancelar',
+                width: 110,
+                hint: 'Cancelar la venta',  // <-- texto del tooltip
+                showTooltip: true,                // <-- activa el toolti
+                text: 'Borrar',
                 disabled: false,
                 onInitialized: function (e) {
                     BtnCancelarVentaInstance = e.component;
                 },
                 onClick: function () {
                     modificarVenta();
+                }
+            },
+            BtnBuscarVentaOptions: {
+                icon: 'fa fa-search',
+                type: 'success',
+                width: 110,
+                hint: 'Buscar ventas',  // <-- texto del tooltip
+                showTooltip: true,                // <-- activa el toolti
+                text: 'Buscar',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnBuscarVentaInstance = e.component;
+                },
+                onClick: function () {
+
                 }
             },
             BtnRegresarOptions: {
@@ -1097,7 +1148,7 @@
                     BtnImprimirInstance = e.component;
                 },
                 onClick: function () {
-
+                    imprimirTicketVenta();
                 }
             },
             BtnPagarOptions: {
@@ -1238,7 +1289,13 @@
                     showInfo: true
                 },
                 selection: {
-                    mode: 'single'
+                    mode: 'single',
+                    selectByRowClick: true
+                },
+                keyboardNavigation: {
+                    enabled: true,
+                    cellNavigationEnabled: false, // ❌ desactiva moverse entre celdas
+                    editOnKeyPress: false
                 },
                 filterRow: {
                     visible: true,
@@ -1272,72 +1329,74 @@
                     gridDesgloseVentaInstance = e.component;
                 },
                 onCellClick: function (e) {
-                    if (e.columnIndex == 0) {
-                        if (e.rowIndex > -1) {
-                            desgloseVentaSeleccionado = e.data;
+                    // Verifica que haya datos (no encabezado ni fila vacía)
+                    if (!e.data || e.rowType !== "data") {
+                        return; // 🔒 ignora clics en encabezado o agrupaciones
+                    }
 
-                            if (fullVentaActiva.abonada == false && fullVentaActiva.pagada == false) {
-                                Swal.fire({
-                                    title: '¿Eliminar producto?',
-                                    text: 'Se va a eliminar el producto.',
-                                    icon: 'question',
-                                    showCancelButton: true,
-                                    confirmButtonText: 'Sí',
-                                    cancelButtonText: 'No',
-                                    allowOutsideClick: false,
-                                    allowEscapeKey: false,
-                                    didOpen: () => {
-                                        const popup = Swal.getPopup();
-                                        if (popup) {
-                                            popup.style.fontSize = '1.2rem';
-                                            popup.style.padding = '2rem';
-                                            popup.style.width = '400px';
-                                        }
+                    if (e.columnIndex === 0) {
+                        desgloseVentaSeleccionado = e.data;
 
-                                        const confirmBtn = Swal.getConfirmButton();
-                                        const cancelBtn = Swal.getCancelButton();
-
-                                        if (confirmBtn) {
-                                            confirmBtn.style.fontSize = '1.5rem';
-                                            confirmBtn.style.padding = '0.75rem 2rem';
-                                        }
-                                        if (cancelBtn) {
-                                            cancelBtn.style.fontSize = '1.5rem';
-                                            cancelBtn.style.padding = '0.75rem 2rem';
-                                        }
+                        if (fullVentaActiva.abonada === false && fullVentaActiva.pagada === false) {
+                            Swal.fire({
+                                title: '¿Eliminar producto?',
+                                text: 'Se va a eliminar el producto.',
+                                icon: 'question',
+                                showCancelButton: true,
+                                confirmButtonText: 'Sí',
+                                cancelButtonText: 'No',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                didOpen: () => {
+                                    const popup = Swal.getPopup();
+                                    if (popup) {
+                                        popup.style.fontSize = '1.2rem';
+                                        popup.style.padding = '2rem';
+                                        popup.style.width = '400px';
                                     }
-                                }).then((result) => {
-                                    if (result.isConfirmed) {
-                                        transaccionEliminarProductoVenta(desgloseVentaSeleccionado.id_desglose);
-                                    }
-                                });
-                            } else {
-                                Swal.fire({
-                                    title: '❌ Imposible eliminar el producto',
-                                    html: `<p style="font-size:1.1rem;">No se puede elliminar el producto de la venta, ya cuenta con pagos registrados.</p>`,
-                                    icon: 'error',
-                                    showConfirmButton: true,
-                                    confirmButtonText: 'Aceptar',
-                                    confirmButtonColor: '#d33',
-                                    allowOutsideClick: false,
-                                    allowEscapeKey: false,
-                                    didOpen: () => {
-                                        const popup = Swal.getPopup();
-                                        if (popup) {
-                                            popup.style.fontSize = '1.3rem';
-                                            popup.style.padding = '2rem';
-                                            popup.style.width = '450px';
-                                            popup.style.textAlign = 'center';
-                                        }
-                                        const confirmBtn = Swal.getConfirmButton();
-                                        if (confirmBtn) {
-                                            confirmBtn.style.fontSize = '1.2rem';
-                                            confirmBtn.style.padding = '0.8rem 2rem';
-                                        }
-                                    }
-                                });
-                            }
 
+                                    const confirmBtn = Swal.getConfirmButton();
+                                    const cancelBtn = Swal.getCancelButton();
+
+                                    if (confirmBtn) {
+                                        confirmBtn.style.fontSize = '1.5rem';
+                                        confirmBtn.style.padding = '0.75rem 2rem';
+                                    }
+                                    if (cancelBtn) {
+                                        cancelBtn.style.fontSize = '1.5rem';
+                                        cancelBtn.style.padding = '0.75rem 2rem';
+                                    }
+                                }
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    transaccionEliminarProductoVenta(desgloseVentaSeleccionado.id_desglose);
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                title: '❌ Imposible eliminar el producto',
+                                html: `<p style="font-size:1.1rem;">No se puede eliminar el producto de la venta, ya cuenta con pagos registrados.</p>`,
+                                icon: 'error',
+                                showConfirmButton: true,
+                                confirmButtonText: 'Aceptar',
+                                confirmButtonColor: '#d33',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                didOpen: () => {
+                                    const popup = Swal.getPopup();
+                                    if (popup) {
+                                        popup.style.fontSize = '1.3rem';
+                                        popup.style.padding = '2rem';
+                                        popup.style.width = '450px';
+                                        popup.style.textAlign = 'center';
+                                    }
+                                    const confirmBtn = Swal.getConfirmButton();
+                                    if (confirmBtn) {
+                                        confirmBtn.style.fontSize = '1.2rem';
+                                        confirmBtn.style.padding = '0.8rem 2rem';
+                                    }
+                                }
+                            });
                         }
                     }
                 },
@@ -1361,7 +1420,7 @@
                 },
                 noDataText: "Sin datos",
                 scrolling: {
-                    mode: 'standar',
+                    mode: 'standard',
                     showScrollbar: 'always'
                 },
                 columnFixing: {
@@ -1471,7 +1530,7 @@
                 },
                 noDataText: "Sin datos",
                 scrolling: {
-                    mode: 'standar',
+                    mode: 'standard',
                     showScrollbar: 'always'
                 },
                 columnFixing: {

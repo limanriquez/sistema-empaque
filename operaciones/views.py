@@ -110,6 +110,27 @@ def comandaPorZona(request):
         'nombre_personal': f"{user.nombre} {user.apellido_paterno} {user.apellido_materno}"
     })
 
+@login_required()
+def imprimirTicketVenta(request):
+    # Obtener la venta activa
+    venta_id = request.GET.get('venta_id')
+    venta = get_object_or_404(Ventas, id=venta_id, activo=True, pagada = True)
+    # Traer todos los productos del desglose con select_related para evitar queries N+1
+    desglose = venta.desglose.select_related('producto').all()
+
+    # Calcular subtotal sumando precios unitarios sin descuentos
+    subtotal = sum(item.precio_unitario for item in desglose)
+
+    context = {
+        'venta': venta,
+        'desglose': desglose,
+        'subtotal': subtotal,
+        'descuento': venta.descuento,
+        'total': venta.total,
+        'cambio': venta.cambio,
+    }
+    
+    return render(request, 'operaciones/ticket_venta.html', context)
    
 @login_required()
 @require_personal

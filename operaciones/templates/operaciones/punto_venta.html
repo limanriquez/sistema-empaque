@@ -96,8 +96,8 @@
     <div class="content dx-viewport" {% initial_loader_hide %}>
         <!-- Contenedor fila que contiene columna 8 + columna 4 -->
 
-        <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
-            <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+        <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 5px;">
+            <div class="row" style="padding-top: 10px; padding-left: 20px; padding-right: 30px;">
                 <!-- Buscar producto -->
                 <div class="col-12 col-md-4 form-group mb-0">
                     <span>Buscar producto:</span>
@@ -118,10 +118,11 @@
                 </div>
 
                 <!-- Botones -->
-                <div class="col-12 col-md-4 form-group mt-3 d-flex flex-wrap gap-2">
+                <div class="col-12 col-md-4 form-group mt-3 d-flex flex-wrap gap-2" style="padding-top: 10px;">
                     <div dx-button="vm.button.BtnCrearVentaOptions"></div>
-                    <div dx-button="vm.button.BtnEnviarVentaOptions"></div>
                     <div dx-button="vm.button.BtnCobrarVentaOptions"></div>
+                    <div dx-button="vm.button.BtnEnviarVentaOptions"></div>
+                    <div dx-button="vm.button.BtnBuscarVentaOptions"></div>
                     <div dx-button="vm.button.BtnCancelarVentaOptions"></div>
                 </div>
             </div>
