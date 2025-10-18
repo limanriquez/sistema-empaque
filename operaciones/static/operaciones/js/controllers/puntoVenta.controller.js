@@ -10,10 +10,11 @@
     function PuntoVentaController($http, $scope, $filter) {
         var gridDesgloseVentaInstance, CmbMesaInstance, BtnCrearVentaInstance, CmbClienteInstance, PopPagosInstance,
             BtnRegresarInstance, CmbMetodoPagoInstance, BtnPagarInstance, gridDesglosePagoVentaInstance, BtnImprimirInstance,
-            BtnEnviarVentaInstance, BtnCancelarVentaInstance, BtnBuscarVentaInstance;
+            BtnEnviarVentaInstance, BtnCancelarVentaInstance, BtnBuscarVentaInstance, gridVentasPorCorteInstance,
+            CmbCortesInstance, PopBuscarVentasInstance, BtnRegresarCortesInstance, BtnBuscarVentasInstance;
 
         var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [],
-            ArrayPagosPorVenta = [];
+            ArrayPagosPorVenta = [], ArrayVentasCorte = [], ArrayCortes = [];
         var strEmpresasVenta = ""
         var vm = this;
         var tab = 0;
@@ -117,6 +118,25 @@
                 }, function (response) {
                 }
             );
+        };
+
+        function getCortesCaja() {
+            $scope.isLoadPanelVisible = true;
+            $http.get('/cortes_por_empresa/', { params: { empresa: vm.empresaId } })
+                .then(
+                    function (response) {
+                        console.log(response)
+                        ArrayCortes.length = 0;
+                        for (let i = 0; i < response.data.length; i++) {
+                            ArrayCortes.push(response.data[i]);
+                        }
+                        $scope.cortes_source.load().done(function (response) {
+                            $scope.cmbCortes = 1;
+                        });
+                        $scope.isLoadPanelVisible = false;
+                    }, function (response) {
+                    }
+                );
         };
 
         function getPagosPorVenta(venta) {
@@ -355,6 +375,55 @@
             );
         };
 
+        function imprimirTicket(idVenta) {
+            $scope.isLoadPanelVisible = true;
+            $http.get('/imprimir_ticket_venta/', {
+                params: { venta_id: idVenta }
+                //params: { venta_id: 60 }
+            }).then(
+                function (response) {
+                    // HTML del ticket desde Django
+                    const ticketHTML = response.data;
+
+                    // Abrir ventana de impresión
+                    const printWindow = window.open('', '_blank');
+                    printWindow.document.write(ticketHTML);
+                    printWindow.document.close();
+                    printWindow.focus();
+                    printWindow.print();
+                    $scope.isLoadPanelVisible = false;
+                },
+                function (error) {
+                    console.error("Error al obtener ticket:", error);
+                    $scope.isLoadPanelVisible = false;
+                }
+            );
+        };
+
+
+        function getVentasPorCorte() {
+            const params = new URLSearchParams({
+                corteCaja: $scope.cmbCortes,
+            });
+            $scope.isLoadPanelVisible = true;
+            const url = `/ventas_por_corte_caja/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    ArrayVentasCorte.length = 0;
+                    for (let i = 0; i < response.data.length; i++) {
+                        ArrayVentasCorte.push(response.data[i]);
+                    }
+
+                    if ($scope.ventas_corte_source && $scope.ventas_corte_source.reload) {
+                        $scope.ventas_corte_source.reload();
+                    }
+                    gridVentasPorCorteInstance.refresh();
+
+                    $scope.isLoadPanelVisible = false;
+                }, function (response) {
+                }
+            );
+        };
         function getVentasAbiertasCorteEmpresas() {
             const params = new URLSearchParams({
                 corteCaja: vm.corteCajaId,
@@ -800,6 +869,14 @@
                 }
             );
         }
+
+
+        $scope.ventas_corte_source = new DevExpress.data.DataSource({
+            store: ArrayVentasCorte
+        });
+        $scope.cortes_source = new DevExpress.data.DataSource({
+            store: ArrayCortes
+        });
         $scope.desglose_venta_source = new DevExpress.data.DataSource({
             store: ArrayDesgloseVenta
         });
@@ -1121,7 +1198,7 @@
                     BtnBuscarVentaInstance = e.component;
                 },
                 onClick: function () {
-
+                    PopBuscarVentasInstance.show();
                 }
             },
             BtnRegresarOptions: {
@@ -1138,6 +1215,74 @@
                     getVentasAbiertasCorteEmpresas();
                 }
             },
+
+            BtnRegresarCortesOptions: {
+                icon: 'fa fa-arrow-left',
+                type: 'default',
+                width: 125,
+                text: 'Regresar',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnRegresarCortesInstance = e.component;
+                },
+                onClick: function () {
+                    PopBuscarVentasInstance.hide();
+                    ArrayVentasCorte.length = 0;
+                    if ($scope.ventas_corte_source && $scope.ventas_corte_source.reload) {
+                        $scope.ventas_corte_source.reload();
+                    }
+                    gridVentasPorCorteInstance.refresh();
+                }
+            },
+            BtnBuscarVentasOptions: {
+                icon: 'fa fa-search',
+                type: 'success',
+                width: 50,
+                //text: 'Buscar',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnBuscarVentasInstance = e.component;
+                },
+                onClick: function () {
+                    if ($scope.cmbCortes > 0) {
+                        getVentasPorCorte();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Advertencia',
+                            text: 'Seleccione un corte de caja para continuar',
+                            showConfirmButton: true,
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => {
+                                const popup = Swal.getPopup();
+                                const overlay = document.querySelector('.swal2-container');
+
+                                // Forzar que quede por encima de cualquier modal/popup
+                                if (popup) {
+                                    popup.style.zIndex = '999999';
+                                    popup.style.fontSize = '1.3rem';
+                                    popup.style.padding = '2rem';
+                                    popup.style.width = '450px';
+                                    popup.style.textAlign = 'center';
+                                }
+                                if (overlay) {
+                                    overlay.style.zIndex = '999998';
+                                }
+
+                                const confirmBtn = Swal.getConfirmButton();
+                                if (confirmBtn) {
+                                    confirmBtn.style.fontSize = '1.2rem';
+                                    confirmBtn.style.padding = '0.8rem 2rem';
+                                }
+                            }
+                        });
+                    }
+
+                }
+            },
+
+
             BtnImprimirOptions: {
                 icon: 'fa fa-print',
                 type: 'default',
@@ -1242,6 +1387,30 @@
                 },
                 onInitialized: function (e) {
                     CmbMesaInstance = e.component;
+                },
+                onValueChanged: function (e) {
+
+                },
+            },
+
+            CmbCortesOptions: {
+                dataSource: $scope.cortes_source,
+                searchEnabled: true,
+                placeholder: 'Seleccione el corte',
+                displayExpr: 'fecha_apertura',
+                valueExpr: 'id',
+                value: '',
+                dropDownOptions: {
+                    title: 'Corte',
+                },
+                cancelButtonText: 'Cancelar',
+                searchPlaceholder: 'Buscar corte',
+                noDataText: "Sin datos",
+                bindingOptions: {
+                    value: 'cmbCortes',
+                },
+                onInitialized: function (e) {
+                    CmbCortesInstance = e.component;
                 },
                 onValueChanged: function (e) {
 
@@ -1432,6 +1601,82 @@
                 rowAlternationEnabled: true,
                 showRowLines: true
             },
+
+
+            gridVentasPorCorteOptions: {
+                dataSource: $scope.ventas_corte_source,
+                paging: {
+                    pageSize: 10
+                },
+                pager: {
+                    showPageSizeSelector: true,
+                    allowedPageSizes: [10, 20],
+                    showInfo: true
+                },
+                selection: {
+                    mode: 'single',
+                    selectByRowClick: true
+                },
+                keyboardNavigation: {
+                    enabled: true,
+                    cellNavigationEnabled: false, // ❌ desactiva moverse entre celdas
+                    editOnKeyPress: false
+                },
+                filterRow: {
+                    visible: true,
+                    applyFilter: "auto"
+                },
+                showBorders: true,
+
+                columns: [
+                    {
+                        visible: true,
+                        cellTemplate: function (container, options) {
+                            // Crear botón de imprimir
+                            const btn = $('<div>')
+                                .addClass('btn btn-primary btn-sm')
+                                .css({ width: '70px' })
+                                .text('Imprimir')
+                                .on('click', function () {
+                                    imprimirTicket(options.data.id_venta);
+                                });
+                            container.append(btn);
+                        },
+                        cssClass: 'sin-padding',
+                        headerCellTemplate: "<i class='fa fa-print' aria-hidden='true'></i>",
+                        width: '85px',
+                        allowSorting: false
+                    },
+                    { dataField: 'id_venta', caption: 'Venta', width: 50 },
+                    { dataField: 'cliente', caption: 'Cliente', width: 200 },
+                    { dataField: 'personal', caption: 'Atendido por', width: 200 },
+                    { dataField: 'total', caption: 'Total', width: 100, format: { type: 'fixedPoint', precision: 2 } },
+                    { dataField: 'fecha_venta', caption: 'Fecha Venta', width: 100 },
+                    { dataField: 'observaciones', caption: 'Observaciones', width: 200 },
+                    { dataField: 'lugar_entrega_id', caption: 'Lugar Entrega', width: 100 },
+                    { dataField: 'corte_caja_id', caption: 'Corte Caja', width: 100 }
+                ],
+                onInitialized: function (e) {
+                    gridVentasPorCorteInstance = e.component;
+                },
+                onRowClick: function (e) {
+
+                },
+
+                noDataText: "Sin datos",
+                scrolling: {
+                    mode: 'standard',
+                    showScrollbar: 'always'
+                },
+                columnFixing: {
+                    enabled: true
+                },
+                columnAutoWidth: true,
+                allowColumnResizing: true,
+                height: 500,
+                rowAlternationEnabled: true,
+                showRowLines: true
+            },
             gridDesglosePagoVentaOptions: {
                 dataSource: $scope.pagos_por_venta_source,
                 paging: {
@@ -1576,6 +1821,41 @@
                 // } else {
                 //   BtnPagarInstance.option("disabled", true);
                 // }
+
+                //}
+            },
+            popBuscarVentasOptions: {
+                showTitle: true,
+                width: 1200,
+                height: 800,
+                title: "Buscar ventas",
+                dragEnabled: false,
+                closeOnOutsideClick: false,
+                showCloseButton: false, // <--- Aquí se quita la X
+                bindingOptions: {
+                    visible: "showPopBuscar",
+                },
+                onInitialized: function (e) {
+                    PopBuscarVentasInstance = e.component;//Se inicializa el popup para poder darle funcionalidad
+                },
+                onShowing: function (e) {
+                    // Esto se ejecuta cada vez que el popup se va a mostrar
+                    // getMetodoPago();
+                    // getPagosPorVenta($scope.ventaActiva);
+                    // if (subTotal > 0) {
+                    //   BtnPagarInstance.option("disabled", false);
+                    // } else {
+                    //   BtnPagarInstance.option("disabled", true);
+                    // }
+                },
+                onContentReady: function (e) {
+                    getCortesCaja();
+                    // getPagosPorVenta($scope.ventaActiva);
+                    //if (subTotal > 0) {
+                    //       BtnPagarInstance.option("disabled", false);
+                    // } else {
+                    //   BtnPagarInstance.option("disabled", true);
+                }
 
                 //}
             },

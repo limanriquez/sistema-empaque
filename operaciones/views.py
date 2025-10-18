@@ -15,6 +15,7 @@ from pytz import timezone as pytz_timezone  # opcional si quieres zona específi
 # Django REST Framework
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.response import Response
 
 # Importaciones propias / locales
 from inventarios.models import Producto, BOM, StockItem
@@ -22,6 +23,7 @@ from operaciones.models import DesgloseVenta, Ventas
 from operaciones.serializer import *
 from inventario.permissions import IsAdminOrReadOnly
 from authentication.decoradores import require_personal
+
 
 class ClientesViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
@@ -380,3 +382,63 @@ def comandasPendientes(request):
         })
 
     return JsonResponse(data, safe=False)
+
+@login_required
+def cortesPorEmpresa(request):
+    # Obtener parámetro empresa desde GET
+    empresa_id = request.GET.get('empresa')
+    if not empresa_id:
+        return JsonResponse({"detail": "Debe proporcionar ?empresa=<id>"}, status=400)
+
+    cortes = CorteCaja.objects.filter(empresa_id=empresa_id)
+    cortes_data = []
+
+    for c in cortes:
+        cortes_data.append({
+            "id": c.id,
+            "empresa_id": c.empresa_id,
+            "personal_id": c.personal_id,
+            "personal": f"{c.personal.nombre} {c.personal.apellido_paterno} {c.personal.apellido_materno}",
+            "saldo_inicial": str(c.saldo_inicial),
+            "saldo_final": str(c.saldo_final) if c.saldo_final is not None else None,
+            "ingresos_efectivo": str(c.ingresos_efectivo),
+            "ingresos_tarjeta": str(c.ingresos_tarjeta),
+            "ingresos_transferencia": str(c.ingresos_transferencia),
+            "egresos": str(c.egresos),
+            "fecha_apertura": c.fecha_apertura.strftime('%d/%m/%Y') if c.fecha_apertura else None,
+            "fecha_cierre": c.fecha_cierre.strftime('%d/%m/%Y') if c.fecha_cierre else None,
+            "observaciones": c.observaciones,
+            "estatus": c.get_estatus_display(),  # Devuelve "Abierto", "Cerrado" o "Cancelado"
+        })
+
+    return JsonResponse(cortes_data, safe=False)
+
+@login_required
+def ventasPorCorteCaja(request):
+    # Obtener parámetro corte_caja desde GET
+    corte_id = request.GET.get('corteCaja')
+    if not corte_id:
+        return JsonResponse({"detail": "Debe proporcionar ?corteCaja=<id>"}, status=400)
+
+    # Filtrar ventas del corte de caja específico
+    ventas = Ventas.objects.filter(corte_caja_id=corte_id, activo=True).order_by('-id')[:10] 
+    ventas_data = []
+
+    for v in ventas:
+        ventas_data.append({
+            "id_venta": v.id,
+            "corte_caja_id": v.corte_caja_id,
+            "cliente_id": v.cliente_id,
+            "cliente": f"{v.cliente.nombre} {v.cliente.apellido_paterno} {v.cliente.apellido_materno}" if v.cliente else None,
+            "personal_id": v.atencion_id,
+            "personal": f"{v.atencion.nombre} {v.atencion.apellido_paterno} {v.atencion.apellido_materno}" if v.atencion else None,
+            "fecha_venta": v.fecha_venta.strftime('%d/%m/%Y') if v.fecha_venta else None,
+            "total": str(v.total),
+            "pagada": v.pagada,
+            "activo": v.activo,
+            "observaciones": v.observaciones,
+            "lugar_entrega_id": v.lugar_entrega_id,
+            # Puedes agregar más campos que necesites mostrar
+        })
+
+    return JsonResponse(ventas_data, safe=False)

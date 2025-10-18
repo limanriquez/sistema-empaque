@@ -10,6 +10,7 @@ router.register('clientes',ClientesViewSet)
 router.register('ventas',VentasViewSet)
 router.register('pagoVenta',PagoVentaViewSet)
 
+
 app_name = 'operaciones'
 urlpatterns = [
     path('api/v1/',include(router.urls)),
@@ -24,5 +25,8 @@ urlpatterns = [
     path('productos_venta/', productosVenta, name='productosVenta'),
     path('pagos_por_venta/', pagosPorVenta, name='pagosPorVenta'),
     path('comandas_pendientes/', comandasPendientes, name='comandasPendientes'),
+    path('cortes_por_empresa/', cortesPorEmpresa, name='cortesPorEmpresa'),
+    path('ventas_por_corte_caja/', ventasPorCorteCaja, name='ventasPorCorteCaja'),
+    
   #  path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]

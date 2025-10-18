@@ -76,10 +76,11 @@ def productosActivosEmpresas(request):
         tipo_producto=tipoProducto,
         activo=True,
         vendible=True,
-        empresa__in=ids_empresas
+        empresa__in=ids_empresas,
+        precios__isnull=False 
     ).select_related('empresa').annotate(
         primer_precio=Subquery(precio_subquery)
-    )  # Aquí agregas la anotación
+    ).order_by('orden')  # Aquí agregas la anotación
 
     resultado = []
     for p in productos:

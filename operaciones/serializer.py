@@ -24,4 +24,8 @@ class PagoVentaSerializer(serializers.ModelSerializer):
         model = PagoVenta
         fields = '__all__'
 
+class CorteCajaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CorteCaja
+        fields = '__all__'
         
