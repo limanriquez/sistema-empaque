@@ -12,10 +12,11 @@
         var arrayComandas = [];
         var zonaSeleccionada = null;
 
-        vm.empresaId = $scope.empresaId;
+        vm.empresaId = 1; //$scope.empresaId;
         vm.nombrePersonal = $scope.nombrePersonal;
-        vm.corteCajaId = $scope.corteCajaId;
+        vm.corteCajaId = 1;//$scope.corteCajaId;
         
+        console.log($scope.corteCajaId)
         const firebaseConfig = {
             apiKey: "AIzaSyCOmQFHQlVFPIiBUyx1k7eshNW4JM-Z-rg",
             authDomain: "signals-test-lasser.firebaseapp.com",

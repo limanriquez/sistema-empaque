@@ -29,15 +29,11 @@
             position: fixed;
             bottom: 0;
         }
-
-            {
-            % block personal_styles %
-        }
-
-            {
-            % endblock personal_styles %
-        }
     </style>
+
+    {% block personal_styles %}
+    <!-- Aquí las plantillas hijas pueden agregar más CSS -->
+    {% endblock personal_styles %}
     <!--
         background-color: rgba(0, 90, 150, 0.3);
         <script src="https://use.fontawesome.com/76790a708b.js"></script>
