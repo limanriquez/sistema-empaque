@@ -27,6 +27,8 @@ urlpatterns = [
     path('comandas_pendientes/', comandasPendientes, name='comandasPendientes'),
     path('cortes_por_empresa/', cortesPorEmpresa, name='cortesPorEmpresa'),
     path('ventas_por_corte_caja/', ventasPorCorteCaja, name='ventasPorCorteCaja'),
+    path('corteCajaAbierto/', corteCajaAbierto, name='corteCajaAbierto'),
+    path('corte_caja/', corte_caja, name='corte_caja'),
     
   #  path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]

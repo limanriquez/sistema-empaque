@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load general_tags %}
+{% block ng_app %}
+<html class="no-js" lang="es" ng-app="operaciones.operacion"
+    ng-init="empresaId={{ empresa.id }}; nombrePersonal='{{ nombre_personal|escapejs }}'; corteCajaId={{ corte_caja }}; personaId={{ corte_caja }}">
+{% endblock ng_app %}
+{% block head_title %} {{ title }} {% endblock head_title %}
+{% block personal_styles %}
+{% endblock personal_styles %}
+{% block contenido %}
+<style>
+    .sin-padding {
+        padding: 0px !important;
+        text-align: center;
+    }
+</style>
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/alertify.min.css' %}" />
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/themes/default.min.css' %}" />
+
+<div ng-controller='CorteCaja as vm' style="padding-left:  40px; padding-right: 40px;">
+    {% initial_loader %}
+    <div class="content dx-viewport" {% initial_loader_hide %}>
+        <div dx-load-panel="vm.loadPanels.basicOptions"></div>
+        <div class="container mt-4" ng-show="modoEdicion">
+            <div class="row justify-content-center">
+                <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+                    <div class="alert text-center rounded-3 shadow-lg px-3 py-2 mb-0" role="alert"
+                        style="background-color: #ffe1cc; color: #cd6625; border: 1px solid #ffae66;">
+                        <strong>Modo Modificación</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-9 col-xs-9">
+                <div class="dx-fieldset-header" style="margin-bottom: 5px;">Corte de caja</div>
+            </div>
+        </div>
+        <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+            <!-- Fila 1: Nombre y apellidos -->
+            <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <span>Nombre:</span>
+                    <div dx-text-box="vm.textBox.TxtNombreOptions"></div>
+                </div>
+                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+                    <span>Saldo inicial:</span>
+                    <div dx-number-box="vm.numberBox.SaldoInicialOptions"></div>
+                </div>
+                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+                    <span>Saldo final:</span>
+                    <div dx-number-box="vm.numberBox.SaldoFinalOptions"></div>
+                </div>
+                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+                    <span>Fecha apertura:</span>
+                    <div dx-date-box="vm.dateBox.FechaAperturaOptions"></div>
+                </div>
+
+                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+                    <span>Fecha cierre:</span>
+                    <div dx-date-box="vm.dateBox.FechaCierreOptions"></div>
+                </div>
+            </div>
+
+            <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+                    <span>Ingresos efectivo:</span>
+                    <div dx-number-box="vm.numberBox.IngresosEfectivoOptions"></div>
+                </div>
+
+                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+                    <span>Ingresos tarjeta:</span>
+                    <div dx-number-box="vm.numberBox.IngresosTarjetaOptions"></div>
+                </div>
+
+                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+                    <span>Ingresos transferencia:</span>
+                    <div dx-number-box="vm.numberBox.IngresosTransferenciaOptions"></div>
+                </div>
+
+                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+                    <span>Egresos:</span>
+                    <div dx-number-box="vm.numberBox.EgresosOptions"></div>
+                </div>
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <span>Observaciones:</span>
+                    <div dx-text-area="vm.textArea.ObservacionesOptions"></div>
+                </div>
+            </div>
+        </div>
+        <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+            <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;"></div>
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;"></div>
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <div dx-button="vm.button.BtnConsultarOptions"></div>
+                    <div dx-button="vm.button.BtnCerrarOptions"></div>
+                    <div dx-button="vm.button.BtnBuscarImprimirOptions"></div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock contenido %}
+{% block scripts_js %}
+<script type="text/javascript" src="{% static 'javascripts/inventarios.config.js' %}"></script>
+<script type="text/javascript" src="{% static 'operaciones/js/operacion.module.js' %}"></script>
+<script type="text/javascript" src="{% static 'operaciones/js/controllers/corteCaja.controller.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OverlayScrollbars/2.1.0/js/OverlayScrollbars.min.js"></script>
+{% endblock scripts_js %}

@@ -90,6 +90,22 @@ class NotificacionZonaSerializerViewSet(viewsets.ModelViewSet):
 def clientes(request):
 	return render(request, 'operaciones/clientes.html',{
 			'title':"Clientes"})
+@login_required()
+@require_personal
+def corte_caja(request):
+    user = request.user.personal
+    empresa = user.empresa
+    corte_abierto = CorteCaja.objects.filter(
+        estatus=1,
+        empresa=empresa.id
+    ).first()
+    return render(request, 'operaciones/corte_caja.html',{
+			'title': "Corte de caja ",
+            'empresa': empresa,
+            'corte_caja': corte_abierto.id if corte_abierto else None,
+            'personaId': user.id,
+            'nombre_personal': f"{user.nombre} {user.apellido_paterno} {user.apellido_materno}"
+            })
 
 # Create your views here.
 @login_required()
@@ -103,7 +119,7 @@ def comandaPorZona(request):
         estatus=1,
         empresa=empresa.id
     ).first()
-    print(empresa)
+
     return render(request, 'operaciones/comanda_por_zona.html', {
         'title': "Comanda por zona",
         'empresa': empresa,
@@ -442,3 +458,66 @@ def ventasPorCorteCaja(request):
         })
 
     return JsonResponse(ventas_data, safe=False)
+
+
+@login_required
+def corteCajaAbierto(request):
+    empresa_id = request.GET.get('empresa')
+    if not empresa_id:
+        return JsonResponse({"advertencia": "Debe proporcionar ?empresa=<id>"}, status=200)
+
+    try:
+        corte_abierto = CorteCaja.objects.get(empresa_id=empresa_id, estatus=1)
+    except CorteCaja.DoesNotExist:
+        return JsonResponse({"advertencia": "No existe un corte de caja abierto para esta empresa."}, status=200)
+
+    # Verificar si hay ventas activas no pagadas
+    ventas_abiertas = Ventas.objects.filter(
+        corte_caja=corte_abierto,
+        activo=True,
+        pagada=False
+    ).exists()
+
+    if ventas_abiertas:
+        return JsonResponse({"advertencia": "Existen ventas activas no pagadas en este corte de caja."}, status=200)
+
+    # Calcular ingresos por tipo de pago usando IDs (1: Efectivo, 2: Tarjeta Crédito, 3: Tarjeta Débito)
+    ingresos_efectivo = PagoVenta.objects.filter(
+        venta__corte_caja=corte_abierto,
+        venta__activo=True,
+        venta__pagada=True,
+        metodo_pago_id=1
+    ).aggregate(total=Sum('monto'))['total'] or 0
+
+    ingresos_tarjeta = PagoVenta.objects.filter(
+        venta__corte_caja=corte_abierto,
+        venta__activo=True,
+        venta__pagada=True,
+        metodo_pago_id__in=[2, 3]  # ambos tipos de tarjeta
+    ).aggregate(total=Sum('monto'))['total'] or 0
+
+    ingresos_transferencia = PagoVenta.objects.filter(
+        venta__corte_caja=corte_abierto,
+        venta__activo=True,
+        venta__pagada=True,
+        metodo_pago_id=4  # si tienes transferencia con id=4
+    ).aggregate(total=Sum('monto'))['total'] or 0
+
+    # Serializar corte
+    corte_data = {
+        "id": corte_abierto.id,
+        "empresa_id": corte_abierto.empresa_id,
+        "personal_id": corte_abierto.personal_id,
+        "saldo_inicial": str(corte_abierto.saldo_inicial),
+        "saldo_final": str(corte_abierto.saldo_final) if corte_abierto.saldo_final is not None else None,
+        "ingresos_efectivo": str(ingresos_efectivo),
+        "ingresos_tarjeta": str(ingresos_tarjeta),
+        "ingresos_transferencia": str(ingresos_transferencia),
+        "egresos": str(corte_abierto.egresos),
+        "fecha_apertura": corte_abierto.fecha_apertura.strftime('%d/%m/%Y') if corte_abierto.fecha_apertura else None,
+        "fecha_cierre": corte_abierto.fecha_cierre.strftime('%d/%m/%Y') if corte_abierto.fecha_cierre else None,
+        "observaciones": corte_abierto.observaciones,
+        "estatus": corte_abierto.get_estatus_display(),
+    }
+
+    return JsonResponse(corte_data, safe=False)
