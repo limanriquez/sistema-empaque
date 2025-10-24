@@ -15,7 +15,7 @@
         vm.empresaId = $scope.empresaId;
         vm.nombrePersonal = $scope.nombrePersonal;
         vm.corteCajaId = $scope.corteCajaId;
-        
+
         const firebaseConfig = {
             apiKey: "AIzaSyCOmQFHQlVFPIiBUyx1k7eshNW4JM-Z-rg",
             authDomain: "signals-test-lasser.firebaseapp.com",
@@ -28,7 +28,7 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const nodo = db.ref('alertas/centro');
+        //   const nodo = db.ref('alertas/centro');
 
         const MAX_CARDS = 18;
         let alertCount = 0;
@@ -73,7 +73,8 @@
                             fecha: item.fecha || new Date().toLocaleDateString(),
                             horaCreacion: horaCreacion,
                             venta_id: item.venta_id,
-                            desglose_venta: item.desglose_venta
+                            desglose_venta: item.desglose_venta,
+                            estado: item.estado,
                         });
 
                         alertCount = Math.max(alertCount, item.id);
@@ -118,16 +119,17 @@
                 card.innerHTML = `
                     <div class="fw-bold fs-5 mb-1">Com.#${comanda.venta_id} - Ele.# ${comanda.desglose_venta || ""}</div>
                     <div class="text-secondary flex-grow-1">
-                        📍 ${comanda.zona}<br>
+                        📍 ${comanda.zona},  ${comanda.estado}<br>
                         🍽️ ${comanda.platillo}<br>
                         📅 ${comanda.fecha}<br>
                         🕒 <span class="font-monospace hora">${hora}</span><br>
-                        ⏱ <span class="font-monospace segundos">${formatTime(segundosTranscurridos)}</span>
+                        🕒 <span class="font-monospace segundos">${formatTime(segundosTranscurridos)}</span><br>
+                       
                     </div>
                     <div class="mt-2 d-flex gap-1">
-                        <button class="btn btn-primary" data-action="ver">Ver</button>
+                        <button class="btn btn-primary" data-action="ver">Estado</button>
                         <button class="btn btn-success" data-action="mover">Mover</button>
-                        <button class="btn btn-danger" data-action="eliminar">Eliminar</button>
+                        <button class="btn btn-danger" data-action="eliminar">Cancelar</button>
                     </div>
                 `;
 
@@ -136,7 +138,7 @@
                         const action = btn.dataset.action;
                         if (action === "ver") showCardID(comanda.id);
                         else if (action === "mover") moveCardWithFade(comanda.id);
-                        else if (action === "eliminar") removeCardWithFade(comanda.id);
+                        else if (action === "eliminar") modificarEstadoNotificacion(comanda.id);
                     });
                 });
             }
@@ -148,9 +150,50 @@
         // Función para mostrar ID
         // ========================
         function showCardID(id) {
-            Swal.fire({ icon: 'info', title: `🆔 Predio #${id}`, text: `ID: ${id}`, confirmButtonText: 'Cerrar' });
+            Swal.fire({
+                title: `🆔 Pedido #${id}`,
+                html: `
+            <p>Selecciona una acción:</p>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                <button id="btnPendiente" class="swal2-confirm swal2-styled" style="background-color:#ff861c;">Pendiente</button>
+                <button id="btnProceso" class="swal2-confirm swal2-styled" style="background-color:#4e73df;">En proceso</button>
+                <button id="btnTerminado" class="swal2-confirm swal2-styled" style="background-color:#1cc88a;">Terminado</button>
+            </div>
+        `,
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                allowEscapeKey: true,
+                width: 400,
+                didOpen: () => {
+                    const btnPendiente = document.getElementById('btnPendiente');
+                    const btnProceso = document.getElementById('btnProceso');
+                    const btnTerminado = document.getElementById('btnTerminado');
+
+                    btnPendiente.addEventListener('click', () => {
+                        Swal.close();
+                        marcarPendiente(id, 1);
+                    });
+                    btnProceso.addEventListener('click', () => {
+                        Swal.close();
+                        marcarProceso(id, 2);
+                    });
+                    btnTerminado.addEventListener('click', () => {
+                        Swal.close();
+                        marcarTerminado(id, 3);
+                    });
+                }
+            });
         }
 
+        function marcarPendiente(id, estado) {
+            modificarEstado(id, estado);
+        }
+        function marcarProceso(id, estado) {
+            modificarEstado(id, estado);
+        }
+        function marcarTerminado(id, estado) {
+            modificarEstado(id, estado);
+        }
         // ========================
         // Mover tarjeta con fade
         // ========================
@@ -200,10 +243,87 @@
             }, 300);
         }
 
+        function modificarEstadoNotificacion(id) {
+            Swal.fire({
+                title: '¿Cancelar pedido?',
+                text: 'Esta acción marcará el pedido como cancelado.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cancelar',
+                cancelButtonText: 'No',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    const popup = Swal.getPopup();
+                    if (popup) {
+                        popup.style.fontSize = '1.2rem';
+                        popup.style.padding = '2rem';
+                        popup.style.width = '400px';
+                    }
+
+                    const confirmBtn = Swal.getConfirmButton();
+                    const cancelBtn = Swal.getCancelButton();
+
+                    if (confirmBtn) {
+                        confirmBtn.style.fontSize = '1.5rem';
+                        confirmBtn.style.padding = '0.75rem 2rem';
+                    }
+                    if (cancelBtn) {
+                        cancelBtn.style.fontSize = '1.5rem';
+                        cancelBtn.style.padding = '0.75rem 2rem';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const inventario_json = { estado: 4 };
+                    $http({
+                        method: 'PATCH',
+                        data: inventario_json,
+                        url: "/api/v1/notificacionZona/" + id + "/"
+                    }).then(
+                        function (response) {
+                            removeCardWithFade(id);
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Cancelada',
+                                text: 'El pedido fue cancelado correctamente.',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        },
+                        function (response) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'No se pudo cancelar el pedido.'
+                            });
+                        }
+                    );
+                }
+            });
+        }
+        function modificarEstado(id, estado) {
+            const inventario_json = { estado: estado };
+            $http({
+                method: 'PATCH',
+                data: inventario_json,
+                url: "/api/v1/notificacionZona/" + id + "/"
+            }).then(
+                function (response) {
+                    getComandasPendientes();
+                },
+                function (response) {
+
+                }
+            );
+        }
+
+
         // ========================
         // Eliminar tarjeta con fade
         // ========================
         function removeCardWithFade(id) {
+            // modificarEstadoNotificacion(id);
             const card = grid.querySelector(`div[data-id='${id}']`) || carousel.querySelector(`div[data-id='${id}']`);
             if (!card) return;
 
@@ -253,6 +373,7 @@
         // }
         //});
         let lastValorMensaje = null;
+        const nodo = db.ref('alertas/' + vm.empresaId + '/');
         nodo.child('mensaje').on('value', snapshot => {
             const nuevoValor = snapshot.val();
             if (nuevoValor !== null && nuevoValor !== lastValorMensaje) {

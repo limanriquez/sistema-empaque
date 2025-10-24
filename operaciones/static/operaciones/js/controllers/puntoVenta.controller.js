@@ -51,16 +51,25 @@
         }
 
         const db = firebase.database();
-
         // Nodo fijo
-        const nodo = db.ref('alertas/centro/');
-
-        function actualizarMensaje() {
+        //      const nodo = db.ref('alertas/centro/');
+        //
+        //    function actualizarMensaje() {
+        //      const segundos = segundosDesdeMedianoche();
+        //    nodo.set({ mensaje: segundos })  // Actualiza el valor en Firebase
+        //      .then(() => console.log("Mensaje actualizado:", segundos))
+        //    .catch(err => console.error("Error al actualizar:", err));
+        // }
+        function crearAlerta() {
             const segundos = segundosDesdeMedianoche();
-            nodo.set({ mensaje: segundos })  // Actualiza el valor en Firebase
-                .then(() => console.log("Mensaje actualizado:", segundos))
-                .catch(err => console.error("Error al actualizar:", err));
+            // Referencia directa al nodo fijo
+            const nodo = db.ref('alertas/' + vm.empresaId + '/');
+
+            nodo.set({ mensaje: segundos })
+                .then(() => console.log("Alerta creada o actualizada:", segundos))
+                .catch(err => console.error("Error al crear/actualizar:", err));
         }
+
 
         function segundosDesdeMedianoche() {
             const ahora = new Date();
@@ -1165,9 +1174,10 @@
                 },
                 onClick: function () {
                     if (total > 0) {
-                        actualizarMensaje();
+                        //actualizarMensaje();
+                        crearAlerta();
                     } else {
-                        DevExpress.ui.notify("No existe comandas pora enviar", "warning", 5000);
+                        DevExpress.ui.notify("No existe comandas por enviar", "warning", 5000);
                     }
                 }
             },

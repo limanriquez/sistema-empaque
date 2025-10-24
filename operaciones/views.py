@@ -374,7 +374,7 @@ def comandasPendientes(request):
         'producto',
         'zona'
     ).filter(
-        estado=int(estado),
+        estado__lt=3,
         zona_id=int(zona_id),
         desglose_venta__venta__corte_caja_id=int(corteCaja)
     ).order_by('id')
