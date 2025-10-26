@@ -1,6 +1,15 @@
 {% extends 'base.html' %}
 {% load staticfiles %}
 {% load general_tags %}
+{% block sidebar %}{% endblock sidebar %}
+{% block personal_styles %}
+<style>
+    /* Oculta toda la barra superior */
+    .app-header {
+        display: none !important;
+    }
+</style>
+{% endblock personal_styles %}
 {% block ng_app %}
 <html class="no-js" lang="es" ng-app="operaciones.operacion"
     ng-init="empresaId={{ empresa.id }}; nombrePersonal='{{ nombre_personal|escapejs }}'; corteCajaId={{ corte_caja }}; personaId={{ corte_caja }}">
@@ -14,6 +23,26 @@
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
 
 <style>
+    #btnFullscreen {
+        position: fixed;
+        bottom: 16px;
+        /* distancia desde abajo */
+        left: 16px;
+        /* ahora pegado al borde izquierdo */
+        z-index: 9999;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #0d6efd;
+        color: white;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
     .card-like {
         border-radius: 0.5rem;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
@@ -100,9 +129,18 @@
             <div class="row" style="padding-top: 10px; padding-left: 20px; padding-right: 30px;">
                 <!-- Buscar producto -->
                 <div class="col-12 col-md-4 form-group mb-0">
-                    <span>Buscar producto:</span>
-                    <input type="text" ng-model="vm.filtro" placeholder="Filtrar por nombre, ID"
-                        class="form-control mb-2" />
+                    <div class="row g-2">
+                        <!-- Botón Home: ocupa 2/12 -->
+                        <div class="col-1" style="padding-top: 17px;">
+                            <div dx-button="vm.button.BtnHomeOptions"></div>
+                        </div>
+                        <!-- Input Buscar producto: ocupa el resto 10/12 -->
+                        <div class="col-11">
+                            <span>Buscar producto:</span>
+                            <input type="text" ng-model="vm.filtro" placeholder="Filtrar por nombre, ID"
+                                class="form-control mb-2" />
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Cliente -->
@@ -360,6 +398,7 @@
     </div>
 </div>
 
+<div id="btnFullscreen" title="Pantalla completa">⛶</div>
 {% endblock contenido %}
 
 {% block scripts_js %}
@@ -369,4 +408,27 @@
 <script type="text/javascript" src="{% static 'operaciones/js/operacion.module.js' %}"></script>
 <script type="text/javascript" src="{% static 'operaciones/js/controllers/puntoVenta.controller.js' %}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/OverlayScrollbars/2.1.0/js/OverlayScrollbars.min.js"></script>
+<script>
+    const btnFS = document.getElementById('btnFullscreen');
+    const nav = document.querySelector('.app-header.navbar');
+
+    btnFS.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            // Entrar a full screen
+            document.documentElement.requestFullscreen().catch(err => console.log(err));
+            if (nav) nav.style.display = 'none';
+        } else {
+            // Salir de full screen
+            document.exitFullscreen().catch(err => console.log(err));
+            if (nav) nav.style.display = '';
+        }
+    });
+
+    // Escuchar cambios de full screen por otros medios (F11)
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            if (nav) nav.style.display = '';
+        }
+    });
+</script>
 {% endblock scripts_js %}

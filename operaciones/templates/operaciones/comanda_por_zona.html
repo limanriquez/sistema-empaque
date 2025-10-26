@@ -1,6 +1,15 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load general_tags %}
+{% block sidebar %}{% endblock sidebar %} 
+{% block personal_styles %}
+<style>
+    /* Oculta toda la barra superior */
+    .app-header {
+        display: none !important;
+    }
+</style>
+{% endblock personal_styles %}
 {% block ng_app %}
 <html class="no-js" lang="es" ng-app="operaciones.operacion"
     ng-init="empresaId={{ empresa.id }}; nombrePersonal='{{ nombre_personal|escapejs }}'; corteCajaId={{ corte_caja }}; personaId={{ corte_caja }}">
@@ -185,11 +194,24 @@
 
 <script>
     const btnFS = document.getElementById('btnFullscreen');
+    const nav = document.querySelector('.app-header.navbar');
+
     btnFS.addEventListener('click', () => {
         if (!document.fullscreenElement) {
+            // Entrar a full screen
             document.documentElement.requestFullscreen().catch(err => console.log(err));
-            const nav = document.querySelector('.app-header.navbar');
             if (nav) nav.style.display = 'none';
+        } else {
+            // Salir de full screen
+            document.exitFullscreen().catch(err => console.log(err));
+            if (nav) nav.style.display = '';
+        }
+    });
+
+    // Escuchar cambios de full screen por otros medios (F11)
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            if (nav) nav.style.display = '';
         }
     });
 </script>

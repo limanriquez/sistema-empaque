@@ -11,7 +11,8 @@
         var gridDesgloseVentaInstance, CmbMesaInstance, BtnCrearVentaInstance, CmbClienteInstance, PopPagosInstance,
             BtnRegresarInstance, CmbMetodoPagoInstance, BtnPagarInstance, gridDesglosePagoVentaInstance, BtnImprimirInstance,
             BtnEnviarVentaInstance, BtnCancelarVentaInstance, BtnBuscarVentaInstance, gridVentasPorCorteInstance,
-            CmbCortesInstance, PopBuscarVentasInstance, BtnRegresarCortesInstance, BtnBuscarVentasInstance;
+            CmbCortesInstance, PopBuscarVentasInstance, BtnRegresarCortesInstance, BtnBuscarVentasInstance,
+            BtnHomeOptionsInstance;
 
         var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [],
             ArrayPagosPorVenta = [], ArrayVentasCorte = [], ArrayCortes = [];
@@ -1196,6 +1197,22 @@
                     modificarVenta();
                 }
             },
+            BtnHomeOptions: {
+                icon: 'fa fa-home',
+                type: 'success',
+                width: 100,
+                hint: 'Home',  // <-- texto del tooltip
+                showTooltip: true,                // <-- activa el toolti
+               // text: 'H',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnHomeOptionsInstance = e.component;
+                },
+                onClick: function () {
+                    window.location.href = '/';
+                }
+            },
+
             BtnBuscarVentaOptions: {
                 icon: 'fa fa-search',
                 type: 'success',
