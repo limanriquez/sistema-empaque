@@ -212,3 +212,34 @@ def crear_notificacion_zona(sender, instance, created, **kwargs):
         cantidad=1,  # Escalar según BOM
         estado=NotificacionZona.ESTADO_PENDIENTE
     )
+
+
+class Egreso(models.Model):
+    corte_caja = models.ForeignKey(
+        'CorteCaja',
+        on_delete=models.CASCADE,
+        related_name='detalle_egresos'
+    )
+    personal = models.ForeignKey(Personal, on_delete=models.PROTECT, related_name='egresos')
+    descripcion = models.CharField(max_length=255)
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Egreso #{self.id} - ${self.monto:.2f}"
+
+class Ingreso(models.Model):
+    corte_caja = models.ForeignKey(
+        'CorteCaja',
+        on_delete=models.CASCADE,
+        related_name='detalle_ingresos'
+    )
+    personal = models.ForeignKey(Personal, on_delete=models.PROTECT, related_name='ingresos')
+    descripcion = models.CharField(max_length=255)
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Ingreso #{self.id} - ${self.monto:.2f}"

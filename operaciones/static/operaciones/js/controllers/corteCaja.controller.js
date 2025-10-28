@@ -65,13 +65,22 @@
             // Asignar valores al $scope
             const hoy = new Date();
             hoy.setHours(0, 0, 0, 0);
-            $scope.txtNombre =  vm.nombrePersonal; //data.personal_id ? `Personal ${data.personal_id}` : '';
+            $scope.txtNombre = vm.nombrePersonal; //data.personal_id ? `Personal ${data.personal_id}` : '';
             $scope.saldoInicial = parseFloat(data.saldo_inicial || 0);
             $scope.saldoFinal = parseFloat(data.saldo_final || 0);
             $scope.ingresosEfectivo = parseFloat(data.ingresos_efectivo || 0);
             $scope.ingresosTarjeta = parseFloat(data.ingresos_tarjeta || 0);
             $scope.ingresosTransferencia = parseFloat(data.ingresos_transferencia || 0);
-            $scope.egresos = parseFloat(data.egresos || 0);
+            $scope.egresos = parseFloat(data.total_egresos || 0);
+            $scope.ingresos = parseFloat(data.total_ingresos || 0);
+            $scope.saldoFinal = $scope.saldoInicial
+                + $scope.ingresosEfectivo
+                + $scope.ingresosTarjeta
+                + $scope.ingresosTransferencia
+                + $scope.ingresos  // Aquí es "otros ingresos"
+                - $scope.egresos;
+
+   
             $scope.fechaApertura = data.fecha_apertura ? new Date(data.fecha_apertura.split('/').reverse().join('-')) : null;
             $scope.fechaCierre = hoy;
             //  $scope.fechaCierre = data.fecha_cierre ? new Date(data.fecha_cierre.split('/').reverse().join('-')) : null;
@@ -89,6 +98,7 @@
                 vm.numberBox.IngresosTarjetaOptions.value = $scope.ingresosTarjeta;
                 vm.numberBox.IngresosTransferenciaOptions.value = $scope.ingresosTransferencia;
                 vm.numberBox.EgresosOptions.value = $scope.egresos;
+                vm.numberBox.OtrosIngresosOptions.value = $scope.egresos;
             }
 
             if (vm.dateBox) {
@@ -157,6 +167,14 @@
                 format: "#,##0.00",
                 bindingOptions: { value: 'ingresosTransferencia' },
                 // onValueChanged: function (e) { $scope.ingresosTransferencia = e.value; }
+            },
+            OtrosIngresosOptions: {
+                disabled: true,
+                showSpinButtons: true,
+                min: 0,
+                format: "#,##0.00",
+                bindingOptions: { value: 'ingresos' },
+                // onValueChanged: function (e) { $scope.egresos = e.value; }
             },
             EgresosOptions: {
                 disabled: true,

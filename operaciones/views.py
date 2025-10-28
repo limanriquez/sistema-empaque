@@ -39,6 +39,34 @@ class ClientesViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+class EgresoViewSet(viewsets.ModelViewSet):
+    queryset = Egreso.objects.all()
+    serializer_class = EgresosSerializer
+
+    @action(detail=False, methods=['get'], url_path='activos')
+    def activos(self, request):
+        """
+        Endpoint GET /egresos/activos/
+        Devuelve solo los egresos con activo=True
+        """
+        activos = self.queryset.filter(activo=True)
+        serializer = self.get_serializer(activos, many=True)
+        return Response(serializer.data)
+
+class IngresoViewSet(viewsets.ModelViewSet):
+    queryset = Ingreso.objects.all()
+    serializer_class = IngresosSerializer
+
+    @action(detail=False, methods=['get'], url_path='activos')
+    def activos(self, request):
+        """
+        Endpoint GET /ingresos/activos/
+        Devuelve solo los ingresos con activo=True
+        """
+        activos = self.queryset.filter(activo=True)
+        serializer = self.get_serializer(activos, many=True)
+        return Response(serializer.data)   
+
 class VentasViewSet(viewsets.ModelViewSet):
     queryset = Ventas.objects.all()  # necesario para que el router funcione
     serializer_class = VentasSerializer
@@ -503,6 +531,16 @@ def corteCajaAbierto(request):
         metodo_pago_id=4  # si tienes transferencia con id=4
     ).aggregate(total=Sum('monto'))['total'] or 0
 
+    # Sumar ingresos activos
+    total_ingresos = corte_abierto.detalle_ingresos.filter(activo=True).aggregate(
+        total=Sum('monto')
+    )['total'] or 0
+
+    # Sumar egresos activos
+    total_egresos = corte_abierto.detalle_egresos.filter(activo=True).aggregate(
+        total=Sum('monto')
+    )['total'] or 0
+
     # Serializar corte
     corte_data = {
         "id": corte_abierto.id,
@@ -513,7 +551,8 @@ def corteCajaAbierto(request):
         "ingresos_efectivo": str(ingresos_efectivo),
         "ingresos_tarjeta": str(ingresos_tarjeta),
         "ingresos_transferencia": str(ingresos_transferencia),
-        "egresos": str(corte_abierto.egresos),
+        "total_ingresos": str(total_ingresos),             # suma de tabla Ingreso
+        "total_egresos": str(total_egresos),             # suma de tabla Egreso
         "fecha_apertura": corte_abierto.fecha_apertura.strftime('%d/%m/%Y') if corte_abierto.fecha_apertura else None,
         "fecha_cierre": corte_abierto.fecha_cierre.strftime('%d/%m/%Y') if corte_abierto.fecha_cierre else None,
         "observaciones": corte_abierto.observaciones,

@@ -12,7 +12,7 @@
             BtnRegresarInstance, CmbMetodoPagoInstance, BtnPagarInstance, gridDesglosePagoVentaInstance, BtnImprimirInstance,
             BtnEnviarVentaInstance, BtnCancelarVentaInstance, BtnBuscarVentaInstance, gridVentasPorCorteInstance,
             CmbCortesInstance, PopBuscarVentasInstance, BtnRegresarCortesInstance, BtnBuscarVentasInstance,
-            BtnHomeOptionsInstance;
+            BtnHomeOptionsInstance, BtnEgresosInstance, BtnIngresosInstance;
 
         var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [],
             ArrayPagosPorVenta = [], ArrayVentasCorte = [], ArrayCortes = [];
@@ -1203,7 +1203,7 @@
                 width: 100,
                 hint: 'Home',  // <-- texto del tooltip
                 showTooltip: true,                // <-- activa el toolti
-               // text: 'H',
+                // text: 'H',
                 disabled: false,
                 onInitialized: function (e) {
                     BtnHomeOptionsInstance = e.component;
@@ -1259,6 +1259,237 @@
                         $scope.ventas_corte_source.reload();
                     }
                     gridVentasPorCorteInstance.refresh();
+                }
+            },
+
+            BtnIngresosOptions: {
+                icon: 'fas fa-money-bill-wave',
+                type: 'success',
+                width: 125,
+                text: 'Ingresos',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnIngresosInstance = e.component;
+                },
+                onClick: function () {
+                    Swal.fire({
+                        title: '💰 Registrar Ingreso',
+                        html: `
+                            <form id="formIngreso" class="text-start" style="font-size: 1.4rem;">
+                                <div class="mb-4">
+                                    <label for="montoIngreso" class="form-label fw-semibold" style="font-size: 1.5rem;">Monto del ingreso</label>
+                                    <input id="montoIngreso" type="number" min="0" step="0.01"
+                                        class="form-control form-control-lg"
+                                        placeholder="Ej. 1500.00"
+                                        style="font-size: 1.6rem; height: 3.5rem; padding: 0.75rem 1rem;">
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="obsIngreso" class="form-label fw-semibold" style="font-size: 1.5rem;">Observación</label>
+                                    <textarea id="obsIngreso" rows="4"
+                                            class="form-control form-control-lg"
+                                            placeholder="Motivo o descripción del ingreso"
+                                            style="font-size: 1.6rem; padding: 1rem;"></textarea>
+                                </div>
+                            </form>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="fa-solid fa-floppy-disk"></i> Guardar',
+                        cancelButtonText: '<i class="fa-solid fa-xmark"></i> Cerrar',
+                        focusConfirm: false,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            const popup = Swal.getPopup();
+                            const overlay = document.querySelector('.swal2-container');
+                            if (popup) {
+                                popup.style.zIndex = '999999';
+                                popup.style.fontSize = '1.4rem';
+                                popup.style.padding = '3rem';
+                                popup.style.width = '650px';
+                                popup.style.textAlign = 'left';
+                                popup.style.borderRadius = '1rem';
+                            }
+                            if (overlay) overlay.style.zIndex = '999998';
+                            const confirmBtn = Swal.getConfirmButton();
+                            if (confirmBtn) {
+                                confirmBtn.style.fontSize = '1.3rem';
+                                confirmBtn.style.padding = '1rem 2.6rem';
+                            }
+                            const cancelBtn = Swal.getCancelButton();
+                            if (cancelBtn) {
+                                cancelBtn.style.fontSize = '1.3rem';
+                                cancelBtn.style.padding = '1rem 2.6rem';
+                            }
+                        },
+                        preConfirm: () => {
+                            const monto = parseFloat(document.getElementById('montoIngreso').value.trim());
+                            const obs = document.getElementById('obsIngreso').value.trim();
+
+                            if (!monto || monto <= 0) {
+                                Swal.showValidationMessage('⚠️ Ingrese un monto válido.');
+                                return false;
+                            }
+                            if (!obs) {
+                                Swal.showValidationMessage('⚠️ Ingrese una observación.');
+                                return false;
+                            }
+
+                            // Retornamos la promesa de $http, Swal esperará la respuesta
+                            return $http.post('/api/v1/ingreso/', {
+                                corte_caja: vm.corteCajaId,
+                                personal: vm.personaId,
+                                monto: monto,
+                                descripcion: obs
+                            }).then(response => response.data)
+                                .catch(err => {
+                                    Swal.showValidationMessage('❌ No se pudo crear el ingreso');
+                                    return false;
+                                });
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed && result.value) {
+                            const ingreso = result.value;
+                            Swal.fire({
+                                icon: 'success',
+                                title: '💾 Ingreso registrado',
+                                html: `<p style="
+                                font-size: 1.3rem; 
+                                margin-top: 0.5rem; 
+                                color: #333;
+                                line-height: 1.4;
+                                text-align: center;
+                            ">${ingreso.descripcion}</p>`,
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: true,
+                                position: 'center',
+                                background: '#f8f9fa',
+                                iconColor: '#e6772eff',  
+                                customClass: {
+                                    popup: 'shadow-2xl rounded-3xl p-5 animate__animated animate__fadeInDown',
+                                    title: 'fw-bold fs-4 text-center',
+                                    htmlContainer: 'text-center'
+                                }
+                            });
+                        }
+                    });
+
+                }
+            },
+            BtnEgresosOptions: {
+                icon: 'fas fa-money-bill-wave',
+                type: 'danger',
+                width: 125,
+                text: 'Egresos',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnEgresosInstance = e.component;
+                },
+                onClick: function () {
+                    Swal.fire({
+                        title: '💰 Registrar Egreso',
+                        html: `
+                        <form id="formEgreso" class="text-start" style="font-size: 1.4rem;">
+                            <div class="mb-4">
+                                <label for="montoEgreso" class="form-label fw-semibold" style="font-size: 1.5rem;">Monto del egreso</label>
+                                <input id="montoEgreso" type="number" min="0" step="0.01"
+                                    class="form-control form-control-lg"
+                                    placeholder="Ej. 1500.00"
+                                    style="font-size: 1.6rem; height: 3.5rem; padding: 0.75rem 1rem;">
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="obsEgreso" class="form-label fw-semibold" style="font-size: 1.5rem;">Observación</label>
+                                <textarea id="obsEgreso" rows="4"
+                                        class="form-control form-control-lg"
+                                        placeholder="Motivo o descripción del egreso"
+                                        style="font-size: 1.6rem; padding: 1rem;"></textarea>
+                            </div>
+                        </form>
+                    `,
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="fa-solid fa-floppy-disk"></i> Guardar',
+                        cancelButtonText: '<i class="fa-solid fa-xmark"></i> Cerrar',
+                        focusConfirm: false,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            const popup = Swal.getPopup();
+                            const overlay = document.querySelector('.swal2-container');
+                            if (popup) {
+                                popup.style.zIndex = '999999';
+                                popup.style.fontSize = '1.4rem';
+                                popup.style.padding = '3rem';
+                                popup.style.width = '650px';
+                                popup.style.textAlign = 'left';
+                                popup.style.borderRadius = '1rem';
+                            }
+                            if (overlay) overlay.style.zIndex = '999998';
+                            const confirmBtn = Swal.getConfirmButton();
+                            if (confirmBtn) {
+                                confirmBtn.style.fontSize = '1.3rem';
+                                confirmBtn.style.padding = '1rem 2.6rem';
+                            }
+                            const cancelBtn = Swal.getCancelButton();
+                            if (cancelBtn) {
+                                cancelBtn.style.fontSize = '1.3rem';
+                                cancelBtn.style.padding = '1rem 2.6rem';
+                            }
+                        },
+                        preConfirm: () => {
+                            const monto = parseFloat(document.getElementById('montoEgreso').value.trim());
+                            const obs = document.getElementById('obsEgreso').value.trim();
+
+                            if (!monto || monto <= 0) {
+                                Swal.showValidationMessage('⚠️ Ingrese un monto válido.');
+                                return false;
+                            }
+                            if (!obs) {
+                                Swal.showValidationMessage('⚠️ Ingrese una observación.');
+                                return false;
+                            }
+
+                            // Retornamos la promesa de $http, Swal esperará la respuesta
+                            return $http.post('/api/v1/egreso/', {
+                                corte_caja: vm.corteCajaId,
+                                personal: vm.personaId,
+                                monto: monto,
+                                descripcion: obs
+                            }).then(response => response.data)
+                                .catch(err => {
+                                    Swal.showValidationMessage('❌ No se pudo crear el egreso');
+                                    return false;
+                                });
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed && result.value) {
+                            const egreso = result.value;
+                            // Mostramos mensaje central de éxito con la observación
+                            Swal.fire({
+                                icon: 'success',
+                                title: '💾 Egreso registrado',
+                                html: `<p style="
+                                    font-size: 1.3rem; 
+                                    margin-top: 0.5rem; 
+                                    color: #333;
+                                    line-height: 1.4;
+                                ">${egreso.descripcion}</p>`,
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: true,
+                                position: 'center',
+                                background: '#ebebebff',      // verde muy suave
+                                iconColor: '#e6772eff',       // verde éxito
+                                customClass: {
+                                    popup: 'shadow-2xl rounded-3xl p-5 animate__animated animate__fadeInDown',
+                                    title: 'fw-bold fs-4 text-center',
+                                    htmlContainer: 'text-center'
+                                }
+                            });
+                        }
+                    });
+
                 }
             },
             BtnBuscarVentasOptions: {

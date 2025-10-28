@@ -28,4 +28,13 @@ class CorteCajaSerializer(serializers.ModelSerializer):
     class Meta:
         model = CorteCaja
         fields = '__all__'
+
+class EgresosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Egreso
+        fields = '__all__'
         
+class IngresosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ingreso
+        fields = '__all__'

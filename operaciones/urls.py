@@ -9,6 +9,8 @@ router = DefaultRouter()
 router.register('clientes',ClientesViewSet)
 router.register('ventas',VentasViewSet)
 router.register('pagoVenta',PagoVentaViewSet)
+router.register('egreso',EgresoViewSet)
+router.register('ingreso', IngresoViewSet)
 router.register('notificacionZona',NotificacionZonaSerializerViewSet)
 
 
