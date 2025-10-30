@@ -11,16 +11,14 @@
 
     // Definición del controlador
     function CorteCajaController($http, $scope, $filter) {
-        var BtnConsultarInstance, BtnCerrarInstance, BtnBuscarImprimirInstance;
-        var vm = this;
+        let BtnConsultarInstance, BtnCerrarInstance, BtnBuscarImprimirInstance, ObservacionesInstance;
+        let vm = this;
         $scope.modoEdicion = false;
 
         vm.empresaId = $scope.empresaId;
         vm.nombrePersonal = $scope.nombrePersonal;
         vm.corteCajaId = $scope.corteCajaId;
         getCorteCajaAbierto();
-
-        console.log(vm.corteCajaId);
 
         function getCorteCajaAbierto() {
             const params = new URLSearchParams({
@@ -42,6 +40,9 @@
                             text: response.data.advertencia,
                             confirmButtonText: 'Aceptar'
                         });
+                        BtnCerrarInstance.option("disabled", true);
+                        BtnBuscarImprimirInstance.option("disabled", true);
+                        ObservacionesInstance.option("disabled", true);
                     } else {
                         // Datos del corte abierto
                         $scope.corteCajaAbierto = response.data;
@@ -57,7 +58,67 @@
                         text: 'No se pudo obtener el corte de caja abierto.',
                         confirmButtonText: 'Aceptar'
                     });
-                    console.error("Error al obtener el corte de caja abierto:", error);
+                }
+            );
+        }
+
+        function modificarCorteCaja() {
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            const fechaCierreISO = hoy.toISOString().slice(0, 19);
+            const corteCajaData = {
+                saldo_final: $scope.saldoFinal,
+                ingresos_efectivo: $scope.ingresosEfectivo,
+                ingresos_tarjeta: $scope.ingresosTarjeta,
+                ingresos_transferencia: $scope.ingresosTransferencia,
+                otros_ingresos: $scope.ingresos,
+                egresos: $scope.egresos,
+                fecha_cierre: fechaCierreISO,
+                estatus: 2 // 2 = CERRADO
+            };
+
+            $http({
+                method: 'PATCH',
+                url: `/api/v1/corteCaja/${$scope.corteCajaId}/`,
+                data: corteCajaData
+            }).then(
+                function (response) {
+                    BtnCerrarInstance.option("disabled", true);
+                    BtnBuscarImprimirInstance.option("disabled", false);
+                    ObservacionesInstance.option("disabled", true);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Corte cerrado con éxito 🚀',
+                        html: `
+                            <div style="font-size: 15px; margin-top: 6px;">
+                                El corte de caja se registró correctamente.<br>
+                                <b>Todo listo para continuar con la operación.</b>
+                            </div>
+                        `,
+                        timer: 5000,               // se cierra automáticamente
+                        timerProgressBar: true,     // barra de progreso
+                        showConfirmButton: false,   // ❌ quita el botón "OK"
+                        allowOutsideClick: false,   // ❌ no cerrar al hacer clic fuera
+                        allowEscapeKey: false,      // ❌ no cerrar con Esc
+                        background: 'linear-gradient(145deg, #ffffff, #fef3c7)', // blanco + dorado sutil
+                        color: '#1e293b',           // texto elegante
+                        iconColor: '#f59e0b',       // dorado elegante
+                        showClass: { popup: 'animate__animated animate__fadeInDown' },
+                        hideClass: { popup: 'animate__animated animate__fadeOutUp' },
+                        customClass: { popup: 'rounded-4 shadow-lg border border-amber-200' },
+                        didOpen: () => {
+                            const popup = Swal.getPopup();
+                            popup.style.boxShadow = '0 0 25px rgba(245, 158, 11, 0.3)'; // brillo dorado sutil
+                        }
+                    });
+                },
+                function (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Se genero un error al cerrar el corte de caja.',
+                        confirmButtonText: 'Aceptar'
+                    });
                 }
             );
         }
@@ -77,38 +138,18 @@
                 + $scope.ingresosEfectivo
                 + $scope.ingresosTarjeta
                 + $scope.ingresosTransferencia
-                + $scope.ingresos  // Aquí es "otros ingresos"
+                + $scope.ingresos
                 - $scope.egresos;
 
-   
+            $scope.totalCaja = $scope.saldoInicial
+                + $scope.ingresosEfectivo
+                + $scope.ingresos
+                - $scope.egresos;
+
             $scope.fechaApertura = data.fecha_apertura ? new Date(data.fecha_apertura.split('/').reverse().join('-')) : null;
             $scope.fechaCierre = hoy;
             //  $scope.fechaCierre = data.fecha_cierre ? new Date(data.fecha_cierre.split('/').reverse().join('-')) : null;
-            $scope.observaciones = data.observaciones || '';
-
-            // Actualizar DevExtreme manually si es necesario
-            if (vm.textBox) {
-                vm.textBox.TxtNombreOptions.value = $scope.txtNombre;
-            }
-
-            if (vm.numberBox) {
-                vm.numberBox.SaldoInicialOptions.value = $scope.saldoInicial;
-                vm.numberBox.SaldoFinalOptions.value = $scope.saldoFinal;
-                vm.numberBox.IngresosEfectivoOptions.value = $scope.ingresosEfectivo;
-                vm.numberBox.IngresosTarjetaOptions.value = $scope.ingresosTarjeta;
-                vm.numberBox.IngresosTransferenciaOptions.value = $scope.ingresosTransferencia;
-                vm.numberBox.EgresosOptions.value = $scope.egresos;
-                vm.numberBox.OtrosIngresosOptions.value = $scope.egresos;
-            }
-
-            if (vm.dateBox) {
-                vm.dateBox.FechaAperturaOptions.value = $scope.fechaApertura;
-                vm.dateBox.FechaCierreOptions.value = $scope.fechaCierre;
-            }
-
-            if (vm.textArea) {
-                vm.textArea.ObservacionesOptions.value = $scope.observaciones;
-            }
+            //  $scope.observaciones = data.observaciones || '';
         }
         vm.textBox = {
             TxtNombreOptions: {
@@ -183,6 +224,14 @@
                 format: "#,##0.00",
                 bindingOptions: { value: 'egresos' },
                 // onValueChanged: function (e) { $scope.egresos = e.value; }
+            },
+            TotalCajaOptions: {
+                disabled: true,
+                showSpinButtons: true,
+                min: 0,
+                format: "#,##0.00",
+                bindingOptions: { value: 'totalCaja' },
+                // onValueChanged: function (e) { $scope.egresos = e.value; }
             }
         };
         vm.dateBox = {
@@ -207,6 +256,9 @@
                 disabled: false,
                 height: 90,
                 bindingOptions: { value: 'observaciones' },
+                onInitialized: function (e) {
+                    ObservacionesInstance = e.component;
+                },
                 onValueChanged: function (e) {
                     // $scope.observaciones = e.value;
                 }
@@ -236,6 +288,7 @@
                     BtnCerrarInstance = e.component;
                 },
                 onClick: function () {
+                    modificarCorteCaja();
                     // cerrarCorteCaja();
                 }
             },
@@ -244,7 +297,7 @@
                 type: 'default',
                 width: 135,
                 text: 'Imprimir',
-                disabled: false,
+                disabled: true,
                 onInitialized: function (e) {
                     BtnBuscarImprimirInstance = e.component;
                 },

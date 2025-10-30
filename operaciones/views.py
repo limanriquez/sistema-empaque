@@ -25,6 +25,11 @@ from inventario.permissions import IsAdminOrReadOnly
 from authentication.decoradores import require_personal
 
 
+
+class CorteCajaViewSet(viewsets.ModelViewSet):
+    queryset = CorteCaja.objects.all()
+    serializer_class = CorteCajaSerializer
+
 class ClientesViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
     serializer_class = ClientesSerializer
@@ -195,6 +200,30 @@ def punto_de_venta(request):
 
     return render(request, 'operaciones/punto_venta.html', {
         'title': "Punto de venta",
+        'empresa': empresa,
+        'empresa_id':empresa.id,
+        'corte_caja':corte_abierto.id,
+        'personal_id':user.id,
+        'nombre_personal': f"{user.nombre} {user.apellido_paterno} {user.apellido_materno}"
+    })
+
+@login_required()
+@require_personal
+def punto_de_venta_movil(request):
+    user = request.user.personal
+    empresa = user.empresa
+    # Verificar si el usuario tiene un corte abierto
+    corte_abierto = CorteCaja.objects.filter(
+        estatus = 1,
+        empresa = empresa.id
+    ).first()
+    if not corte_abierto:
+        messages.warning(request, "No tienes un corte de caja abierto. Ábrelo en el administrador.")
+        # Redirige directamente a la vista de agregar CorteCaja en el admin
+        return redirect(reverse('admin:%s_%s_add' % (CorteCaja._meta.app_label, CorteCaja._meta.model_name)))
+
+    return render(request, 'operaciones/punto_venta_movil.html', {
+        'title': "Punto de venta movil",
         'empresa': empresa,
         'empresa_id':empresa.id,
         'corte_caja':corte_abierto.id,

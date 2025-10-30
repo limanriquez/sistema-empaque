@@ -37,7 +37,7 @@
                 <div class="dx-fieldset-header" style="margin-bottom: 5px;">Corte de caja</div>
             </div>
         </div>
-        <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+        <div class="rowdgr" style="margin-top: 20px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
             <!-- Fila 1: Nombre y apellidos -->
             <div class="row g-3 py-2 px-3 align-items-end">
                 <div class="col-12 col-md-4">
@@ -47,22 +47,22 @@
 
                 <div class="col-6 col-md-2">
                     <label for="saldoInicial" class="form-label fw-semibold">Saldo inicial:</label>
-                    <div dx-number-box="vm.numberBox.SaldoInicialOptions" id="saldoInicial"></div>
+                    <div dx-number-box="vm.numberBox.SaldoInicialOptions" ></div>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <label for="saldoFinal" class="form-label fw-semibold">Saldo final:</label>
-                    <div dx-number-box="vm.numberBox.SaldoFinalOptions" id="saldoFinal"></div>
+                    <div dx-number-box="vm.numberBox.SaldoFinalOptions" ></div>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <label for="fechaApertura" class="form-label fw-semibold">Fecha apertura:</label>
-                    <div dx-date-box="vm.dateBox.FechaAperturaOptions" id="fechaApertura"></div>
+                    <div dx-date-box="vm.dateBox.FechaAperturaOptions" ></div>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <label for="fechaCierre" class="form-label fw-semibold">Fecha cierre:</label>
-                    <div dx-date-box="vm.dateBox.FechaCierreOptions" id="fechaCierre"></div>
+                    <div dx-date-box="vm.dateBox.FechaCierreOptions" ></div>
                 </div>
             </div>
 
@@ -70,31 +70,32 @@
             <div class="row g-3 py-2 px-3 align-items-end">
                 <div class="col-6 col-md-2">
                     <label for="ingEfectivo" class="form-label fw-semibold">Ingresos efectivo:</label>
-                    <div dx-number-box="vm.numberBox.IngresosEfectivoOptions" id="ingEfectivo"></div>
+                    <div dx-number-box="vm.numberBox.IngresosEfectivoOptions" ></div>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <label for="ingTarjeta" class="form-label fw-semibold">Ingresos tarjeta:</label>
-                    <div dx-number-box="vm.numberBox.IngresosTarjetaOptions" id="ingTarjeta"></div>
+                    <div dx-number-box="vm.numberBox.IngresosTarjetaOptions" ></div>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <label for="ingTransferencia" class="form-label fw-semibold">Ingresos transferencia:</label>
-                    <div dx-number-box="vm.numberBox.IngresosTransferenciaOptions" id="ingTransferencia"></div>
+                    <div dx-number-box="vm.numberBox.IngresosTransferenciaOptions" ></div>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <label for="otrosIngresos" class="form-label fw-semibold">Otros ingresos:</label>
-                    <div dx-number-box="vm.numberBox.OtrosIngresosOptions" id="otrosIngresos"></div>
+                    <div dx-number-box="vm.numberBox.OtrosIngresosOptions" ></div>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <label for="egresos" class="form-label fw-semibold">Egresos:</label>
-                    <div dx-number-box="vm.numberBox.EgresosOptions" id="egresos"></div>
+                    <div dx-number-box="vm.numberBox.EgresosOptions"></div>
                 </div>
 
-                <div class="col-6 col-md-2 d-flex justify-content-center align-items-center">
-                    <!-- Aquí puedes poner un botón de acción o dejar vacío si quieres -->
+                 <div class="col-6 col-md-2">
+                    <label for="totalCaja" class="form-label fw-semibold">Efectivo en Caja:</label>
+                    <div dx-number-box="vm.numberBox.TotalCajaOptions"></div>
                 </div>
             </div>
             <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">

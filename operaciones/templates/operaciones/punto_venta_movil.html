@@ -1,0 +1,440 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load general_tags %}
+{% block sidebar %}{% endblock sidebar %}
+{% block personal_styles %}
+<style>
+    /* Oculta toda la barra superior */
+    .app-header {
+        display: none !important;
+    }
+</style>
+{% endblock personal_styles %}
+{% block ng_app %}
+<html class="no-js" lang="es" ng-app="operaciones.operacion"
+    ng-init="empresaId={{ empresa.id }}; nombrePersonal='{{ nombre_personal|escapejs }}'; corteCajaId={{ corte_caja }}; personaId={{ corte_caja }}">
+{% endblock ng_app %}
+{% block head_title %} {{ title }} {% endblock head_title %}
+
+{% block contenido %}
+
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/alertify.min.css' %}" />
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/themes/default.min.css' %}" />
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
+
+<style>
+    #btnFullscreen {
+        position: fixed;
+        bottom: 16px;
+        /* distancia desde abajo */
+        left: 16px;
+        /* ahora pegado al borde izquierdo */
+        z-index: 9999;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #0d6efd;
+        color: white;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-like {
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        color: #333;
+        border: 1px solid #ddd;
+        padding: 15px;
+        min-height: 100px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        text-align: center;
+        background-color: white;
+        transition: box-shadow 0.3s ease;
+        cursor: pointer;
+        /* Indica que es clickeable */
+    }
+
+    .card-like:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .scroll-card-grid {
+        max-height: calc(4 * 130px);
+        /* 4 filas de altura aprox */
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 15px;
+    }
+
+    /* Agrego padding bottom al contenedor para que no tape el párrafo fijo */
+    div[ng-controller="PanelController as vm"] {
+        padding-bottom: 15vh;
+    }
+
+    /* Párrafo fijo abajo */
+    .fixed-bottom-paragraph {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 9vh;
+        /* Cambiar este valor para el ancho de la barra de abajo */
+        background-color: #dedede;
+        border-top: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0px;
+        /*box-sizing: border-box;
+        z-index: 1050;*/
+    }
+
+    .fixed-bottom-paragraph p {
+        margin: 0;
+        color: #666;
+        text-align: center;
+        font-size: 1rem;
+    }
+
+    /* Nuevo div */
+    .mi-nuevo-div {
+        margin-top: 15px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        background-color: #fafafa;
+        font-weight: 500;
+        text-align: center;
+    }
+</style>
+
+<div ng-controller="PuntoVenta as vm">
+    {% initial_loader %}
+    <div class="content dx-viewport" {% initial_loader_hide %}>
+        <!-- Contenedor fila que contiene columna 8 + columna 4 -->
+
+        <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 5px;">
+            <div class="row" style="padding-top: 10px; padding-left: 20px; padding-right: 30px;">
+                <!-- Buscar producto -->
+                <div class="col-12 col-md-4 form-group mb-0">
+                    <div class="row g-2">
+                        <!-- Botón Home: ocupa 1/12 -->
+                        <div class="col-1" style="padding-top: 17px;">
+                            <div dx-button="vm.button.BtnHomeOptions"></div>
+                        </div>
+
+                        <!-- Input Buscar producto: ocupa 11/12 -->
+                        <div class="col-11">
+                            <span>Buscar producto:</span>
+                            <input type="text" ng-model="vm.filtro" placeholder="Filtrar por nombre, ID"
+                                class="form-control mb-2" />
+                        </div>
+                    </div>
+
+                    <!-- Nueva fila: Cliente y Mesa -->
+                    <div class="row g-2 mt-2">
+                        <!-- Cliente -->
+                        <div class="col-6">
+                            <span>Cliente:</span>
+                            <div dx-lookup="vm.lookup.CmbClienteOptions"></div>
+                        </div>
+
+                        <!-- Mesa -->
+                        <div class="col-6">
+                            <span>Mesa:</span>
+                            <div dx-lookup="vm.lookup.CmbMesaOptions"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="col-12 col-md-4 form-group mt-3 d-flex flex-wrap gap-2" style="padding-top: 10px;">
+                    <div dx-button="vm.button.BtnCrearVentaOptions"></div>
+                    <div dx-button="vm.button.BtnBuscarVentaOptions"></div>
+                    <div dx-button="vm.button.BtnCancelarVentaOptions"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center" style="margin-top:15px;">
+
+            <!-- Columna 8: listado o filtrado -->
+            <div class="col-md-6">
+
+                <!-- Mostrar listado por categorías si NO hay filtro -->
+                <div ng-if="!vm.filtro || vm.filtro === ''">
+
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs">
+                        <li ng-repeat="cat in vm.categorias" ng-class="{active: vm.categoriaActiva === cat.id}">
+                            <a href="" ng-click="vm.setCategoria(cat.id)">
+                                {[{cat.nombre}]} - {[{cat.productos.length}]}
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Contenido por categoría -->
+                    <div class="tab-content" style="margin-top:15px;">
+                        <div class="tab-pane fade" ng-repeat="cat in vm.categorias"
+                            ng-class="{'active': vm.categoriaActiva === cat.id, 'in': vm.categoriaActiva === cat.id}"
+                            ng-show="vm.categoriaActiva === cat.id">
+                            <div class="scroll-card-grid">
+                                <div class="grid">
+                                    <div class="card-like" ng-repeat="producto in cat.productos"
+                                        ng-style="{'background-color': producto.color}"
+                                        ng-click="vm.mostrarAlertId(producto.id)">
+                                        <!--  <img ng-src="https://picsum.photos/150" alt="{{producto.nombre}}"
+                                            style="width:100%; height:auto; border-radius:5px; margin-bottom:5px;" />-->
+                                        <strong>{[{producto.nombre}]}</strong><br />
+                                        ID: {[{producto.id}]}<br />
+                                        Empresa: {[{producto.empresa}]}<br />
+                                        Precio $: {[{producto.precio}]}
+                                    </div>
+
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Mostrar listado filtrado si hay filtro -->
+                <div ng-if="vm.filtro && vm.filtro !== ''">
+                    <div class="scroll-card-grid">
+                        <div class="grid">
+                            <div class="card-like" ng-repeat="producto in vm.prediosFiltrados() track by producto.id"
+                                ng-style="{'background-color': producto.color || '#f0f0f0'}"
+                                ng-click="vm.mostrarAlertId(producto.id)">
+                                <!--    <img ng-src="https://picsum.photos/150" alt="{{producto.nombre}}"
+                                    style="width:100%; height:auto; border-radius:5px; margin-bottom:5px;" />-->
+                                <strong>{[{producto.nombre}]} -${[{producto.precio}]}</strong><br />
+                                ID: {[{producto.id}]}<br />
+                                Empresa: {[{producto.empresa}]}<br />
+                                Precio $: {[{producto.precio}]}
+                            </div>
+                        </div>
+                    </div>
+                    <div ng-if="vm.prediosFiltrados().length === 0" class="col-12 text-center text-muted"
+                        style="margin-top: 15px;">
+                        No se encontraron predios que coincidan con el filtro.
+                    </div>
+                </div>
+
+                <!-- NUEVO DIV agregado justo debajo del listado o filtrado dentro de col-md-8 -->
+                <div class="mi-nuevo-div" style="height: 120px">
+                    Aquí va tu nuevo contenido o funcionalidad justo debajo del listado/filtrado.
+                </div>
+
+            </div>
+
+            <!-- Columna 4: filtro + grid SIEMPRE visibles -->
+            <div class="col-md-6">
+                <!-- Contenido de los tab de ventas -->
+                <ul class="nav nav-tabs">
+                    <li ng-repeat="venta in ventas" ng-class="{active: ventaActiva === venta}">
+                        <a href="" ng-click="setVentaActiva(venta); consultarVenta(venta)">
+                            {[{ venta }]}
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Contenido mínimo para cada venta -->
+                <div class="tab-content" style="margin-top:15px;">
+                    <div class="tab-pane fade" ng-repeat="venta in ventas"
+                        ng-class="{'active': ventaActiva === venta, 'in': ventaActiva === venta}"
+                        ng-show="ventaActiva === venta">
+                        <p>Actualmente se encuenta la venta seleccionada No. : {[{ venta }]}</p>
+                    </div>
+                </div>
+                <!-- Contenido de los tab de ventas-->
+
+                <div class="row" style="margin-left: 0px; margin-right: 0px;" id="gridSiniestros">
+                    <div class="rowdgr" style="margin-top: 0px; padding: 5px 20px 5px 30px; margin-bottom: 10px;">
+                        <div class="row" style="padding-right: 15px; height: 530px; overflow-y: auto;">
+                            <div dx-data-grid="vm.grids.gridDesgloseventaOptions" style="height: 620px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!-- Párrafo fijo abajo -->
+
+        <div class="fixed-bottom-paragraph">
+            <div class="container-fluid" style="padding: 0px;">
+                <div class="row w-100 text-center" style="text-align: right;">
+                    <div class="col-3">
+                        <div dx-button="vm.button.BtnIngresosOptions" style="margin: 0;"></div>
+                        <div dx-button="vm.button.BtnEgresosOptions" style="margin: 0;"></div>
+                    </div>
+                    <div class="col-3">
+                        Columna 2
+                    </div>
+                    <div class="col-3">Columna 3</div>
+                    <div class="col-3" style="padding: 0px;">
+                        <div class="row w-100">
+                            <div class="col-4">
+                                <span>Sub-Total</span>
+                                <div dx-number-box="vm.numberBox.NbrSubtotalOptions"></div>
+                            </div>
+                            <div class="col-4">
+                                <span>Descuento</span>
+                                <div dx-number-box="vm.numberBox.NbrDescuentoOptions"></div>
+                            </div>
+                            <div class="col-4">
+                                <span>Total</span>
+                                <div dx-number-box="vm.numberBox.NbrTotalOptions"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div dx-popup="vm.popups.popBuscarVentasOptions">
+
+            <!-- Fila 1 dividida en 3 columnas -->
+            <div class="rowdgr" style="margin-top: 15px; padding: 0 20px 20px 20px;">
+                <div class="row" style="padding: 25px 15px;">
+                    <!-- Columna 1: Botón -->
+                    <div style="flex: 0 0 150px;">
+                        <div dx-button="vm.button.BtnRegresarCortesOptions" style="margin: 0;"></div>
+                    </div>
+
+                    <!-- Columna 2: Lookup / Combo Corte de Caja -->
+                    <div style="display: flex; align-items: center; gap: 10px; flex: 0 0 350px;">
+                        <label style="font-weight: 600; margin: 0;">Corte de Caja:</label>
+                        <div dx-lookup="vm.lookup.CmbCortesOptions" style="flex: 1;"></div>
+                    </div>
+
+                    <!-- Columna 3: espacio vacío -->
+                    <div style="flex: 0 0 150px;">
+                        <div dx-button="vm.button.BtnBuscarVentasOptions" style="margin: 0;"></div>
+                    </div>
+
+                </div>
+            </div>
+            <!-- Grid de ventas -->
+            <div class="rowdgr" style="margin-top: 15px; padding: 0 20px 20px 20px;">
+                <div class="row" style="padding: 5px 15px;">
+                    <div dx-data-grid="vm.grids.gridVentasPorCorteOptions"></div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div dx-popup="vm.popups.popPagosOptions">
+            <div dx-button="vm.button.BtnRegresarOptions"
+                style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+
+            <div dx-button="vm.button.BtnPagarOptions" style="margin-top: 0px; text-align: left; margin-bottom: 0px;">
+            </div>
+
+            <div dx-button="vm.button.BtnImprimirOptions"
+                style="margin-top: 0px; text-align: left; margin-bottom: 0px;">
+            </div>
+
+            <div class="rowdgr" style="margin-top: 10px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 10px;">
+                <div class="row w-100 text-center" style="text-align: right;">
+                    <div class="col-md-4" style="padding-left: 20px;">
+                        <span>Sub-Total</span>
+                        <div dx-number-box="vm.numberBox.NbrCobroSubtotalOptions"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <span>Descuento</span>
+                        <div dx-number-box="vm.numberBox.NbrCobroDescuentoOptions"></div>
+                    </div>
+                    <div class="col-md-4" style="padding: 0px;">
+                        <span>Total</span>
+                        <div dx-number-box="vm.numberBox.NbrCobroTotalOptions"></div>
+                    </div>
+                </div>
+
+                <div class="row w-100" style="text-align: left; padding-top: 10px;">
+                    <div class="col-md-4" style="padding-left: 20px;">
+
+                    </div>
+                    <div class="col-md-4">
+                        <span>Pendiente de Pago</span>
+                        <div dx-number-box="vm.numberBox.NbrCobroPendienteOptions"></div>
+                    </div>
+                    <div class="col-md-4" style="padding: 0px;">
+                        <span>Pagado</span>
+                        <div dx-number-box="vm.numberBox.NbrCobroPagadoOptions"></div>
+                    </div>
+                </div>
+
+                <div class="row w-100" style="text-align: left; padding-top: 10px;">
+                    <div class="col-md-4" style="padding-left: 20px;">
+                        <span>Metodo de pago:</span>
+                        <div dx-lookup="vm.lookup.CmbMetodoPagoOptions"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <span>Pago</span>
+                        <div dx-number-box="vm.numberBox.NbrCobroPagoOptions"></div>
+                    </div>
+                    <div class="col-md-4" style="padding: 0px;">
+                        <span>Cambio</span>
+                        <div dx-number-box="vm.numberBox.NbrCobroCambioOptions"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="rowdgr" style="margin-top: 15px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 20px;">
+                <div class="row" style="padding-top: 5px; padding-left: 0px;padding-left: 15px; padding-right: 15px;">
+                    <div dx-data-grid="vm.grids.gridDesglosePagoVentaOptions"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="btnFullscreen" title="Pantalla completa">⛶</div>
+{% endblock contenido %}
+
+{% block scripts_js %}
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script type="text/javascript" src="{% static 'javascripts/inventarios.config.js' %}"></script>
+<script type="text/javascript" src="{% static 'operaciones/js/operacion.module.js' %}"></script>
+<script type="text/javascript" src="{% static 'operaciones/js/controllers/puntoVenta.controller.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OverlayScrollbars/2.1.0/js/OverlayScrollbars.min.js"></script>
+<script>
+    const btnFS = document.getElementById('btnFullscreen');
+    const nav = document.querySelector('.app-header.navbar');
+
+    btnFS.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            // Entrar a full screen
+            document.documentElement.requestFullscreen().catch(err => console.log(err));
+            if (nav) nav.style.display = 'none';
+        } else {
+            // Salir de full screen
+            document.exitFullscreen().catch(err => console.log(err));
+            if (nav) nav.style.display = '';
+        }
+    });
+
+    // Escuchar cambios de full screen por otros medios (F11)
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            if (nav) nav.style.display = '';
+        }
+    });
+</script>
+{% endblock scripts_js %}

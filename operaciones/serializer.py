@@ -38,3 +38,10 @@ class IngresosSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingreso
         fields = '__all__'
+
+class IngresosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ingreso
+        fields = '__all__'
+
+

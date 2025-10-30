@@ -28,6 +28,7 @@ class CorteCaja(models.Model):
     ingresos_efectivo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     ingresos_tarjeta = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     ingresos_transferencia = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    otros_ingresos = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     fecha_apertura = models.DateTimeField(default=timezone.now)
     fecha_cierre = models.DateTimeField(null=True, blank=True)
     egresos = models.DecimalField(max_digits=10, decimal_places=2, default=0)

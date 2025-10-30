@@ -12,6 +12,8 @@ router.register('pagoVenta',PagoVentaViewSet)
 router.register('egreso',EgresoViewSet)
 router.register('ingreso', IngresoViewSet)
 router.register('notificacionZona',NotificacionZonaSerializerViewSet)
+router.register('corteCaja',CorteCajaViewSet)
+
 
 
 app_name = 'operaciones'
@@ -21,6 +23,7 @@ urlpatterns = [
     path('comandaPorZona/', comandaPorZona, name="comandaPorZona"),
     path('imprimir_ticket_venta/', imprimirTicketVenta, name="imprimirTicketVenta"),
     path('punto_de_venta/', punto_de_venta, name="punto_de_venta"),
+     path('punto_de_venta_movil/', punto_de_venta_movil, name="punto_de_venta_movil"),
     path('existeTelefono/<str:telefono>/', existeTelefono, name="existeTelefono"),
     path('ventas_abiertas_corte_empresas/', ventasAbiertasCorteEmpresas, name='ventasAbiertasCorteEmpresas'),
     path('transaccion_venta_producto/', transaccionVentaProducto, name='transaccionVentaProducto'),
