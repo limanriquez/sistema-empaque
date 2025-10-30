@@ -1,19 +1,34 @@
 {% load staticfiles %}
 
-	<script type="text/javascript" src="{% static 'bower_components/jquery/dist/jquery.min.js' %}"></script>
-	<script type="text/javascript" src="{% static 'javascripts/modernizr-2.8.3.min.js' %}"></script>
-	<script type="text/javascript" src="{% static 'javascripts/plugins.js' %}"></script>
-	<script type="text/javascript" src="{% static 'bower_components/bootstrap/dist/js/bootstrap.js' %}"></script>
-	<script type="text/javascript" src="{% static 'bower_components/bootstrap-submenu/dist/js/bootstrap-submenu.js' %}"></script>
-	<script type="text/javascript" src="{% static 'bower_components/angular/angular.min.js' %}"></script>
-	<script type="text/javascript" src="{% static 'bower_components/angular-route/angular-route.min.js' %}"></script>
-	<script type="text/javascript" src="{% static 'bower_components/angular-sanitize/angular-sanitize.min.js' %}"></script>
-	<script type="text/javascript" src="{% static 'bower_components/angular-animate/angular-animate.min.js' %}"></script>
-	<script type="text/javascript" src="{% static 'devex/js/jszip.min.js' %}"></script>
-	<script type="text/javascript" src="{% static 'javascripts/messages/es.js' %}"></script>
-	<script type="text/javascript" src="{% static 'devex/js/dx.all.js' %}"></script>	
-	<script type="text/javascript" src="{% static 'devex/js/angular-locale_es-mx.js' %}"></script>
-	<script type="text/javascript" src="{% static 'bower_components/angular-bootstrap/ui-bootstrap-tpls.js' %}"></script>
-	<script type="text/javascript" src="{% static 'bower_components/alertify-js/build/alertify.min.js' %}"></script>
-	<script type="text/javascript" src="{% static 'bower_components/vue/vue.global.js' %}"></script>
-	<!--<script src="//code.jivosite.com/widget/YTZpiwJHZ0" async></script>-->
+<script type="text/javascript" src="{% static 'bower_components/jquery/dist/jquery.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'javascripts/modernizr-2.8.3.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'javascripts/plugins.js' %}"></script>
+<script type="text/javascript" src="{% static 'bower_components/bootstrap/dist/js/bootstrap.js' %}"></script>
+<script type="text/javascript"
+    src="{% static 'bower_components/bootstrap-submenu/dist/js/bootstrap-submenu.js' %}"></script>
+<script type="text/javascript" src="{% static 'bower_components/angular/angular.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'bower_components/angular-route/angular-route.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'bower_components/angular-sanitize/angular-sanitize.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'bower_components/angular-animate/angular-animate.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'devex/js/jszip.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'javascripts/messages/es.js' %}"></script>
+<script type="text/javascript" src="{% static 'devex/js/dx.all.js' %}"></script>
+<script type="text/javascript" src="{% static 'devex/js/angular-locale_es-mx.js' %}"></script>
+<script type="text/javascript" src="{% static 'bower_components/angular-bootstrap/ui-bootstrap-tpls.js' %}"></script>
+<script type="text/javascript" src="{% static 'bower_components/alertify-js/build/alertify.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'bower_components/vue/vue.global.js' %}"></script>
+
+<script>
+    $(document).ready(function () {
+        var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            $('#menu-pc').hide();
+            $('#menu-movil').show();
+        } else {
+            $('#menu-pc').show();
+            $('#menu-movil').hide();
+        }
+    });
+</script>
+<!--<script src="//code.jivosite.com/widget/YTZpiwJHZ0" async></script>-->
