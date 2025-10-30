@@ -75,7 +75,7 @@
 
     .grid {
         display: grid;
-        grid-template-columns: repeat(6, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 15px;
     }
 
@@ -130,34 +130,31 @@
                 <!-- Buscar producto -->
                 <div class="col-12 col-md-4 form-group mb-0">
                     <div class="row g-2">
-                        <!-- Botón Home: ocupa 1/12 -->
+                        <!-- Botón Home: ocupa 2/12 -->
                         <div class="col-1" style="padding-top: 17px;">
                             <div dx-button="vm.button.BtnHomeOptions"></div>
                         </div>
-
-                        <!-- Input Buscar producto: ocupa 11/12 -->
+                        <!-- Input Buscar producto: ocupa el resto 10/12 -->
                         <div class="col-11">
                             <span>Buscar producto:</span>
                             <input type="text" ng-model="vm.filtro" placeholder="Filtrar por nombre, ID"
                                 class="form-control mb-2" />
                         </div>
                     </div>
-
-                    <!-- Nueva fila: Cliente y Mesa -->
-                    <div class="row g-2 mt-2">
-                        <!-- Cliente -->
-                        <div class="col-6">
-                            <span>Cliente:</span>
-                            <div dx-lookup="vm.lookup.CmbClienteOptions"></div>
-                        </div>
-
-                        <!-- Mesa -->
-                        <div class="col-6">
-                            <span>Mesa:</span>
-                            <div dx-lookup="vm.lookup.CmbMesaOptions"></div>
-                        </div>
-                    </div>
                 </div>
+
+                <!-- Cliente -->
+                <div class="col-12 col-md-2 form-group mb-0">
+                    <span>Cliente:</span>
+                    <div dx-lookup="vm.lookup.CmbClienteOptions"></div>
+                </div>
+
+                <!-- Mesa -->
+                <div class="col-12 col-md-2 form-group mb-0">
+                    <span>Mesa:</span>
+                    <div dx-lookup="vm.lookup.CmbMesaOptions"></div>
+                </div>
+
 
                 <!-- Botones -->
                 <div class="col-12 col-md-4 form-group mt-3 d-flex flex-wrap gap-2" style="padding-top: 10px;">
@@ -233,11 +230,11 @@
                     </div>
                 </div>
 
-                <!-- NUEVO DIV agregado justo debajo del listado o filtrado dentro de col-md-8 -->
+                <!-- NUEVO DIV agregado justo debajo del listado o filtrado dentro de col-md-8 
                 <div class="mi-nuevo-div" style="height: 120px">
                     Aquí va tu nuevo contenido o funcionalidad justo debajo del listado/filtrado.
                 </div>
-
+                -->
             </div>
 
             <!-- Columna 4: filtro + grid SIEMPRE visibles -->
@@ -263,7 +260,7 @@
 
                 <div class="row" style="margin-left: 0px; margin-right: 0px;" id="gridSiniestros">
                     <div class="rowdgr" style="margin-top: 0px; padding: 5px 20px 5px 30px; margin-bottom: 10px;">
-                        <div class="row" style="padding-right: 15px; height: 530px; overflow-y: auto;">
+                        <div class="row" style="padding-right: 15px; height: 450px; overflow-y: auto;">
                             <div dx-data-grid="vm.grids.gridDesgloseventaOptions" style="height: 620px;"></div>
                         </div>
                     </div>
