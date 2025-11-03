@@ -34,7 +34,8 @@ urlpatterns = [
     path('cortes_por_empresa/', cortesPorEmpresa, name='cortesPorEmpresa'),
     path('ventas_por_corte_caja/', ventasPorCorteCaja, name='ventasPorCorteCaja'),
     path('corteCajaAbierto/', corteCajaAbierto, name='corteCajaAbierto'),
+    path('cortesCajaCerrados/', cortesCajaCerrados, name='cortesCajaCerrados'),
     path('corte_caja/', corte_caja, name='corte_caja'),
-    
+    path('corte_caja_pdf/<int:corte_id>/', generar_pdf_corte_caja, name='corte_caja_pdf'),
   #  path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]

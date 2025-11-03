@@ -11,13 +11,32 @@
 
     // Definición del controlador
     function CorteCajaController($http, $scope, $filter) {
-        let BtnConsultarInstance, BtnCerrarInstance, BtnBuscarImprimirInstance, ObservacionesInstance;
+        let BtnConsultarInstance, BtnCerrarInstance, BtnImprimirInstance, ObservacionesInstance,
+            popConsultarCortesInstance, BtnSeleccionarCortesInstance, BtnRegresarInstance,
+            grdConsultarCortesInstance;
+        let corteSeleccionado = null;
+        let ArrayCortes = [];
         let vm = this;
         $scope.modoEdicion = false;
 
         vm.empresaId = $scope.empresaId;
         vm.nombrePersonal = $scope.nombrePersonal;
         vm.corteCajaId = $scope.corteCajaId;
+
+        function showLoading() {
+            Swal.fire({
+                title: 'Cargando...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        }
+        // Ocultar loading
+        function hideLoading() {
+            Swal.close();
+        }
+
         getCorteCajaAbierto();
 
         function getCorteCajaAbierto() {
@@ -25,12 +44,12 @@
                 empresa: vm.empresaId // o el ID que tengas en el scope
             });
 
-            $scope.isLoadPanelVisible = true;
+            showLoading();
             const url = `/corteCajaAbierto/?${params.toString()}`;
 
             $http.get(url).then(
                 function (response) {
-                    $scope.isLoadPanelVisible = false;
+                    hideLoading();
 
                     // Si el servidor envía una advertencia
                     if (response.data.advertencia) {
@@ -41,16 +60,17 @@
                             confirmButtonText: 'Aceptar'
                         });
                         BtnCerrarInstance.option("disabled", true);
-                        BtnBuscarImprimirInstance.option("disabled", true);
+                        BtnImprimirInstance.option("disabled", true);
                         ObservacionesInstance.option("disabled", true);
                     } else {
                         // Datos del corte abierto
                         $scope.corteCajaAbierto = response.data;
+                        corteSeleccionado = response.data;
                         cargarCorteCajaAbierto(response.data);
                     }
                 },
                 function (error) {
-                    $scope.isLoadPanelVisible = false;
+                    hideLoading();
                     // Error de red o inesperado
                     Swal.fire({
                         icon: 'error',
@@ -61,6 +81,37 @@
                 }
             );
         }
+
+        function getCortesCajaCerrados() {
+            const params = new URLSearchParams({
+                empresa: vm.empresaId // o el ID que tengas en el scope
+            });
+            showLoading();
+            const url = `/cortesCajaCerrados/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    popConsultarCortesInstance.show();
+                    ArrayCortes.length = 0;
+                    for (let i = 0; i < response.data.length; i++) {
+                        ArrayCortes.push(response.data[i]);
+                    }
+                    hideLoading()
+                    if (grdConsultarCortesInstance) {
+                        grdConsultarCortesInstance.refresh();
+                    }
+                }, function (response) {
+                    hideLoading()
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudo obtener los cortes de caja',
+                        confirmButtonText: 'Aceptar'
+                    });
+                }
+            );
+        };
+
+
 
         function modificarCorteCaja() {
             const hoy = new Date();
@@ -84,7 +135,7 @@
             }).then(
                 function (response) {
                     BtnCerrarInstance.option("disabled", true);
-                    BtnBuscarImprimirInstance.option("disabled", false);
+                    BtnImprimirInstance.option("disabled", false);
                     ObservacionesInstance.option("disabled", true);
                     Swal.fire({
                         icon: 'success',
@@ -122,6 +173,39 @@
                 }
             );
         }
+        function llenarInformacion(data) {
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            $scope.txtNombre = vm.nombrePersonal;
+            $scope.saldoInicial = parseFloat(data.saldo_inicial || 0);
+            $scope.saldoFinal = parseFloat(data.saldo_final || 0);
+            $scope.ingresosEfectivo = parseFloat(data.ingresos_efectivo || 0);
+            $scope.ingresosTarjeta = parseFloat(data.ingresos_tarjeta || 0);
+            $scope.ingresosTransferencia = parseFloat(data.ingresos_transferencia || 0);
+            $scope.egresos = parseFloat(data.total_egresos || 0);
+            $scope.ingresos = parseFloat(data.otros_ingresos || 0);
+            $scope.saldoFinal = parseFloat(data.tota_caja || 0);
+            $scope.totalCaja = parseFloat(data.saldo_final || 0);
+            $scope.fechaApertura = data.fecha_apertura ? new Date(data.fecha_apertura.split('/').reverse().join('-')) : null;
+            $scope.fechaCierre = data.fecha_cierre ? new Date(data.fecha_cierre.split('/').reverse().join('-')) : null;
+            $scope.observaciones = data.observaciones;
+        }
+        function limpiarCamposCorte() {
+            $scope.txtNombre = "";
+            $scope.saldoInicial = "";
+            $scope.saldoFinal = "";
+            $scope.ingresosEfectivo = "";
+            $scope.ingresosTarjeta = "";
+            $scope.ingresosTransferencia = "";
+            $scope.egresos = "";
+            $scope.ingresos = "";
+            $scope.totalCaja = "";
+            $scope.fechaApertura = null;
+            $scope.fechaCierre = null;
+            $scope.observaciones = "";
+            corteSeleccionado = null;
+            BtnImprimirInstance.option("disabled", true);
+        };
         function cargarCorteCajaAbierto(data) {
             // Asignar valores al $scope
             const hoy = new Date();
@@ -151,6 +235,9 @@
             //  $scope.fechaCierre = data.fecha_cierre ? new Date(data.fecha_cierre.split('/').reverse().join('-')) : null;
             //  $scope.observaciones = data.observaciones || '';
         }
+        $scope.cortes_source = new DevExpress.data.DataSource({
+            store: ArrayCortes
+        });
         vm.textBox = {
             TxtNombreOptions: {
                 disabled: true,
@@ -265,6 +352,68 @@
             }
         };
         vm.button = {
+            BtnSeleccionarCortesOptions: {
+                icon: 'fas fa-check-circle',
+                type: 'success',
+                width: 135,
+                text: 'Seleccionar',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnSeleccionarCortesInstance = e.component;
+                },
+                onClick: function () {
+                    if (corteSeleccionado) {
+                        popConsultarCortesInstance.hide();
+                        llenarInformacion(corteSeleccionado);
+                        BtnImprimirInstance.option("disabled", false)
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Advertencia',
+                            text: 'Seleccione un corte de caja para continuar',
+                            showConfirmButton: true,
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => {
+                                const popup = Swal.getPopup();
+                                const overlay = document.querySelector('.swal2-container');
+
+                                // Forzar que quede por encima de cualquier modal/popup
+                                if (popup) {
+                                    popup.style.zIndex = '999999';
+                                    popup.style.fontSize = '1.3rem';
+                                    popup.style.padding = '2rem';
+                                    popup.style.width = '450px';
+                                    popup.style.textAlign = 'center';
+                                }
+                                if (overlay) {
+                                    overlay.style.zIndex = '999998';
+                                }
+
+                                const confirmBtn = Swal.getConfirmButton();
+                                if (confirmBtn) {
+                                    confirmBtn.style.fontSize = '1.2rem';
+                                    confirmBtn.style.padding = '0.8rem 2rem';
+                                }
+                            }
+                        });
+                    }
+
+                }
+            },
+            BtnRegresarOptions: {
+                icon: 'fas fa-arrow-left',
+                type: 'danger',
+                width: 135,
+                text: 'Regresar',
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnRegresarInstance = e.component;
+                },
+                onClick: function () {
+                    popConsultarCortesInstance.hide();
+                }
+            },
             BtnConsultarOptions: {
                 icon: 'fas fa-search',
                 type: 'success',
@@ -275,7 +424,8 @@
                     BtnConsultarInstance = e.component;
                 },
                 onClick: function () {
-                    // consultarCorteCaja();
+                    limpiarCamposCorte();
+                    getCortesCajaCerrados();
                 }
             },
             BtnCerrarOptions: {
@@ -292,19 +442,98 @@
                     // cerrarCorteCaja();
                 }
             },
-            BtnBuscarImprimirOptions: {
+            BtnImprimirOptions: {
                 icon: 'fas fa-print',
                 type: 'default',
                 width: 135,
                 text: 'Imprimir',
                 disabled: true,
                 onInitialized: function (e) {
-                    BtnBuscarImprimirInstance = e.component;
+                    BtnImprimirInstance = e.component;
                 },
                 onClick: function () {
+                    if (corteSeleccionado) {
+                        window.open(`/corte_caja_pdf/${corteSeleccionado.id}/`, '_blank');
+                    } else {
+
+                    }
+
                     //buscarImprimirCorteCaja();
                 }
             }
+        };
+
+        vm.grid = {
+            grdConsultarCortesOptions: {
+                dataSource: $scope.cortes_source,
+                paging: {
+                    pageSize: 20
+                },
+                pager: {
+                    showPageSizeSelector: true,
+                    allowedPageSizes: [20, 40, 60],
+                    showInfo: true
+                },
+                selection: {
+                    mode: 'single'
+                },
+                filterRow: {
+                    visible: true,
+                    applyFilter: "auto"
+                },
+                showBorders: true,
+                columns: [
+                    { dataField: 'id', visible: false },
+                    { dataField: 'empresa_id', caption: 'ID Empresa', dataType: 'number', visible: false },
+                    { dataField: 'personal', caption: 'Personal', dataType: 'string', width: 200 },
+                    { dataField: 'saldo_inicial', caption: 'Saldo inicial', dataType: 'number', format: { type: 'currency', precision: 2 } },
+                    { dataField: 'saldo_final', caption: 'Saldo final', dataType: 'number', format: { type: 'currency', precision: 2 } },
+                    { dataField: 'ingresos_efectivo', caption: 'Ingresos efectivo', dataType: 'number', format: { type: 'currency', precision: 2 } },
+                    { dataField: 'ingresos_tarjeta', caption: 'Ingresos tarjeta', dataType: 'number', format: { type: 'currency', precision: 2 } },
+                    { dataField: 'ingresos_transferencia', caption: 'Ingresos transferencia', dataType: 'number', format: { type: 'currency', precision: 2 } },
+                    { dataField: 'egresos', caption: 'Egresos', dataType: 'number', format: { type: 'currency', precision: 2 } },
+                    { dataField: 'fecha_apertura', caption: 'Fecha apertura', dataType: 'date', format: 'dd/MM/yyyy', width: 120, alignment: 'center' },
+                    { dataField: 'fecha_cierre', caption: 'Fecha cierre', dataType: 'date', format: 'dd/MM/yyyy', width: 120, alignment: 'center' },
+                    { dataField: 'estatus', caption: 'Estatus', dataType: 'string', width: 120 },
+                    { dataField: 'observaciones', caption: 'Observaciones', dataType: 'string', width: 250 }
+                ],
+                onInitialized: function (e) {
+                    grdConsultarCortesInstance = e.component;
+                },
+                onRowClick: function (e) {
+                    corteSeleccionado = e.data;
+                },
+                noDataText: "Sin datos",
+                scrolling: {
+                    mode: 'standar',
+                    showScrollbar: 'always'
+                },
+                columnFixing: {
+                    enabled: true
+                },
+                rowAlternationEnabled: true,
+                columnAutoWidth: true,
+                allowColumnResizing: true,
+            },
+        }
+        vm.popups = {
+            popConsultarCortesOptions: {
+                showTitle: true,
+                width: 1200,
+                height: 800,
+                title: "Buscar cortes de caja",
+                dragEnabled: false,
+                closeOnOutsideClick: false,
+                bindingOptions: {
+                    visible: "showPopConsultarCortes",
+                },
+                onInitialized: function (e) {
+                    popConsultarCortesInstance = e.component;//Se inicializa el popup para poder darle funcionalidad
+                },
+                onShown: function (e) {
+
+                },
+            },
         };
 
     }

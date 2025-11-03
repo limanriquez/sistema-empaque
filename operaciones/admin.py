@@ -65,6 +65,11 @@ class CorteCajaAdmin(admin.ModelAdmin):
         return self.base_readonly_fields
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Si es superusuario o staff, dejar acceso completo
+        if request.user.is_superuser or request.user.is_staff:
+            return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+        # Si no es superusuario, aplicar restricciones
         if db_field.name == "personal":
             try:
                 personal = request.user.personal
@@ -73,7 +78,7 @@ class CorteCajaAdmin(admin.ModelAdmin):
             except Personal.DoesNotExist:
                 kwargs["queryset"] = Personal.objects.none()
 
-        if db_field.name == "empresa":
+        elif db_field.name == "empresa":
             try:
                 empresa = request.user.personal.empresa
                 kwargs["queryset"] = Empresa.objects.filter(pk=empresa.pk)

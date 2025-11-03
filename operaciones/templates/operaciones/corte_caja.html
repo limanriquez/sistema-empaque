@@ -41,60 +41,60 @@
             <!-- Fila 1: Nombre y apellidos -->
             <div class="row g-3 py-2 px-3 align-items-end">
                 <div class="col-12 col-md-4">
-                    <label for="txtNombre" class="form-label fw-semibold">Nombre:</label>
+                    <label class="form-label fw-semibold">Nombre:</label>
                     <div dx-text-box="vm.textBox.TxtNombreOptions" id="txtNombre"></div>
                 </div>
 
                 <div class="col-6 col-md-2">
-                    <label for="saldoInicial" class="form-label fw-semibold">Saldo inicial:</label>
-                    <div dx-number-box="vm.numberBox.SaldoInicialOptions" ></div>
+                    <label class="form-label fw-semibold">Saldo inicial:</label>
+                    <div dx-number-box="vm.numberBox.SaldoInicialOptions"></div>
                 </div>
 
                 <div class="col-6 col-md-2">
-                    <label for="saldoFinal" class="form-label fw-semibold">Saldo final:</label>
-                    <div dx-number-box="vm.numberBox.SaldoFinalOptions" ></div>
+                    <label class="form-label fw-semibold">Saldo final:</label>
+                    <div dx-number-box="vm.numberBox.SaldoFinalOptions"></div>
                 </div>
 
                 <div class="col-6 col-md-2">
-                    <label for="fechaApertura" class="form-label fw-semibold">Fecha apertura:</label>
-                    <div dx-date-box="vm.dateBox.FechaAperturaOptions" ></div>
+                    <label class="form-label fw-semibold">Fecha apertura:</label>
+                    <div dx-date-box="vm.dateBox.FechaAperturaOptions"></div>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <label for="fechaCierre" class="form-label fw-semibold">Fecha cierre:</label>
-                    <div dx-date-box="vm.dateBox.FechaCierreOptions" ></div>
+                    <div dx-date-box="vm.dateBox.FechaCierreOptions"></div>
                 </div>
             </div>
 
 
             <div class="row g-3 py-2 px-3 align-items-end">
                 <div class="col-6 col-md-2">
-                    <label for="ingEfectivo" class="form-label fw-semibold">Ingresos efectivo:</label>
-                    <div dx-number-box="vm.numberBox.IngresosEfectivoOptions" ></div>
+                    <label class="form-label fw-semibold">Ingresos efectivo:</label>
+                    <div dx-number-box="vm.numberBox.IngresosEfectivoOptions"></div>
                 </div>
 
                 <div class="col-6 col-md-2">
-                    <label for="ingTarjeta" class="form-label fw-semibold">Ingresos tarjeta:</label>
-                    <div dx-number-box="vm.numberBox.IngresosTarjetaOptions" ></div>
+                    <label class="form-label fw-semibold">Ingresos tarjeta:</label>
+                    <div dx-number-box="vm.numberBox.IngresosTarjetaOptions"></div>
                 </div>
 
                 <div class="col-6 col-md-2">
-                    <label for="ingTransferencia" class="form-label fw-semibold">Ingresos transferencia:</label>
-                    <div dx-number-box="vm.numberBox.IngresosTransferenciaOptions" ></div>
+                    <label class="form-label fw-semibold">Ingresos transferencia:</label>
+                    <div dx-number-box="vm.numberBox.IngresosTransferenciaOptions"></div>
                 </div>
 
                 <div class="col-6 col-md-2">
-                    <label for="otrosIngresos" class="form-label fw-semibold">Otros ingresos:</label>
-                    <div dx-number-box="vm.numberBox.OtrosIngresosOptions" ></div>
+                    <label class="form-label fw-semibold">Otros ingresos:</label>
+                    <div dx-number-box="vm.numberBox.OtrosIngresosOptions"></div>
                 </div>
 
                 <div class="col-6 col-md-2">
-                    <label for="egresos" class="form-label fw-semibold">Egresos:</label>
+                    <label class="form-label fw-semibold">Egresos:</label>
                     <div dx-number-box="vm.numberBox.EgresosOptions"></div>
                 </div>
 
-                 <div class="col-6 col-md-2">
-                    <label for="totalCaja" class="form-label fw-semibold">Efectivo en Caja:</label>
+                <div class="col-6 col-md-2">
+                    <label class="form-label fw-semibold">Efectivo en Caja:</label>
                     <div dx-number-box="vm.numberBox.TotalCajaOptions"></div>
                 </div>
             </div>
@@ -112,9 +112,28 @@
                 <div class="col-md-4 form-group" style="margin-bottom: 0px;">
                     <div dx-button="vm.button.BtnConsultarOptions"></div>
                     <div dx-button="vm.button.BtnCerrarOptions"></div>
-                    <div dx-button="vm.button.BtnBuscarImprimirOptions"></div>
+                    <div dx-button="vm.button.BtnImprimirOptions"></div>
                 </div>
 
+            </div>
+        </div>
+
+        <div dx-popup="vm.popups.popConsultarCortesOptions">
+            <div class="rowdgr" style="margin-top: 10px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 10px;">
+                <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+                    <div class="col-md-12 form-group" style="margin-bottom: 0px;">
+                        <div dx-button="vm.button.BtnSeleccionarCortesOptions"
+                            style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+                        <div dx-button="vm.button.BtnRegresarOptions"
+                            style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rowdgr" style="margin-top: 15px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 20px;">
+                <div class="row" style="padding-top: 5px; padding-left: 0px; padding-right: 5px;">
+                    <div dx-data-grid="vm.grid.grdConsultarCortesOptions"></div>
+                </div>
             </div>
         </div>
 

@@ -1,5 +1,6 @@
 # Librerías estándar de Python
 from decimal import Decimal, InvalidOperation
+from weasyprint import HTML
 
 # Librerías de Django
 from django.contrib import messages
@@ -9,7 +10,9 @@ from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.timezone import localtime
 from pytz import timezone as pytz_timezone  # opcional si quieres zona específica
+from django.template.loader import render_to_string
 
 
 # Django REST Framework
@@ -478,10 +481,43 @@ def cortesPorEmpresa(request):
             "ingresos_tarjeta": str(c.ingresos_tarjeta),
             "ingresos_transferencia": str(c.ingresos_transferencia),
             "egresos": str(c.egresos),
+            "otros_ingresos": str(c.otros_ingresos),
             "fecha_apertura": c.fecha_apertura.strftime('%d/%m/%Y') if c.fecha_apertura else None,
             "fecha_cierre": c.fecha_cierre.strftime('%d/%m/%Y') if c.fecha_cierre else None,
             "observaciones": c.observaciones,
             "estatus": c.get_estatus_display(),  # Devuelve "Abierto", "Cerrado" o "Cancelado"
+        })
+
+    return JsonResponse(cortes_data, safe=False)
+
+@login_required
+def cortesCajaCerrados(request):
+    # Obtener parámetro empresa desde GET
+    empresa_id = request.GET.get('empresa')
+    if not empresa_id:
+        return JsonResponse({"detail": "Debe proporcionar ?empresa=<id>"}, status=400)
+
+    # Filtrar solo cortes con estatus = 2 (CERRADO)
+    cortes = CorteCaja.objects.filter(empresa_id=empresa_id, estatus=2)
+    cortes_data = []
+
+    for c in cortes:
+        cortes_data.append({
+            "id": c.id,
+            "empresa_id": c.empresa_id,
+            "personal_id": c.personal_id,
+            "personal": f"{c.personal.nombre} {c.personal.apellido_paterno} {c.personal.apellido_materno}",
+            "saldo_inicial": str(c.saldo_inicial),
+            "saldo_final": str(c.saldo_final) if c.saldo_final is not None else None,
+            "ingresos_efectivo": str(c.ingresos_efectivo),
+            "ingresos_tarjeta": str(c.ingresos_tarjeta),
+            "ingresos_transferencia": str(c.ingresos_transferencia),
+            "egresos": str(c.egresos),
+            "otros_ingresos": str(c.otros_ingresos),
+            "fecha_apertura": c.fecha_apertura.strftime('%d/%m/%Y') if c.fecha_apertura else None,
+            "fecha_cierre": c.fecha_cierre.strftime('%d/%m/%Y') if c.fecha_cierre else None,
+            "observaciones": c.observaciones,
+            "estatus": c.get_estatus_display(),  # "Abierto", "Cerrado" o "Cancelado"
         })
 
     return JsonResponse(cortes_data, safe=False)
@@ -589,3 +625,22 @@ def corteCajaAbierto(request):
     }
 
     return JsonResponse(corte_data, safe=False)
+
+@login_required
+def generar_pdf_corte_caja(request, corte_id):
+    corte = get_object_or_404(CorteCaja, id=corte_id)
+
+    # Renderizamos plantilla con datos del corte
+    html_string = render_to_string('operaciones/corte_caja_pdf.html', {
+        'corte': corte,
+        'fecha_actual': localtime().strftime('%d/%m/%Y %H:%M'),
+       # 'logo_url': request.build_absolute_uri('/static/img/logo_empresa.png'),  # cambia ruta según tu static
+    })
+
+    # Generar PDF con WeasyPrint
+    pdf_file = HTML(string=html_string).write_pdf()
+
+    # Respuesta HTTP con PDF
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="corte_caja_{corte.id}.pdf"'
+    return response

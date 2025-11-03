@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Corte de Caja</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            margin: 15px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            margin: 5px 0;
+        }
+
+        p {
+            margin: 3px 0;
+        }
+
+        .encabezado {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .info {
+            margin-top: 10px;
+            border: 1px solid #333;
+            padding: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid #333;
+            padding: 6px;
+            text-align: right;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            text-align: center;
+        }
+
+        .firmas {
+            width: 100%;
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .firmas td {
+            width: 50%;
+            padding-top: 40px;
+            vertical-align: bottom;
+        }
+
+        .firma-linea {
+            border-top: 1px solid #000;
+            width: 80%;
+            margin: 0 auto 10px auto;
+        }
+
+        .firmas strong {
+            display: block;
+            margin-top: 5px;
+        }
+
+        .right { text-align: right; }
+        .center { text-align: center; }
+    </style>
+</head>
+<body>
+    <!-- Logo -->
+    <div class="encabezado">
+        <h2>Corte de Caja</h2>
+        <p><strong>Fecha de generación:</strong> {{ fecha_actual }}</p>
+    </div>
+
+    <!-- Info general -->
+    <div class="info">
+        <p><strong>Empresa:</strong> {{ corte.empresa.nombre }}</p>
+        <p><strong>Personal:</strong> {{ corte.personal.nombre }} {{ corte.personal.apellido_paterno }} {{ corte.personal.apellido_materno }}</p>
+        <p><strong>Fecha de apertura:</strong> {{ corte.fecha_apertura|date:"d/m/Y H:i" }}</p>
+        <p><strong>Fecha de cierre:</strong> {{ corte.fecha_cierre|date:"d/m/Y H:i" }}</p>
+        <p><strong>Estado actual:</strong> {{ corte.get_estatus_display }}</p>
+    </div>
+
+    <!-- Tabla de movimientos -->
+    <table>
+        <thead>
+            <tr>
+                <th>Concepto</th>
+                <th>Monto</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>Saldo inicial</td><td>${{ corte.saldo_inicial }}</td></tr>
+            <tr><td>Ingresos efectivo</td><td>${{ corte.ingresos_efectivo }}</td></tr>
+            <tr><td>Ingresos tarjeta</td><td>${{ corte.ingresos_tarjeta }}</td></tr>
+            <tr><td>Ingresos transferencia</td><td>${{ corte.ingresos_transferencia }}</td></tr>
+            <tr><td><strong>Total ingresos</strong></td><td><strong>${{ corte.total_ingresos }}</strong></td></tr>
+            <tr><td>Egresos</td><td>${{ corte.egresos }}</td></tr>
+            <tr><td><strong>Saldo final</strong></td><td><strong>${{ corte.saldo_final }}</strong></td></tr>
+        </tbody>
+    </table>
+
+    {% if corte.observaciones %}
+    <p><strong>Observaciones:</strong> {{ corte.observaciones }}</p>
+    {% endif %}
+</body>
+</html>
