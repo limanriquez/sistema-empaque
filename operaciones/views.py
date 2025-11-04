@@ -27,7 +27,7 @@ from operaciones.serializer import *
 from inventario.permissions import IsAdminOrReadOnly
 from authentication.decoradores import require_personal
 
-
+from django.db.models import Sum, Count, F
 
 class CorteCajaViewSet(viewsets.ModelViewSet):
     queryset = CorteCaja.objects.all()
@@ -626,21 +626,50 @@ def corteCajaAbierto(request):
 
     return JsonResponse(corte_data, safe=False)
 
+
 @login_required
 def generar_pdf_corte_caja(request, corte_id):
     corte = get_object_or_404(CorteCaja, id=corte_id)
 
-    # Renderizamos plantilla con datos del corte
+    # Ventas pagadas del corte actual
+    ventas_pagadas = Ventas.objects.filter(
+        corte_caja=corte,
+        pagada=True
+    )
+
+    # Agrupación por empresa (suma de ventas)
+    ventas_por_empresa = (
+        DesgloseVenta.objects
+        .filter(venta__in=ventas_pagadas)
+        .values('empresa__nombre')
+        .annotate(total_empresa=Sum('total'))
+        .order_by('empresa__nombre')
+    )
+
+    # Resumen por producto (cada registro = 1 producto vendido)
+    resumen_productos = (
+        DesgloseVenta.objects
+        .filter(venta__in=ventas_pagadas)
+        .values(
+            producto_nombre=F('producto__nombre'),
+            empresa_nombre=F('empresa__nombre')
+        )
+        .annotate(
+            total_vendido=Count('id'),  # cuenta los registros en vez de cantidad
+            total_monto=Sum('total')
+        )
+        .order_by('empresa_nombre', 'producto_nombre')
+    )
+
+    # Renderizamos plantilla con los datos
     html_string = render_to_string('operaciones/corte_caja_pdf.html', {
         'corte': corte,
         'fecha_actual': localtime().strftime('%d/%m/%Y %H:%M'),
-       # 'logo_url': request.build_absolute_uri('/static/img/logo_empresa.png'),  # cambia ruta según tu static
+        'ventas_por_empresa': ventas_por_empresa,
+        'resumen_productos': resumen_productos,
     })
 
-    # Generar PDF con WeasyPrint
     pdf_file = HTML(string=html_string).write_pdf()
-
-    # Respuesta HTTP con PDF
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="corte_caja_{corte.id}.pdf"'
     return response

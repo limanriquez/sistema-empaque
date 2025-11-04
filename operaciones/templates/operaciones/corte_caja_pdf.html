@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Corte de Caja</title>
@@ -10,7 +11,8 @@
             margin: 15px;
         }
 
-        h1, h2 {
+        h1,
+        h2 {
             text-align: center;
             margin: 5px 0;
         }
@@ -36,7 +38,8 @@
             margin-top: 15px;
         }
 
-        th, td {
+        th,
+        td {
             border: 1px solid #333;
             padding: 6px;
             text-align: right;
@@ -70,10 +73,16 @@
             margin-top: 5px;
         }
 
-        .right { text-align: right; }
-        .center { text-align: center; }
+        .right {
+            text-align: right;
+        }
+
+        .center {
+            text-align: center;
+        }
     </style>
 </head>
+
 <body>
     <!-- Logo -->
     <div class="encabezado">
@@ -84,7 +93,14 @@
     <!-- Info general -->
     <div class="info">
         <p><strong>Empresa:</strong> {{ corte.empresa.nombre }}</p>
-        <p><strong>Personal:</strong> {{ corte.personal.nombre }} {{ corte.personal.apellido_paterno }} {{ corte.personal.apellido_materno }}</p>
+        <p>
+            <strong>Personal:</strong>
+            {{ corte.personal.nombre }}
+            {{ corte.personal.apellido_paterno }}
+            {% if corte.personal.apellido_materno and corte.personal.apellido_materno.strip %}
+            {{ corte.personal.apellido_materno }}
+            {% endif %}
+        </p>
         <p><strong>Fecha de apertura:</strong> {{ corte.fecha_apertura|date:"d/m/Y H:i" }}</p>
         <p><strong>Fecha de cierre:</strong> {{ corte.fecha_cierre|date:"d/m/Y H:i" }}</p>
         <p><strong>Estado actual:</strong> {{ corte.get_estatus_display }}</p>
@@ -99,13 +115,80 @@
             </tr>
         </thead>
         <tbody>
-            <tr><td>Saldo inicial</td><td>${{ corte.saldo_inicial }}</td></tr>
-            <tr><td>Ingresos efectivo</td><td>${{ corte.ingresos_efectivo }}</td></tr>
-            <tr><td>Ingresos tarjeta</td><td>${{ corte.ingresos_tarjeta }}</td></tr>
-            <tr><td>Ingresos transferencia</td><td>${{ corte.ingresos_transferencia }}</td></tr>
-            <tr><td><strong>Total ingresos</strong></td><td><strong>${{ corte.total_ingresos }}</strong></td></tr>
-            <tr><td>Egresos</td><td>${{ corte.egresos }}</td></tr>
-            <tr><td><strong>Saldo final</strong></td><td><strong>${{ corte.saldo_final }}</strong></td></tr>
+            <tr>
+                <td>Saldo inicial</td>
+                <td>${{ corte.saldo_inicial }}</td>
+            </tr>
+            <tr>
+                <td>Ingresos efectivo</td>
+                <td>${{ corte.ingresos_efectivo }}</td>
+            </tr>
+            <tr>
+                <td>Ingresos tarjeta</td>
+                <td>${{ corte.ingresos_tarjeta }}</td>
+            </tr>
+            <tr>
+                <td>Ingresos transferencia</td>
+                <td>${{ corte.ingresos_transferencia }}</td>
+            </tr>
+            <tr>
+                <td>Total ingresos</td>
+                <td>${{ corte.otros_ingresos }}</td>
+            </tr>
+            <tr>
+                <td>Egresos</td>
+                <td>${{ corte.egresos }}</td>
+            </tr>
+            <tr>
+                <td><strong>Saldo final</strong></td>
+                <td><strong>${{ corte.saldo_final }}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    {% if ventas_por_empresa %}
+    <h3 style="margin-top: 25px; text-align: center;">Ventas por Empresa (solo pagadas)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Empresa</th>
+                <th>Total Vendido</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in ventas_por_empresa %}
+            <tr>
+                <td style="text-align: left;">{{ item.empresa__nombre }}</td>
+                <td>${{ item.total_empresa|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <h3>Resumen de productos vendidos</h3>
+    <table border="1" cellspacing="0" cellpadding="5" width="100%">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad total</th>
+                <th>Total $</th>
+                <th>Empresa</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in resumen_productos %}
+            <tr>
+                <td>{{ item.producto_nombre }}</td>
+                <td align="center">{{ item.total_vendido }}</td>
+                <td align="right">${{ item.total_monto|floatformat:2 }}</td>
+                <td>{{ item.empresa_nombre }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" align="center">Sin ventas registradas</td>
+            </tr>
+            {% endfor %}
         </tbody>
     </table>
 
@@ -113,4 +196,5 @@
     <p><strong>Observaciones:</strong> {{ corte.observaciones }}</p>
     {% endif %}
 </body>
+
 </html>

@@ -111,12 +111,11 @@
             );
         };
 
-
-
         function modificarCorteCaja() {
-            const hoy = new Date();
-            hoy.setHours(0, 0, 0, 0);
-            const fechaCierreISO = hoy.toISOString().slice(0, 19);
+            const ahora = new Date();
+            const fechaLocal = new Date(ahora.getTime() - ahora.getTimezoneOffset() * 60000);
+            const fechaCierreISO = fechaLocal.toISOString().slice(0, 19);
+
             const corteCajaData = {
                 saldo_final: $scope.saldoFinal,
                 ingresos_efectivo: $scope.ingresosEfectivo,

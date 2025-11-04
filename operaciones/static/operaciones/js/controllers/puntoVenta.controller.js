@@ -516,9 +516,9 @@
 
         function transaccionVentaProducto(idProducto, idVenta) {
             const productoEncontrado = findProductoById(vm.categorias, idProducto);
-            if (productoEncontrado) {
-                console.log(productoEncontrado.data.empresa);
-            }
+          //  if (productoEncontrado) {
+            //    console.log(productoEncontrado.data.empresa);
+           // }
             let localPrecio = 0;
             let localEmpresa = 0;
             let descuento = 0;
@@ -540,11 +540,61 @@
             const url = `/transaccion_venta_producto/?${params.toString()}`;
             $http.get(url).then(
                 function (response) {
-                    console.log(response);
+                    if (response.data && response.data.error && response.data.error.includes('Stock insuficiente')) {
+                        Swal.fire({
+                            title: '⚠️ Stock insuficiente',
+                            html: `<p style="font-size:1.1rem;">No hay suficiente inventario para el producto <strong>${response.data.error.replace('Stock insuficiente para ', '')}</strong>.</p>`,
+                            icon: 'warning',
+                            showConfirmButton: true,
+                            confirmButtonText: 'Entendido',
+                            confirmButtonColor: '#d33',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => {
+                                const popup = Swal.getPopup();
+                                if (popup) {
+                                    popup.style.fontSize = '1.3rem';
+                                    popup.style.padding = '2rem';
+                                    popup.style.width = '450px';
+                                    popup.style.textAlign = 'center';
+                                }
+                                const confirmBtn = Swal.getConfirmButton();
+                                if (confirmBtn) {
+                                    confirmBtn.style.fontSize = '1.2rem';
+                                    confirmBtn.style.padding = '0.8rem 2rem';
+                                }
+                            }
+                        });
+                        return;
+                    }
                     productosVenta(idVenta);
                     var mensaje = response.data.success;
                     $scope.isLoadPanelVisible = false;
                 }, function (response) {
+                    Swal.fire({
+                        title: '⚠️ Se presento un error al agregar el producto',
+                        html: `<p style="font-size:1.1rem;">No hay suficiente inventario para el producto <strong>${response.data.error.replace('Stock insuficiente para ', '')}</strong>.</p>`,
+                        icon: 'warning',
+                        showConfirmButton: true,
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#d33',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            const popup = Swal.getPopup();
+                            if (popup) {
+                                popup.style.fontSize = '1.3rem';
+                                popup.style.padding = '2rem';
+                                popup.style.width = '450px';
+                                popup.style.textAlign = 'center';
+                            }
+                            const confirmBtn = Swal.getConfirmButton();
+                            if (confirmBtn) {
+                                confirmBtn.style.fontSize = '1.2rem';
+                                confirmBtn.style.padding = '0.8rem 2rem';
+                            }
+                        }
+                    });
                 }
             );
         };
@@ -592,7 +642,7 @@
             const url = `/transaccion_cancelar_desglose_venta/?${params.toString()}`;
             $http.get(url).then(
                 function (response) {
-                    console.log(response);
+                //    console.log(response);
                     productosVenta($scope.ventaActiva);
                     $scope.isLoadPanelVisible = false;
                 }, function (response) {
@@ -1365,7 +1415,7 @@
                                 timerProgressBar: true,
                                 position: 'center',
                                 background: '#f8f9fa',
-                                iconColor: '#e6772eff',  
+                                iconColor: '#e6772eff',
                                 customClass: {
                                     popup: 'shadow-2xl rounded-3xl p-5 animate__animated animate__fadeInDown',
                                     title: 'fw-bold fs-4 text-center',

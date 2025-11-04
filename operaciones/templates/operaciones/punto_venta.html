@@ -12,7 +12,7 @@
 {% endblock personal_styles %}
 {% block ng_app %}
 <html class="no-js" lang="es" ng-app="operaciones.operacion"
-    ng-init="empresaId={{ empresa.id }}; nombrePersonal='{{ nombre_personal|escapejs }}'; corteCajaId={{ corte_caja }}; personaId={{ corte_caja }}">
+    ng-init="empresaId={{ empresa.id }}; nombrePersonal='{{ nombre_personal|escapejs }}'; corteCajaId={{ corte_caja }}; personaId={{ personal_id }}">
 {% endblock ng_app %}
 {% block head_title %} {{ title }} {% endblock head_title %}
 
