@@ -20,6 +20,7 @@ app_name = 'operaciones'
 urlpatterns = [
     path('api/v1/',include(router.urls)),
     path('clientes/', clientes, name="clientes"),
+    path('reporte_top_cinco/', reporte_top_cinco, name="reporte_top_cinco"),
     path('comandaPorZona/', comandaPorZona, name="comandaPorZona"),
     path('imprimir_ticket_venta/', imprimirTicketVenta, name="imprimirTicketVenta"),
     path('punto_de_venta/', punto_de_venta, name="punto_de_venta"),

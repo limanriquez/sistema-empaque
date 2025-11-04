@@ -126,6 +126,13 @@ class NotificacionZonaSerializerViewSet(viewsets.ModelViewSet):
 def clientes(request):
 	return render(request, 'operaciones/clientes.html',{
 			'title':"Clientes"})
+
+@login_required()
+@require_personal
+def reporte_top_cinco(request):
+	return render(request, 'operaciones/reporte_top_cinco.html',{
+			'title':"Reporte"})
+
 @login_required()
 @require_personal
 def corte_caja(request):

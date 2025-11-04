@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block sidebar %}{% endblock sidebar %}
+
+{% block personal_styles %}
+<!-- Animate.css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+<style>
+    .app-header {
+        display: none !important;
+    }
+
+    body,
+    html {
+        margin: 0;
+        padding: 0;
+        font-family: 'Poppins', sans-serif;
+        background: url('https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=1950&q=80') no-repeat center center fixed;
+        background-size: cover;
+        color: #333;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow-x: hidden;
+    }
+
+    #main-container {
+        max-width: 1920px;
+        margin: auto;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: auto;
+    }
+
+    /* ===== Contenedor Grid de empresas ===== */
+    #empresasContainer {
+        display: grid;
+        gap: 2rem;
+        justify-content: center;
+        width: 100%;
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 1rem;
+        box-sizing: border-box;
+
+        /* ancho de cards perfecto: usa auto-fit con minmax para mantener tu diseño */
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    /* ===== Cards ===== */
+    .card {
+        background: linear-gradient(180deg, #ff7f50, #ff6347);
+        border-radius: 1.5rem;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+        border: 2px solid rgba(255, 255, 255, 0.15);
+        position: relative;
+        overflow: hidden;
+        padding: 2rem;
+        transition: transform 0.35s ease, box-shadow 0.35s ease;
+        transform-origin: center;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        animation: fadeInUp 1s ease both, jelloCard 1.5s ease-in-out 0.4s both;
+    }
+
+    .card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(from 180deg, rgba(255, 255, 255, 0.15), transparent 40%);
+        animation: rotateGlow 4s linear infinite;
+        pointer-events: none;
+    }
+
+    @keyframes rotateGlow {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @keyframes jelloCard {
+        0%, 100% { transform: scale3d(1, 1, 1); }
+        25% { transform: scale3d(1.1, 0.9, 1); }
+        50% { transform: scale3d(0.95, 1.05, 1); }
+        75% { transform: scale3d(1.03, 0.97, 1); }
+    }
+
+    .card:hover {
+        transform: scale(1.06);
+        box-shadow: 0 20px 50px rgba(255, 140, 0, 0.6);
+    }
+
+    .empresa-titulo {
+        text-align: center;
+        font-weight: 800;
+        text-transform: uppercase;
+        font-size: 1.6rem;
+        margin-bottom: 1rem;
+        color: #fff;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+    }
+
+    .producto-item {
+        background: rgba(255, 255, 255, 0.95);
+        color: #333;
+        border-radius: 1rem;
+        padding: 1rem;
+        margin: 0.8rem 0;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: transform 0.25s ease, background 0.3s ease;
+    }
+
+    .producto-item:hover {
+        background: #fff8e1;
+        transform: scale(1.04);
+    }
+
+    .producto-item .flex {
+        overflow: visible;
+    }
+
+    .star {
+        color: #ffd700;
+        font-size: 1.2rem;
+        text-shadow: 0 0 8px rgba(255, 223, 0, 0.8);
+        animation: pulseStar 2s infinite ease-in-out alternate;
+    }
+
+    @keyframes pulseStar {
+        from { transform: scale(1); opacity: 0.8; }
+        to { transform: scale(1.2); opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(40px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock personal_styles %}
+
+{% block ng_app %}
+<html class="no-js" lang="es" ng-app="operaciones.operacion">
+{% endblock ng_app %}
+
+{% block head_title %}Top 5 Productos por Empresa{% endblock head_title %}
+
+{% block contenido %}
+<div ng-controller="ReporteTopCinco as vm">
+    <div id="main-container">
+        <!-- Botón al inicio -->
+        <div class="col-1" style="padding-top: 17px;">
+            <div dx-button="vm.button.BtnHomeOptions"></div>
+        </div>
+
+        <h1 class="text-4xl md:text-5xl font-bold mb-10 drop-shadow-lg animate__animated animate__fadeInDown text-white">
+            ⭐ Productos Estrella por Empresa ⭐
+        </h1>
+
+        <div id="empresasContainer">
+            <!-- Cartas dinámicas -->
+        </div>
+    </div>
+</div>
+{% endblock contenido %}
+
+{% block scripts_js %}
+<script type="text/javascript" src="{% static 'javascripts/inventarios.config.js' %}"></script>
+<script type="text/javascript" src="{% static 'operaciones/js/operacion.module.js' %}"></script>
+<script type="text/javascript" src="{% static 'operaciones/js/controllers/reporteTopCinco.controller.js' %}"></script>
+{% endblock scripts_js %}
