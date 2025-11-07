@@ -192,21 +192,19 @@
                                 <div class="grid">
                                     <div class="card-like" ng-repeat="producto in cat.productos"
                                         ng-style="{'background-color': producto.color}"
-                                        ng-click="vm.mostrarAlertId(producto.id)">
+                                        ng-click="vm.mostrarAlertId(producto.id)"
+                                        style="line-height: 1; padding: 10px;">
                                         <!--  <img ng-src="https://picsum.photos/150" alt="{{producto.nombre}}"
                                             style="width:100%; height:auto; border-radius:5px; margin-bottom:5px;" />-->
-                                        <strong>{[{producto.nombre}]}</strong><br />
-                                        ID: {[{producto.id}]}<br />
+                                        <strong style="font-size: 18px;">{[{producto.nombre}]}</strong><br />
+                                        <strong style="font-size: 18px;">Precio $: {[{producto.precio}]}</strong><br />
                                         Empresa: {[{producto.empresa}]}<br />
-                                        Precio $: {[{producto.precio}]}
+                                        ID: {[{producto.id}]}
                                     </div>
-
-
                                 </div>
                             </div>
                         </div>
                     </div>
-
                 </div>
 
                 <!-- Mostrar listado filtrado si hay filtro -->
@@ -278,10 +276,15 @@
                         <div dx-button="vm.button.BtnIngresosOptions" style="margin: 0;"></div>
                         <div dx-button="vm.button.BtnEgresosOptions" style="margin: 0;"></div>
                     </div>
-                    <div class="col-3">
-                        Columna 2
+                    <div class="col-1">
+                        <div dx-button="vm.button.BtnVerIngresosOptions" style="margin: 0;"></div>
                     </div>
-                    <div class="col-3">Columna 3</div>
+                    <div class="col-1">
+                        <div dx-button="vm.button.BtnVerEgresosOptions" style="margin: 0;"></div>
+                    </div>
+                    <div class="col-4">
+                        sfdfdf
+                    </div>
                     <div class="col-3" style="padding: 0px;">
                         <div class="row w-100">
                             <div class="col-4">
@@ -395,6 +398,25 @@
             <div class="rowdgr" style="margin-top: 15px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 20px;">
                 <div class="row" style="padding-top: 5px; padding-left: 0px;padding-left: 15px; padding-right: 15px;">
                     <div dx-data-grid="vm.grids.gridDesglosePagoVentaOptions"></div>
+                </div>
+            </div>
+        </div>
+        <div dx-popup="vm.popups.popEgresosOptions">
+            <div dx-button="vm.button.BtnCerrarEgresosOptions"
+                style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+            <div class="rowdgr" style="margin-top: 15px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 20px;">
+                <div class="row" style="padding-top: 5px; padding-left: 0px;padding-left: 15px; padding-right: 15px;">
+                    <div dx-data-grid="vm.grids.gridEgresosPorCorteOptions"></div>
+                </div>
+            </div>
+        </div>
+
+        <div dx-popup="vm.popups.popIngresosOptions">
+            <div dx-button="vm.button.BtnCerrarIngresosOptions"
+                style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+            <div class="rowdgr" style="margin-top: 15px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 20px;">
+                <div class="row" style="padding-top: 5px; padding-left: 0px;padding-left: 15px; padding-right: 15px;">
+                    <div dx-data-grid="vm.grids.gridIngresosPorCorteOptions"></div>
                 </div>
             </div>
         </div>

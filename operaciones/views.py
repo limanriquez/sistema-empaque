@@ -431,6 +431,40 @@ def pagosPorVenta(request):
 
 
 @login_required
+def egresosPorCorte(request):
+    corte_id = request.GET.get('idCorte')
+    if not corte_id:
+        return JsonResponse({'error': "Parámetro 'idcorte' es requerido."}, status=400)
+    # Traer todos los egresos relacionados con el corte, activos
+    egresos = Egreso.objects.filter(corte_caja_id=corte_id)
+    egresos_data = []
+    for egreso in egresos:
+        egresos_data.append({
+            'id_egreso': egreso.id,
+            'monto': float(egreso.monto),
+            'descripcion': egreso.descripcion
+        })
+
+    return JsonResponse(egresos_data, safe=False)
+
+@login_required
+def ingresosPorCorte(request):
+    corte_id = request.GET.get('idCorte')
+    if not corte_id:
+        return JsonResponse({'error': "Parámetro 'idcorte' es requerido."}, status=400)
+    # Traer todos los egresos relacionados con el corte, activos
+    ingresos = Ingreso.objects.filter(corte_caja_id=corte_id)
+    ingreso_data = []
+    for ingreso in ingresos:
+        ingreso_data.append({
+            'id_egreso': ingreso.id,
+            'monto': float(ingreso.monto),
+            'descripcion': ingreso.descripcion
+        })
+
+    return JsonResponse(ingreso_data, safe=False)
+
+@login_required
 def comandasPendientes(request):
     zona_id = request.GET.get('zona')
     estado = request.GET.get('estado')

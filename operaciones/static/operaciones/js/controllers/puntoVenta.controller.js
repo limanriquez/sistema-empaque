@@ -12,10 +12,12 @@
             BtnRegresarInstance, CmbMetodoPagoInstance, BtnPagarInstance, gridDesglosePagoVentaInstance, BtnImprimirInstance,
             BtnEnviarVentaInstance, BtnCancelarVentaInstance, BtnBuscarVentaInstance, gridVentasPorCorteInstance,
             CmbCortesInstance, PopBuscarVentasInstance, BtnRegresarCortesInstance, BtnBuscarVentasInstance,
-            BtnHomeOptionsInstance, BtnEgresosInstance, BtnIngresosInstance;
+            BtnHomeOptionsInstance, BtnEgresosInstance, BtnIngresosInstance, gridEgresosPorCorteInstance,
+            popEgresosInstance, verEgresosInstance, BtnCerrarEgresosInstance, popIngresosInstance,
+            BtnCerrarIngresosInstance, gridIngresosPorCorteInstance, verIngresosInstance;
 
         var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [],
-            ArrayPagosPorVenta = [], ArrayVentasCorte = [], ArrayCortes = [];
+            ArrayPagosPorVenta = [], ArrayVentasCorte = [], ArrayCortes = [], ArrayEgresosPorCorte = [], ArrayIngresosPorCorte = [];
         var strEmpresasVenta = ""
         var vm = this;
         var tab = 0;
@@ -148,6 +150,52 @@
                     }
                 );
         };
+
+
+
+        function getIngresosPorCorte(venta) {
+            $scope.isLoadPanelVisible = true;
+            const params = new URLSearchParams({
+                idCorte: vm.corteCajaId,
+            });
+            const url = `/ingresos_por_corte/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    ArrayIngresosPorCorte.length = 0;
+                    for (let i = 0; i < response.data.length; i++) {
+                        ArrayIngresosPorCorte.push(response.data[i]);
+                    }
+                    if (gridIngresosPorCorteInstance)
+                        gridIngresosPorCorteInstance.refresh();
+                },
+                function (error) {
+                    console.error("Error al obtener loe ingresos del corte:", error);
+                    $scope.isLoadPanelVisible = false;
+                }
+            );
+        }
+
+        function getEgresosPorCorte(venta) {
+            $scope.isLoadPanelVisible = true;
+            const params = new URLSearchParams({
+                idCorte: vm.corteCajaId,
+            });
+            const url = `/egresos_por_corte/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    ArrayEgresosPorCorte.length = 0;
+                    for (let i = 0; i < response.data.length; i++) {
+                        ArrayEgresosPorCorte.push(response.data[i]);
+                    }
+                    if (gridEgresosPorCorteInstance)
+                        gridEgresosPorCorteInstance.refresh();
+                },
+                function (error) {
+                    console.error("Error al obtener loe egresos del corte:", error);
+                    $scope.isLoadPanelVisible = false;
+                }
+            );
+        }
 
         function getPagosPorVenta(venta) {
             $scope.isLoadPanelVisible = true;
@@ -516,9 +564,9 @@
 
         function transaccionVentaProducto(idProducto, idVenta) {
             const productoEncontrado = findProductoById(vm.categorias, idProducto);
-          //  if (productoEncontrado) {
+            //  if (productoEncontrado) {
             //    console.log(productoEncontrado.data.empresa);
-           // }
+            // }
             let localPrecio = 0;
             let localEmpresa = 0;
             let descuento = 0;
@@ -642,7 +690,7 @@
             const url = `/transaccion_cancelar_desglose_venta/?${params.toString()}`;
             $http.get(url).then(
                 function (response) {
-                //    console.log(response);
+                    //    console.log(response);
                     productosVenta($scope.ventaActiva);
                     $scope.isLoadPanelVisible = false;
                 }, function (response) {
@@ -672,6 +720,8 @@
             getMesas();
             getClientes();
             getVentasAbiertasCorteEmpresas();
+            getEgresosPorCorte();
+            getIngresosPorCorte();
             //cargarCategorias();
             // 
         }
@@ -960,6 +1010,15 @@
             store: ArrayPagosPorVenta
         });
 
+        $scope.egresos_por_corte_source = new DevExpress.data.DataSource({
+            store: ArrayEgresosPorCorte
+        });
+
+        $scope.ingresos_por_corte_source = new DevExpress.data.DataSource({
+            store: ArrayIngresosPorCorte
+        });
+
+
 
 
         vm.numberBox = {
@@ -1212,6 +1271,67 @@
 
                 }
             },
+            BtnVerEgresosOptions: {
+                icon: 'fa fa-chart-bar',
+                type: 'danger',
+                width: 130,
+                text: 'Egresos',
+                hint: 'Ver los egresos',  // <-- texto del tooltip
+                showTooltip: true,                // <-- activa el tooltip
+                disabled: false,
+                onInitialized: function (e) {
+                    verEgresosInstance = e.component;
+                },
+                onClick: function () {
+                    popEgresosInstance.show();
+                }
+            },
+            BtnVerIngresosOptions: {
+                icon: 'fa fa-chart-bar',
+                type: 'success',
+                width: 130,
+                text: 'Ingresos',
+                hint: 'Ver los ingresos',  // <-- texto del tooltip
+                showTooltip: true,                // <-- activa el tooltip
+                disabled: false,
+                onInitialized: function (e) {
+                    verIngresosInstance = e.component;
+                },
+                onClick: function () {
+                    popIngresosInstance.show();
+                }
+            },
+            BtnCerrarEgresosOptions: {
+                icon: 'fa fa-times-circle',
+                type: 'success',
+                width: 130,
+                text: 'Regresar',
+                hint: 'Regresar a punto de venta',  // <-- texto del tooltip
+                showTooltip: true,                // <-- activa el tooltip
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnCerrarEgresosInstance = e.component;
+                },
+                onClick: function () {
+                    popEgresosInstance.hide();
+                }
+            },
+            BtnCerrarIngresosOptions: {
+                icon: 'fa fa-times-circle',
+                type: 'success',
+                width: 130,
+                text: 'Regresar',
+                hint: 'Regresar a punto de venta',  // <-- texto del tooltip
+                showTooltip: true,                // <-- activa el tooltip
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnCerrarIngresosInstance = e.component;
+                },
+                onClick: function () {
+                    popIngresosInstance.hide();
+                }
+            },
+
             BtnEnviarVentaOptions: {
                 icon: 'fa fa-paper-plane',
                 type: 'success',
@@ -1325,24 +1445,24 @@
                     Swal.fire({
                         title: '💰 Registrar Ingreso',
                         html: `
-                            <form id="formIngreso" class="text-start" style="font-size: 1.4rem;">
-                                <div class="mb-4">
-                                    <label for="montoIngreso" class="form-label fw-semibold" style="font-size: 1.5rem;">Monto del ingreso</label>
-                                    <input id="montoIngreso" type="number" min="0" step="0.01"
-                                        class="form-control form-control-lg"
-                                        placeholder="Ej. 1500.00"
-                                        style="font-size: 1.6rem; height: 3.5rem; padding: 0.75rem 1rem;">
-                                </div>
+        <form id="formIngreso" class="text-start" style="font-size: 1.4rem;">
+            <div class="mb-4">
+                <label for="montoIngreso" class="form-label fw-semibold" style="font-size: 1.5rem;">Monto del ingreso</label>
+                <input id="montoIngreso" type="number" min="0" step="0.01"
+                    class="form-control form-control-lg"
+                    placeholder="Ej. 1500.00"
+                    style="font-size: 1.6rem; height: 3.5rem; padding: 0.75rem 1rem;">
+            </div>
 
-                                <div class="mb-4">
-                                    <label for="obsIngreso" class="form-label fw-semibold" style="font-size: 1.5rem;">Observación</label>
-                                    <textarea id="obsIngreso" rows="4"
-                                            class="form-control form-control-lg"
-                                            placeholder="Motivo o descripción del ingreso"
-                                            style="font-size: 1.6rem; padding: 1rem;"></textarea>
-                                </div>
-                            </form>
-                        `,
+            <div class="mb-4">
+                <label for="obsIngreso" class="form-label fw-semibold" style="font-size: 1.5rem;">Observación</label>
+                <textarea id="obsIngreso" rows="4"
+                        class="form-control form-control-lg"
+                        placeholder="Motivo o descripción del ingreso"
+                        style="font-size: 1.6rem; padding: 1rem;"></textarea>
+            </div>
+        </form>
+    `,
                         showCancelButton: true,
                         confirmButtonText: '<i class="fa-solid fa-floppy-disk"></i> Guardar',
                         cancelButtonText: '<i class="fa-solid fa-xmark"></i> Cerrar',
@@ -1362,15 +1482,36 @@
                             }
                             if (overlay) overlay.style.zIndex = '999998';
                             const confirmBtn = Swal.getConfirmButton();
+                            const cancelBtn = Swal.getCancelButton();
                             if (confirmBtn) {
                                 confirmBtn.style.fontSize = '1.3rem';
                                 confirmBtn.style.padding = '1rem 2.6rem';
                             }
-                            const cancelBtn = Swal.getCancelButton();
                             if (cancelBtn) {
                                 cancelBtn.style.fontSize = '1.3rem';
                                 cancelBtn.style.padding = '1rem 2.6rem';
                             }
+
+                            // Foco inicial en Monto
+                            const montoInput = document.getElementById('montoIngreso');
+                            const obsInput = document.getElementById('obsIngreso');
+                            montoInput.focus();
+
+                            // Enter en Monto → pasar a Observación
+                            montoInput.addEventListener('keydown', function (e) {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    obsInput.focus();
+                                }
+                            });
+
+                            // Enter en Observación → disparar confirm
+                            obsInput.addEventListener('keydown', function (e) {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    Swal.clickConfirm();
+                                }
+                            });
                         },
                         preConfirm: () => {
                             const monto = parseFloat(document.getElementById('montoIngreso').value.trim());
@@ -1385,13 +1526,12 @@
                                 return false;
                             }
 
-                            // Retornamos la promesa de $http, Swal esperará la respuesta
                             return $http.post('/api/v1/ingreso/', {
                                 corte_caja: vm.corteCajaId,
                                 personal: vm.personaId,
                                 monto: monto,
                                 descripcion: obs
-                            }).then(response => response.data)
+                            }).then(response => getIngresosPorCorte())
                                 .catch(err => {
                                     Swal.showValidationMessage('❌ No se pudo crear el ingreso');
                                     return false;
@@ -1409,9 +1549,9 @@
                                 color: #333;
                                 line-height: 1.4;
                                 text-align: center;
-                            ">${ingreso.descripcion}</p>`,
+                            "></p>`,
                                 showConfirmButton: false,
-                                timer: 2000,
+                                timer: 1000,
                                 timerProgressBar: true,
                                 position: 'center',
                                 background: '#f8f9fa',
@@ -1424,6 +1564,7 @@
                             });
                         }
                     });
+
 
                 }
             },
@@ -1457,7 +1598,7 @@
                                         style="font-size: 1.6rem; padding: 1rem;"></textarea>
                             </div>
                         </form>
-                    `,
+                        `,
                         showCancelButton: true,
                         confirmButtonText: '<i class="fa-solid fa-floppy-disk"></i> Guardar',
                         cancelButtonText: '<i class="fa-solid fa-xmark"></i> Cerrar',
@@ -1476,6 +1617,7 @@
                                 popup.style.borderRadius = '1rem';
                             }
                             if (overlay) overlay.style.zIndex = '999998';
+
                             const confirmBtn = Swal.getConfirmButton();
                             if (confirmBtn) {
                                 confirmBtn.style.fontSize = '1.3rem';
@@ -1486,6 +1628,27 @@
                                 cancelBtn.style.fontSize = '1.3rem';
                                 cancelBtn.style.padding = '1rem 2.6rem';
                             }
+
+                            // Foco inicial en Monto
+                            const montoInput = document.getElementById('montoEgreso');
+                            const obsInput = document.getElementById('obsEgreso');
+                            montoInput.focus();
+
+                            // Enter en Monto → pasar a Observación
+                            montoInput.addEventListener('keydown', function (e) {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    obsInput.focus();
+                                }
+                            });
+
+                            // Enter en Observación → disparar confirm
+                            obsInput.addEventListener('keydown', function (e) {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    Swal.clickConfirm();
+                                }
+                            });
                         },
                         preConfirm: () => {
                             const monto = parseFloat(document.getElementById('montoEgreso').value.trim());
@@ -1500,13 +1663,12 @@
                                 return false;
                             }
 
-                            // Retornamos la promesa de $http, Swal esperará la respuesta
                             return $http.post('/api/v1/egreso/', {
                                 corte_caja: vm.corteCajaId,
                                 personal: vm.personaId,
                                 monto: monto,
                                 descripcion: obs
-                            }).then(response => response.data)
+                            }).then(response => getEgresosPorCorte())
                                 .catch(err => {
                                     Swal.showValidationMessage('❌ No se pudo crear el egreso');
                                     return false;
@@ -1515,7 +1677,6 @@
                     }).then((result) => {
                         if (result.isConfirmed && result.value) {
                             const egreso = result.value;
-                            // Mostramos mensaje central de éxito con la observación
                             Swal.fire({
                                 icon: 'success',
                                 title: '💾 Egreso registrado',
@@ -1524,13 +1685,13 @@
                                     margin-top: 0.5rem; 
                                     color: #333;
                                     line-height: 1.4;
-                                ">${egreso.descripcion}</p>`,
+                                "></p>`,
                                 showConfirmButton: false,
-                                timer: 2000,
+                                timer: 1000,
                                 timerProgressBar: true,
                                 position: 'center',
-                                background: '#ebebebff',      // verde muy suave
-                                iconColor: '#e6772eff',       // verde éxito
+                                background: '#ebebebff',
+                                iconColor: '#e6772eff',
                                 customClass: {
                                     popup: 'shadow-2xl rounded-3xl p-5 animate__animated animate__fadeInDown',
                                     title: 'fw-bold fs-4 text-center',
@@ -1539,7 +1700,6 @@
                             });
                         }
                     });
-
                 }
             },
             BtnBuscarVentasOptions: {
@@ -2095,6 +2255,162 @@
                 rowAlternationEnabled: true,
                 showRowLines: true
             },
+            gridEgresosPorCorteOptions: {
+                dataSource: $scope.egresos_por_corte_source, // tu data de egresos
+                // Paginación
+                paging: {
+                    pageSize: 1000
+                },
+                pager: {
+                    showPageSizeSelector: true,
+                    allowedPageSizes: [1000, 2000, 6000],
+                    showInfo: true
+                },
+
+                // Solo lectura
+                selection: {
+                    mode: 'none'
+                },
+
+                // Filtro por fila
+                filterRow: {
+                    visible: true,
+                    applyFilter: "auto"
+                },
+
+                showBorders: true,
+                rowAlternationEnabled: true,
+                showRowLines: true,
+                height: 400,
+                columnAutoWidth: true,
+                allowColumnResizing: true,
+                columnFixing: {
+                    enabled: true
+                },
+
+                // Columnas ejemplo para egresos
+                columns: [
+                    { dataField: 'id_egreso', caption: 'ID', width: 40 },
+                    { dataField: 'descripcion', caption: 'Concepto', width: 300 },
+                    {
+                        dataField: 'monto',
+                        caption: 'Monto',
+                        width: 60,
+                        format: { type: 'fixedPoint', precision: 2 },
+                        cellTemplate: function (container, options) {
+                            container.css({
+                                'background-color': '#f2a0a0',
+                                'color': '#800000',
+                                'font-weight': 'bold'
+                            });
+                            container.text(options.text);
+                        }
+                    }
+                ],
+
+                // Totalización de la columna "monto"
+                summary: {
+                    totalItems: [
+                        {
+                            column: "monto",
+                            summaryType: "sum",
+                            displayFormat: "Total: {0}",
+                            valueFormat: { type: "fixedPoint", precision: 2 }
+                        }
+                    ]
+                },
+
+                onInitialized: function (e) {
+                    gridEgresosPorCorteInstance = e.component;
+                },
+                // Mensaje cuando no hay datos
+                noDataText: "Sin egresos registrados",
+
+                // Scroll
+                scrolling: {
+                    mode: 'standard',
+                    showScrollbar: 'always'
+                }
+            },
+            gridIngresosPorCorteOptions: {
+                dataSource: $scope.ingresos_por_corte_source, // tu data de egresos
+                // Paginación
+                paging: {
+                    pageSize: 1000
+                },
+                pager: {
+                    showPageSizeSelector: true,
+                    allowedPageSizes: [1000, 2000, 6000],
+                    showInfo: true
+                },
+
+                // Solo lectura
+                selection: {
+                    mode: 'none'
+                },
+
+                // Filtro por fila
+                filterRow: {
+                    visible: true,
+                    applyFilter: "auto"
+                },
+
+                showBorders: true,
+                rowAlternationEnabled: true,
+                showRowLines: true,
+                height: 400,
+                columnAutoWidth: true,
+                allowColumnResizing: true,
+                columnFixing: {
+                    enabled: true
+                },
+
+                // Columnas ejemplo para egresos
+                columns: [
+                    { dataField: 'id_ingreso', caption: 'ID', width: 40 },
+                    { dataField: 'descripcion', caption: 'Concepto', width: 300 },
+                    {
+                        dataField: 'monto',
+                        caption: 'Monto',
+                        width: 60,
+                        format: { type: 'fixedPoint', precision: 2 },
+                        cellTemplate: function (container, options) {
+                            container.css({
+                                'background-color': '#9af392ff',
+                                'color': '#008055ff',
+                                'font-weight': 'bold'
+                            });
+                            container.text(options.text);
+                        }
+                    }
+                ],
+
+                // Totalización de la columna "monto"
+                summary: {
+                    totalItems: [
+                        {
+                            column: "monto",
+                            summaryType: "sum",
+                            displayFormat: "Total: {0}",
+                            valueFormat: { type: "fixedPoint", precision: 2 }
+                        }
+                    ]
+                },
+
+                onInitialized: function (e) {
+                    gridIngresosPorCorteInstance = e.component;
+                },
+                // Mensaje cuando no hay datos
+                noDataText: "Sin egresos registrados",
+
+                // Scroll
+                scrolling: {
+                    mode: 'standard',
+                    showScrollbar: 'always'
+                }
+            }
+
+
         }
         vm.popups = {
             popPagosOptions: {
@@ -2120,6 +2436,7 @@
                     } else {
                         BtnPagarInstance.option("disabled", true);
                     }
+                    
                 },
                 // onContentReady: function (e) {
                 //   getMetodoPago();
@@ -2167,6 +2484,47 @@
 
                 //}
             },
+            popEgresosOptions: {
+                showTitle: true,
+                width: 800,
+                height: 600,
+                title: "Egresos",
+                dragEnabled: false,
+                closeOnOutsideClick: false,
+                showCloseButton: false, // <--- Aquí se quita la X
+                bindingOptions: {
+                    visible: "showPopEgresos",
+                },
+                onInitialized: function (e) {
+                    popEgresosInstance = e.component;//Se inicializa el popup para poder darle funcionalidad
+                },
+
+                onContentReady: function (e) {
+
+                }
+            },
+
+            popIngresosOptions: {
+                showTitle: true,
+                width: 800,
+                height: 600,
+                title: "Ingresos",
+                dragEnabled: false,
+                closeOnOutsideClick: false,
+                showCloseButton: false, // <--- Aquí se quita la X
+                bindingOptions: {
+                    visible: "showPopingresos",
+                },
+                onInitialized: function (e) {
+                    popIngresosInstance = e.component;//Se inicializa el popup para poder darle funcionalidad
+                },
+
+                onContentReady: function (e) {
+
+                }
+            },
+
+
         };
     }
 })();
