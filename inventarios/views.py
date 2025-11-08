@@ -8,6 +8,22 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import OuterRef, Subquery
 
+from authentication.decoradores import require_personal
+from .models import Producto, StockItem
+
+@login_required()
+@require_personal
+def movimientoInventario(request):
+    user = request.user.personal
+    empresa = user.empresa
+    return render(request, 'inventarios/movimiento_inventario.html',{
+			'title':"Movimiento inventario",
+            'empresa': empresa,
+            'personaId': user.id,
+            'nombre_personal': f"{user.nombre} {user.apellido_paterno} {user.apellido_materno}"
+            })
+            
+
 class ProductosViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
@@ -97,3 +113,44 @@ def productosActivosEmpresas(request):
         })
 
     return JsonResponse(resultado, safe=False)
+
+@login_required
+def inventarioPorEmpresa(request):
+    empresa = request.user.personal.empresa
+    productos = Producto.objects.filter(empresa=empresa, activo=True).select_related('tipo_producto')
+
+    inventario_data = []
+
+    for p in productos:
+        stock_item = StockItem.objects.filter(nombre=p.nombre).first()
+        total_stock = stock_item.existencia if stock_item else 0
+        stock_id = stock_item.id if stock_item else None
+
+        inventario_data.append({
+            "producto_id": p.id,
+            "stock_item_id": stock_id,
+            "nombre_producto": p.nombre,
+            "total_stock": total_stock,
+            "tipo_producto": p.tipo_producto.tipo_producto if p.tipo_producto else None
+        })
+
+    return JsonResponse(inventario_data, safe=False)
+
+
+@login_required
+def incrementarStock(request):
+    stock_item_id = request.POST.get("id")
+    cantidad = request.POST.get("cantidad")
+
+    try:
+        stock_item = StockItem.objects.get(id=stock_item_id)
+        stock_item.existencia += int(cantidad)
+        stock_item.save()
+        return JsonResponse({
+            "success": True,
+            "stock_item_id": stock_item.id,
+            "nombre": stock_item.nombre,
+            "nueva_existencia": stock_item.existencia
+        })
+    except:
+        return JsonResponse({"success": False})

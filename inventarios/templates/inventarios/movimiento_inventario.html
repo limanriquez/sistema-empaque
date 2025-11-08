@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load general_tags %}
+{% block ng_app %}
+<html class="no-js" lang="es" ng-app="inventarios.inventario"
+    ng-init="empresaId={{ empresa.id|default:'null' }}; nombrePersonal='{{ nombre_personal|default:''|escapejs }}';">
+{% endblock ng_app %}
+{% block head_title %} {{ title }} {% endblock head_title %}
+{% block personal_styles %}
+{% endblock personal_styles %}
+{% block contenido %}
+<style>
+    .sin-padding {
+        padding: 0px !important;
+        text-align: center;
+    }
+</style>
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/alertify.min.css' %}" />
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/themes/default.min.css' %}" />
+<div ng-controller='MovimientoInventario as vm'>
+    {% initial_loader %}
+    <div class="content dx-viewport" {% initial_loader_hide %}>
+        <div dx-load-panel="vm.loadPanels.basicOptions"></div>
+        <div class="row">
+            <div class="col-md-9 col-xs-9">
+                <div class="dx-fieldset-header" style="margin-bottom: 5px;">Movimiento de Inventario</div>
+            </div>
+        </div>
+        <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+            <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <div dx-button="vm.button.BtnIngresarOptions"></div>
+                    <div dx-button="vm.button.BtnSalidaOptions"></div>
+                    <div dx-button="vm.button.BtnImprimirOptions"></div>
+                </div>
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;"></div>
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+
+                </div>
+            </div>
+        </div>
+
+        <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+            <div class="row" style="padding-top: 15px; padding-left: 0px; padding-right: 5px;">
+                <div dx-data-grid="vm.grid.grdInventarioOptions"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock contenido %}
+{% block scripts_js %}
+<script type="text/javascript" src="{% static 'javascripts/inventarios.config.js' %}"></script>
+<script type="text/javascript" src="{% static 'inventarios/js/inventario.module.js' %}"></script>
+<script type="text/javascript"
+    src="{% static 'inventarios/js/controllers/movimientoInventario.controller.js' %}"></script>
+{% endblock scripts_js %}
