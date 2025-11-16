@@ -19,9 +19,16 @@
 
         .content {
             background-color: white;
-            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4);
             padding: 10px;
             margin-top: 5px;
+            border-radius: 12px;
+            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.35);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .content:hover {
+            /* Sombra más sutil y controlada */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.38);
         }
 
         .footer {
@@ -330,6 +337,12 @@
                                         <p>Corte de caja</p>
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a href="{% url 'inventario:movimientoInventario' %}" class="nav-link">
+                                        <i class="nav-icon bi bi-circle"></i>
+                                        <p>Movimiento de inventario</p>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                         <li class="nav-item">
@@ -342,7 +355,7 @@
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                     <a href="{% url 'operaciones:reporte_top_cinco' %}" class="nav-link">
+                                    <a href="{% url 'operaciones:reporte_top_cinco' %}" class="nav-link">
                                         <i class="nav-icon bi bi-circle"></i>
                                         <p>Top cinco</p>
                                     </a>

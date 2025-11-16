@@ -15,5 +15,6 @@ urlpatterns = [
     path('movimiento_inventario/', movimientoInventario, name='movimientoInventario'),
     path('inventario_por_empresa/', inventarioPorEmpresa, name='inventarioPorEmpresa'),
     path('incrementar_Stock/', incrementarStock, name='incrementarStock'),
-
+    path('disminuir_Stock/', disminuirStock, name='disminuirStock'),
+    path('movimiento_Inventario_Por_Corte_Caja/', movimientoInventarioPorCorteCaja, name='movimientoInventarioPorCorteCaja'),
 ]

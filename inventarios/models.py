@@ -1,7 +1,6 @@
 from django.db import models
 from catalogos.models import TipoProducto, TipoPrecio, Seccion, ZonaNotificacion
-from empresa.models import Empresa, Proveedor
-
+from empresa.models import Empresa, Proveedor, Personal
 
 class Producto(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
@@ -70,6 +69,35 @@ class BOM(models.Model):
 
     def __str__(self):
         return f"{self.cantidad} x {self.stock_item.nombre} para {self.producto.nombre}"
+
+class MovimientoInventario(models.Model):
+    TIPO_MOVIMIENTO = (
+        (1, 'Entrada'),
+        (0, 'Salida'),
+    )
+    stock_item = models.ForeignKey(
+        StockItem,
+        on_delete=models.CASCADE,
+        related_name='movimientos'
+    )
+    tipo = models.SmallIntegerField(choices=TIPO_MOVIMIENTO)
+    cantidad = models.PositiveIntegerField()
+    descripcion = models.TextField(blank=True, null=True)
+    personal = models.ForeignKey(
+        Personal,
+        on_delete=models.PROTECT,
+        related_name='movimientos_inventario'
+    )
+    corte_caja = models.ForeignKey(
+        'operaciones.CorteCaja',
+        on_delete=models.PROTECT,
+        related_name='movimientos_inventario',
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        tipo_str = "Alta" if self.tipo == 1 else "Baja"
+        return f"{self.stock_item.nombre} - {tipo_str} ({self.cantidad})"
 
 """
 Configura la zona de notificación asignada a cada producto.

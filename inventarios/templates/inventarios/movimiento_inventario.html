@@ -28,13 +28,13 @@
         </div>
         <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
             <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
-                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                <div class="col-md-6 form-group" style="margin-bottom: 0px;">
                     <div dx-button="vm.button.BtnIngresarOptions"></div>
                     <div dx-button="vm.button.BtnSalidaOptions"></div>
-                    <div dx-button="vm.button.BtnImprimirOptions"></div>
+                    <div dx-button="vm.button.BtnMovimientosPorCorteOptions"></div>
                 </div>
-                <div class="col-md-4 form-group" style="margin-bottom: 0px;"></div>
-                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                <div class="col-md-3 form-group" style="margin-bottom: 0px;"></div>
+                <div class="col-md-3 form-group" style="margin-bottom: 0px;">
 
                 </div>
             </div>
@@ -45,6 +45,96 @@
                 <div dx-data-grid="vm.grid.grdInventarioOptions"></div>
             </div>
         </div>
+
+        <div dx-popup="vm.popups.popIngresarInvenarioOptions">
+            <div class="row">
+                <div class="col-md-12 form-group" style="margin-bottom: 0px;">
+                    <div dx-button="vm.button.BtnAgregarInventarioOptions"
+                        style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+                    <div dx-button="vm.button.BtnRegresarOptions"
+                        style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div style="margin-top: 0px; padding-top:  10px; padding-left: 0px;">
+                    <div class="col-md-12 form-group" style="margin-bottom: 0px;">
+                        <span>Cantidad:</span>
+                        <div dx-number-box="vm.numberBox.NumBoxCantidadOptions"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div style="margin-top: 0px; padding-top: 10px; padding-left: 0px;">
+                    <div class="col-md-12 form-group" style="margin-bottom: 0px;">
+                        <span>Descripción:</span>
+                        <div dx-text-area="vm.textArea.descripcionOptions"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div dx-popup="vm.popups.popDisminuirInvenarioOptions">
+            <div class="row">
+                <div class="col-md-12 form-group" style="margin-bottom: 0px;">
+                    <div dx-button="vm.button.BtnDisminuirInventarioOptions"
+                        style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+                    <div dx-button="vm.button.BtnDisminuirRegresarOptions"
+                        style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div style="margin-top: 0px; padding-top:  10px; padding-left: 0px;">
+                    <div class="col-md-12 form-group" style="margin-bottom: 0px;">
+                        <span>Cantidad:</span>
+                        <div dx-number-box="vm.numberBox.NumBoxDisminuirCantidadOptions"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div style="margin-top: 0px; padding-top: 10px; padding-left: 0px;">
+                    <div class="col-md-12 form-group" style="margin-bottom: 0px;">
+                        <span>Descripción:</span>
+                        <div dx-text-area="vm.textArea.disminuirDescripcionOptions"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div dx-popup="vm.popups.popBuscarMovimientosPorCorteOptions">
+
+            <!-- Fila 1 dividida en 3 columnas -->
+            <div class="rowdgr" style="margin-top: 15px; padding: 0 20px 20px 20px;">
+                <div class="row" style="padding: 25px 15px;">
+                    <!-- Columna 1: Botón -->
+                    <div style="flex: 0 0 150px;">
+                        <div dx-button="vm.button.BtnRegresarCortesOptions" style="margin: 0;"></div>
+                    </div>
+
+                    <!-- Columna 2: Lookup / Combo Corte de Caja -->
+                    <div style="display: flex; align-items: center; gap: 10px; flex: 0 0 350px;">
+                        <label style="font-weight: 600; margin: 0;">Corte de Caja:</label>
+                        <div dx-lookup="vm.lookup.CmbCortesOptions" style="flex: 1;"></div>
+                    </div>
+
+                    <!-- Columna 3: espacio vacío -->
+                    <div style="flex: 0 0 150px;">
+                        <div dx-button="vm.button.BtnBuscarMovimientosOptions" style="margin: 0;"></div>
+                    </div>
+
+                </div>
+            </div>
+            <!-- Grid de ventas -->
+            <div class="rowdgr" style="margin-top: 15px; padding: 0 20px 20px 20px;">
+                <div class="row" style="padding: 5px 15px;">
+                    <div dx-data-grid="vm.grid.gridMovimientosPorCorteOptions"></div>
+                </div>
+            </div>
+
+        </div>
+
+
 
     </div>
 </div>
