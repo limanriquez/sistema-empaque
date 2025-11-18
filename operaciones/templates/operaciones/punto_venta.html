@@ -272,17 +272,23 @@
         <div class="fixed-bottom-paragraph">
             <div class="container-fluid" style="padding: 0px;">
                 <div class="row w-100 text-center" style="text-align: right;">
-                    <div class="col-3">
+                    <div class="col-1">
+
+                    </div>
+                    <div class="col-2">
                         <div dx-button="vm.button.BtnIngresosOptions" style="margin: 0;"></div>
                         <div dx-button="vm.button.BtnEgresosOptions" style="margin: 0;"></div>
                     </div>
-                    <div class="col-1">
+                    <div class="col-2">
                         <div dx-button="vm.button.BtnVerIngresosOptions" style="margin: 0;"></div>
-                    </div>
-                    <div class="col-1">
                         <div dx-button="vm.button.BtnVerEgresosOptions" style="margin: 0;"></div>
                     </div>
-                    <div class="col-4">
+
+                    <div class="col-2">
+                        <div dx-button="vm.button.BtnInformacionEnvioOptions" style="margin: 0;"></div>
+                    </div>
+
+                    <div class="col-2">
                         sfdfdf
                     </div>
                     <div class="col-3" style="padding: 0px;">
@@ -417,6 +423,38 @@
             <div class="rowdgr" style="margin-top: 15px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 20px;">
                 <div class="row" style="padding-top: 5px; padding-left: 0px;padding-left: 15px; padding-right: 15px;">
                     <div dx-data-grid="vm.grids.gridIngresosPorCorteOptions"></div>
+                </div>
+            </div>
+        </div>
+
+        <div dx-popup="vm.popups.popEnvioDomicilioOptions">
+            <div dx-button="vm.button.BtnCerrarDomicilioOptions"
+                style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+            <div class="rowdgr" style="margin-top: 15px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 20px;">
+                <div class="row" style="padding-top: 5px; padding-left: 0px;padding-left: 15px; padding-right: 15px;">
+                    <div class="col-md-3 form-group" style="margin-bottom: 0px; padding-right: 5px;">
+                        <span>Nombre:</span>
+                        <div dx-text-box="vm.textBox.TxtNombreOptions"></div>
+                    </div>
+                    <div class="col-md-3 form-group" style="margin-bottom: 0px; padding-left: 5px; padding-right: 5px;">
+                        <span>Apellido paterno:</span>
+                        <div dx-text-box="vm.textBox.TxtApellidoPaternoOptions" style="padding-left: 5px; padding-right: 5px"></div>
+                    </div>
+                    <div class="col-md-3 form-group" style="margin-bottom: 0px; padding-left: 5px; padding-right: 5px">
+                        <span>Apellido materno:</span>
+                        <div dx-text-box="vm.textBox.TxtApellidoMaternoOptions"></div>
+                    </div>
+                    <div class="col-md-3 form-group" style="margin-bottom: 0px;">
+                        <span>Teléfono:</span>
+                        <div dx-text-box="vm.textBox.TxtTelefonoOptions"></div>
+                    </div>
+                </div>
+
+                <div class="row" style="padding-top: 5px; padding-left: 0px;padding-left: 15px; padding-right: 15px;">
+                    <div class="col-md-12 form-group" style="margin-bottom: 0px;">
+                        <span>Observaciones:</span>
+                        <div dx-text-area="vm.textArea.ObservacionesOptions"></div>
+                    </div>
                 </div>
             </div>
         </div>

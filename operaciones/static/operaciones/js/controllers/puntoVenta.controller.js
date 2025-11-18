@@ -14,7 +14,8 @@
             CmbCortesInstance, PopBuscarVentasInstance, BtnRegresarCortesInstance, BtnBuscarVentasInstance,
             BtnHomeOptionsInstance, BtnEgresosInstance, BtnIngresosInstance, gridEgresosPorCorteInstance,
             popEgresosInstance, verEgresosInstance, BtnCerrarEgresosInstance, popIngresosInstance,
-            BtnCerrarIngresosInstance, gridIngresosPorCorteInstance, verIngresosInstance;
+            BtnCerrarIngresosInstance, gridIngresosPorCorteInstance, verIngresosInstance,
+            BtnInformacionEnvioInstance, popEnvioDomicilioInstance, BtnCerrarDomicilioInstance;
 
         var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [],
             ArrayPagosPorVenta = [], ArrayVentasCorte = [], ArrayCortes = [], ArrayEgresosPorCorte = [], ArrayIngresosPorCorte = [];
@@ -1301,9 +1302,24 @@
                     popIngresosInstance.show();
                 }
             },
+            BtnInformacionEnvioOptions: {
+                icon: 'fa fa-motorcycle',
+                type: 'default',
+                width: 130,
+                text: 'Domicilio',
+                hint: 'Envio a domicilio',  // <-- texto del tooltip
+                showTooltip: true,                // <-- activa el tooltip
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnInformacionEnvioInstance = e.component;
+                },
+                onClick: function () {
+                    popEnvioDomicilioInstance.show();
+                }
+            },
             BtnCerrarEgresosOptions: {
-                icon: 'fa fa-times-circle',
-                type: 'success',
+                icon: 'fa fa-arrow-left',
+                type: 'default',
                 width: 130,
                 text: 'Regresar',
                 hint: 'Regresar a punto de venta',  // <-- texto del tooltip
@@ -1317,8 +1333,8 @@
                 }
             },
             BtnCerrarIngresosOptions: {
-                icon: 'fa fa-times-circle',
-                type: 'success',
+                icon: 'fa fa-arrow-left',
+                type: 'default',
                 width: 130,
                 text: 'Regresar',
                 hint: 'Regresar a punto de venta',  // <-- texto del tooltip
@@ -1329,6 +1345,22 @@
                 },
                 onClick: function () {
                     popIngresosInstance.hide();
+                }
+            },
+
+            BtnCerrarDomicilioOptions: {
+                icon: 'fa fa-arrow-left',
+                type: 'default',
+                width: 130,
+                text: 'Regresar',
+                hint: 'Regresar a punto de venta',  // <-- texto del tooltip
+                showTooltip: true,                // <-- activa el tooltip
+                disabled: false,
+                onInitialized: function (e) {
+                     BtnCerrarDomicilioInstance = e.component;
+                },
+                onClick: function () {
+                    popEnvioDomicilioInstance.hide();
                 }
             },
 
@@ -2436,7 +2468,7 @@
                     } else {
                         BtnPagarInstance.option("disabled", true);
                     }
-                    
+
                 },
                 // onContentReady: function (e) {
                 //   getMetodoPago();
@@ -2517,6 +2549,26 @@
                 },
                 onInitialized: function (e) {
                     popIngresosInstance = e.component;//Se inicializa el popup para poder darle funcionalidad
+                },
+
+                onContentReady: function (e) {
+
+                }
+            },
+
+            popEnvioDomicilioOptions: {
+                showTitle: true,
+                width: 800,
+                height: 600,
+                title: "Envio a domicilio",
+                dragEnabled: false,
+                closeOnOutsideClick: false,
+                showCloseButton: false, // <--- Aquí se quita la X
+                bindingOptions: {
+                    visible: "showPopDomicilio",
+                },
+                onInitialized: function (e) {
+                    popEnvioDomicilioInstance = e.component;//Se inicializa el popup para poder darle funcionalidad
                 },
 
                 onContentReady: function (e) {

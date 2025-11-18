@@ -98,6 +98,35 @@ class DesgloseVenta(models.Model):
     def __str__(self):
         return f"{self.producto.nombre} - ${self.total:.2f} (Venta #{self.venta_id})"
 
+class VentaEnvio(models.Model):
+    venta = models.OneToOneField(
+        Ventas,
+        on_delete=models.PROTECT,
+        related_name='envio'
+    )
+
+    # Cliente del catálogo (opcional)
+    cliente = models.ForeignKey(
+        Cliente,
+        on_delete=models.PROTECT,
+        related_name='envios',
+        null=True,
+        blank=True
+    )
+
+    # Datos capturados para esta venta (por si no es cliente registrado)
+    nombre_cliente = models.CharField(max_length=200, blank=True, null=True)
+    telefono = models.CharField(max_length=15, blank=True, null=True)
+    domicilio = models.TextField(blank=True, null=True)
+    observaciones_envio = models.TextField(blank=True, null=True)
+
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        if self.cliente:
+            return f"Envío de Venta #{self.venta.id} - {self.cliente}"
+        return f"Envío de Venta #{self.venta.id}"
+        
 """
 Registra las notificaciones generadas para cada producto vendido en las diferentes zonas de preparación.
 Permite rastrear el estado de cada notificación (pendiente, entregada, cancelada) para una gestión eficiente
