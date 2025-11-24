@@ -139,6 +139,23 @@
             );
         };
 
+        function vaciarInformacionEnvio() {
+            clienteExiste = false;
+            fullName = "";
+            $scope.txtTelefono = "";
+            $scope.txtNombre = "";
+            $scope.txtApellidoParterno = "";
+            $scope.txtApellidoMaterno = "";
+            $scope.txtDomicilio = "";
+            $scope.txtObservaciones = "";
+            clienteId = null;
+            envioExiste = false;
+            txtTelefonoInstance.option("disabled", false);
+            txtNombreInstance.option("disabled", false);
+            txtAPInstance.option("disabled", false);
+            txtAMInstance.option("disabled", false);
+        }
+
         function getCortesCaja() {
             $scope.isLoadPanelVisible = true;
             $http.get('/cortes_por_empresa/', { params: { empresa: vm.empresaId } })
@@ -575,6 +592,7 @@
                 function (response) {
                     if (response.data.success) {
                         DevExpress.ui.notify("Envío guardado correctamente", "success", 2000);
+                        vaciarInformacionEnvio()
                         popEnvioDomicilioInstance.hide();
                     } else {
                         DevExpress.ui.notify("Error al guardar envío", "error", 2000);
@@ -606,6 +624,7 @@
                 function (response) {
                     if (response.data.success) {
                         DevExpress.ui.notify("Envío modificado correctamente", "success", 2000);
+                        vaciarInformacionEnvio();
                         popEnvioDomicilioInstance.hide();
                     } else {
                         DevExpress.ui.notify("Error al modificar envío", "error", 2000);
@@ -1607,6 +1626,7 @@
                     BtnCerrarDomicilioInstance = e.component;
                 },
                 onClick: function () {
+                    vaciarInformacionEnvio();
                     popEnvioDomicilioInstance.hide();
                 }
             },
@@ -2841,20 +2861,7 @@
 
                 },
                 onShown: function () {
-                    clienteExiste = false;
-                    fullName = "";
-                    $scope.txtTelefono = "";
-                    $scope.txtNombre = "";
-                    $scope.txtApellidoParterno = "";
-                    $scope.txtApellidoMaterno = "";
-                    $scope.txtDomicilio = "";
-                    $scope.txtObservaciones = "";
-                    clienteId = null;
-                    envioExiste = false;
-                    txtTelefonoInstance.option("disabled", false);
-                    txtNombreInstance.option("disabled", false);
-                    txtAPInstance.option("disabled", false);
-                    txtAMInstance.option("disabled", false);
+                    vaciarInformacionEnvio();
                     consultarEnvioDomicilio();
                 },
             },
