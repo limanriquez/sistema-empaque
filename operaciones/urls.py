@@ -40,5 +40,9 @@ urlpatterns = [
     path('cortesCajaCerrados/', cortesCajaCerrados, name='cortesCajaCerrados'),
     path('corte_caja/', corte_caja, name='corte_caja'),
     path('corte_caja_pdf/<int:corte_id>/', generar_pdf_corte_caja, name='corte_caja_pdf'),
+    path('buscar_cliente_por_telefono/', buscarClientePorTelefono, name='buscarClientePorTelefono'),
+    path('guardar_envio_domicilio/', guardarEnvioDomicilio, name='guardarEnvioDomicilio'),
+    path('modificar_envio_domicilio/', modificarEnvioDomicilio, name='modificarEnvioDomicilio'),
+    path('consultar_Envio_Domicilio/', consultarEnvioDomicilio, name='consultarEnvioDomicilio'), 
   #  path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]

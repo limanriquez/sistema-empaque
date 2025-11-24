@@ -430,30 +430,38 @@
         <div dx-popup="vm.popups.popEnvioDomicilioOptions">
             <div dx-button="vm.button.BtnCerrarDomicilioOptions"
                 style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
+            <div dx-button="vm.button.BtnGuardarDomicilioOptions"
+                style="margin-top: 0px; text-align: left; margin-bottom: 0px;"></div>
             <div class="rowdgr" style="margin-top: 15px; padding-left: 5px; margin-bottom: 0px; padding-bottom: 20px;">
                 <div class="row" style="padding-top: 5px; padding-left: 0px;padding-left: 15px; padding-right: 15px;">
+                    <div class="col-md-3 form-group" style="margin-bottom: 0px;">
+                        <span>Teléfono:</span>
+                        <div dx-text-box="vm.textBox.TxtTelefonoOptions"></div>
+                    </div>
                     <div class="col-md-3 form-group" style="margin-bottom: 0px; padding-right: 5px;">
                         <span>Nombre:</span>
                         <div dx-text-box="vm.textBox.TxtNombreOptions"></div>
                     </div>
                     <div class="col-md-3 form-group" style="margin-bottom: 0px; padding-left: 5px; padding-right: 5px;">
                         <span>Apellido paterno:</span>
-                        <div dx-text-box="vm.textBox.TxtApellidoPaternoOptions" style="padding-left: 5px; padding-right: 5px"></div>
+                        <div dx-text-box="vm.textBox.TxtApellidoPaternoOptions"
+                            style="padding-left: 5px; padding-right: 5px"></div>
                     </div>
                     <div class="col-md-3 form-group" style="margin-bottom: 0px; padding-left: 5px; padding-right: 5px">
                         <span>Apellido materno:</span>
                         <div dx-text-box="vm.textBox.TxtApellidoMaternoOptions"></div>
                     </div>
-                    <div class="col-md-3 form-group" style="margin-bottom: 0px;">
-                        <span>Teléfono:</span>
-                        <div dx-text-box="vm.textBox.TxtTelefonoOptions"></div>
-                    </div>
+
                 </div>
 
                 <div class="row" style="padding-top: 5px; padding-left: 0px;padding-left: 15px; padding-right: 15px;">
                     <div class="col-md-12 form-group" style="margin-bottom: 0px;">
+                        <span>Domicilio:</span>
+                        <div dx-text-area="vm.textArea.TxtDomicilioOptions"></div>
+                    </div>
+                    <div class="col-md-12 form-group" style="margin-bottom: 0px;">
                         <span>Observaciones:</span>
-                        <div dx-text-area="vm.textArea.ObservacionesOptions"></div>
+                        <div dx-text-area="vm.textArea.TxtObservacionesOptions"></div>
                     </div>
                 </div>
             </div>

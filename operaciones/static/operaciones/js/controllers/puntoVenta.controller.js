@@ -15,7 +15,9 @@
             BtnHomeOptionsInstance, BtnEgresosInstance, BtnIngresosInstance, gridEgresosPorCorteInstance,
             popEgresosInstance, verEgresosInstance, BtnCerrarEgresosInstance, popIngresosInstance,
             BtnCerrarIngresosInstance, gridIngresosPorCorteInstance, verIngresosInstance,
-            BtnInformacionEnvioInstance, popEnvioDomicilioInstance, BtnCerrarDomicilioInstance;
+            BtnInformacionEnvioInstance, popEnvioDomicilioInstance, BtnCerrarDomicilioInstance,
+            BtnGuardarDomicilioInstance, txtTelefonoInstance, txtNombreInstance, txtAPInstance,
+            txtAMInstance;
 
         var ArrayDesgloseVenta = [], ArrayMesa = [], ArrayEmpresasVenta = [], ArrayClientes = [], ArrayMetodoPago = [],
             ArrayPagosPorVenta = [], ArrayVentasCorte = [], ArrayCortes = [], ArrayEgresosPorCorte = [], ArrayIngresosPorCorte = [];
@@ -30,6 +32,10 @@
         var subTotal = 0;
         var descuento = 0;
         var total = 0;
+        var clienteExiste = false;
+        var fullName = "";
+        var clienteId = null;
+        var envioExiste = false;
         var cobroSubTotal, cobroDescuento, cobroTotal, cobroPendientePago, cobroPagado, coboMetodoPago, cobroPago, cobroCambio;
         $scope.ventas = [];
         $scope.ventaActiva = null;
@@ -483,6 +489,137 @@
                 }
             );
         };
+
+        function buscarClientePorTelefono(telefono) {
+            const params = new URLSearchParams({
+                telefono: telefono,
+                empresa: vm.empresaId
+            });
+            $scope.isLoadPanelVisible = true;
+            const url = `/buscar_cliente_por_telefono/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    // Si existe el cliente
+                    console.log(response.data);
+                    if (response.data.exists) {
+                        const nombre = response.data.nombre || "";
+                        const ap = response.data.apellido_paterno || "";
+                        const am = response.data.apellido_materno || "";
+                        $scope.txtNombre = nombre;
+                        $scope.txtApellidoParterno = ap;
+                        $scope.txtApellidoMaterno = am;
+                        clienteExiste = true;
+                        clienteId = response.data.id;
+                        fullName = `${nombre} ${ap} ${am}`.trim().replace(/\s+/g, " ");
+                    } else {
+                        clienteExiste = false;
+                    }
+                    $scope.isLoadPanelVisible = false;
+                },
+                function () {
+                    $scope.isLoadPanelVisible = false;
+                }
+            );
+        };
+
+        function consultarEnvioDomicilio(ventaId) {
+            const params = new URLSearchParams({
+                venta_id: $scope.ventaActiva
+            });
+            $scope.isLoadPanelVisible = true;
+            const url = `/consultar_Envio_Domicilio/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    if (response.data.existe) {
+                        const data = response.data;
+                        $scope.txtTelefono = data.telefono || "";
+                        $scope.txtNombre = data.nombre || "";
+                        $scope.txtApellidoParterno = data.apellido_paterno || "";
+                        $scope.txtApellidoMaterno = data.apellido_materno || "";
+                        $scope.txtDomicilio = data.domicilio || "";
+                        $scope.txtObservaciones = data.observaciones || "";
+                        txtTelefonoInstance.option("disabled", true);
+                        txtNombreInstance.option("disabled", true);
+                        txtAPInstance.option("disabled", true);
+                        txtAMInstance.option("disabled", true);
+                        envioExiste = true;
+                    } else {
+                        if (txtTelefonoInstance) {
+                            txtTelefonoInstance.focus();
+                        }
+                        envioExiste = false;
+                    }
+
+                    $scope.isLoadPanelVisible = false;
+                },
+                function () {
+                    $scope.isLoadPanelVisible = false;
+                }
+            );
+        }
+        function guardarEnvioDomicilio() {
+            const params = new URLSearchParams({
+                venta_id: $scope.ventaActiva,
+                empresa_id: vm.empresaId,
+                telefono: $scope.txtTelefono || "",
+                nombre: $scope.txtNombre || "",
+                apellido_paterno: $scope.txtApellidoParterno || "",
+                apellido_materno: $scope.txtApellidoMaterno || "",
+                domicilio: $scope.txtDomicilio || "",
+                observaciones: $scope.txtObservaciones || "",
+                cliente_id: clienteExiste ? clienteId : ""   // si tú guardas el ID del cliente
+            });
+            $scope.isLoadPanelVisible = true;
+            const url = `/guardar_envio_domicilio/?${params.toString()}`;
+            $http.get(url).then(
+                function (response) {
+                    if (response.data.success) {
+                        DevExpress.ui.notify("Envío guardado correctamente", "success", 2000);
+                        popEnvioDomicilioInstance.hide();
+                    } else {
+                        DevExpress.ui.notify("Error al guardar envío", "error", 2000);
+                    }
+                    $scope.isLoadPanelVisible = false;
+                },
+                function () {
+                    DevExpress.ui.notify("Fallo la conexión con el servidor", "error", 2000);
+                    $scope.isLoadPanelVisible = false;
+                }
+            );
+        }
+
+        function modificarEnvioDomicilio() {
+            const params = new URLSearchParams({
+                venta_id: $scope.ventaActiva,
+                telefono: $scope.txtTelefono || "",
+                nombre: $scope.txtNombre || "",
+                apellido_paterno: $scope.txtApellidoParterno || "",
+                apellido_materno: $scope.txtApellidoMaterno || "",
+                domicilio: $scope.txtDomicilio || "",
+                observaciones: $scope.txtObservaciones || ""
+            });
+
+            $scope.isLoadPanelVisible = true;
+            const url = `/modificar_envio_domicilio/?${params.toString()}`;
+
+            $http.get(url).then(
+                function (response) {
+                    if (response.data.success) {
+                        DevExpress.ui.notify("Envío modificado correctamente", "success", 2000);
+                        popEnvioDomicilioInstance.hide();
+                    } else {
+                        DevExpress.ui.notify("Error al modificar envío", "error", 2000);
+                    }
+                    $scope.isLoadPanelVisible = false;
+                },
+                function () {
+                    DevExpress.ui.notify("Fallo la conexión con el servidor", "error", 2000);
+                    $scope.isLoadPanelVisible = false;
+                }
+            );
+        }
+
+
         function getVentasAbiertasCorteEmpresas() {
             const params = new URLSearchParams({
                 corteCaja: vm.corteCajaId,
@@ -1199,9 +1336,119 @@
             }
 
         };
-
+        vm.textArea = {
+            TxtDomicilioOptions: {
+                disabled: false,
+                showClearButton: true,
+                height: 60,
+                maxLength: 300,
+                bindingOptions: {
+                    value: 'txtDomicilio'
+                },
+                onValueChanged: function (data) {
+                    $scope.txtDomicilio = $filter('uppercase')(data.value);
+                }
+            },
+            TxtObservacionesOptions: {
+                disabled: false,
+                showClearButton: true,
+                height: 60,
+                maxLength: 300,
+                bindingOptions: {
+                    value: 'txtObservaciones'
+                },
+                onValueChanged: function (data) {
+                    $scope.txtObservaciones = $filter('uppercase')(data.value);
+                }
+            }
+        }
         vm.textBox = {
+            TxtNombreOptions: {
+                disabled: false,
+                showClearButton: true,
+                maxLength: 100,
+                bindingOptions: {
+                    value: 'txtNombre'
+                },
+                onInitialized: function (e) {
+                    txtNombreInstance = e.component;
+                },
+                onValueChanged: function (data) {
+                    $scope.txtNombre = $filter('uppercase')(data.value);
+                },
 
+            },
+            TxtApellidoPaternoOptions: {
+                disabled: false,
+                showClearButton: true,
+                maxLength: 100,
+                bindingOptions: {
+                    value: 'txtApellidoParterno'
+                },
+                onInitialized: function (e) {
+                    txtAPInstance = e.component;
+                },
+                onValueChanged: function (data) {
+                    $scope.txtApellidoParterno = $filter('uppercase')(data.value);
+                },
+            },
+            TxtApellidoMaternoOptions: {
+                disabled: false,
+                showClearButton: true,
+                maxLength: 100,
+                bindingOptions: {
+                    value: 'txtApellidoMaterno'
+                },
+                onInitialized: function (e) {
+                    txtAMInstance = e.component;
+                },
+                onValueChanged: function (data) {
+                    $scope.txtApellidoMaterno = $filter('uppercase')(data.value);
+                },
+            },
+            TxtTelefonoOptions: {
+                disabled: false,
+                showClearButton: true,
+                maxLength: 10,
+                bindingOptions: {
+                    value: 'txtTelefono'
+                },
+                mode: 'tel',
+                onKeyDown: function (e) {
+                    const key = e.event.key;
+                    // Permitir solo dígitos, teclas de navegación, borrar, tab
+                    const allowedKeys = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete'];
+                    if (!/^\d$/.test(key) && !allowedKeys.includes(key)) {
+                        e.event.preventDefault();
+                    }
+                },
+                onInitialized: function (e) {
+                    txtTelefonoInstance = e.component;
+                },
+                onValueChanged: function (e) {
+                    // Puedes agregar validación adicional aquí si deseas
+                },
+                onFocusOut: function (e) {
+                    const valor = e.component.option("value") || "";
+
+                    // Bloquear si está vacío
+                    if (valor.length === 0) {
+                        DevExpress.ui.notify("El teléfono no puede estar vacío", "warning", 2000);
+                        setTimeout(() => e.component.focus());
+                        return;
+                    }
+
+                    //  Bloquear si tiene menos de 10 caracteres
+                    if (valor.length < 10) {
+                        DevExpress.ui.notify("El teléfono debe tener 10 dígitos", "warning", 2000);
+                        setTimeout(() => e.component.focus());
+                        return;
+                    }
+
+                    //  Tiene 10 dígitos → correr búsqueda
+                    buscarClientePorTelefono($scope.txtTelefono);
+                }
+            },
         }
         vm.button = {
             BtnCrearVentaOptions: {
@@ -1357,10 +1604,30 @@
                 showTooltip: true,                // <-- activa el tooltip
                 disabled: false,
                 onInitialized: function (e) {
-                     BtnCerrarDomicilioInstance = e.component;
+                    BtnCerrarDomicilioInstance = e.component;
                 },
                 onClick: function () {
                     popEnvioDomicilioInstance.hide();
+                }
+            },
+
+            BtnGuardarDomicilioOptions: {
+                icon: 'fa fa-save',
+                type: 'success',
+                width: 130,
+                text: 'Guardar',
+                hint: 'Guardar información del envio',  // <-- texto del tooltip
+                showTooltip: true,                // <-- activa el tooltip
+                disabled: false,
+                onInitialized: function (e) {
+                    BtnGuardarDomicilioInstance = e.component;
+                },
+                onClick: function () {
+                    if (envioExiste == false) {
+                        guardarEnvioDomicilio();
+                    } else {
+                        modificarEnvioDomicilio();
+                    }
                 }
             },
 
@@ -2570,10 +2837,26 @@
                 onInitialized: function (e) {
                     popEnvioDomicilioInstance = e.component;//Se inicializa el popup para poder darle funcionalidad
                 },
-
                 onContentReady: function (e) {
 
-                }
+                },
+                onShown: function () {
+                    clienteExiste = false;
+                    fullName = "";
+                    $scope.txtTelefono = "";
+                    $scope.txtNombre = "";
+                    $scope.txtApellidoParterno = "";
+                    $scope.txtApellidoMaterno = "";
+                    $scope.txtDomicilio = "";
+                    $scope.txtObservaciones = "";
+                    clienteId = null;
+                    envioExiste = false;
+                    txtTelefonoInstance.option("disabled", false);
+                    txtNombreInstance.option("disabled", false);
+                    txtAPInstance.option("disabled", false);
+                    txtAMInstance.option("disabled", false);
+                    consultarEnvioDomicilio();
+                },
             },
 
 

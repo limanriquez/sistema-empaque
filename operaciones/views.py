@@ -667,6 +667,138 @@ def corteCajaAbierto(request):
 
     return JsonResponse(corte_data, safe=False)
 
+@login_required
+def buscarClientePorTelefono(request):
+    telefono = request.GET.get("telefono")
+    empresa_id = request.GET.get("empresa")
+    print(telefono)
+    if not telefono or not empresa_id:
+        return JsonResponse({"error": "Parámetros incompletos"}, status=400)
+
+    cliente = Cliente.objects.filter(
+        telefono=telefono,
+        empresa_id=empresa_id
+    ).first()
+
+    if cliente:
+        return JsonResponse({
+            "exists": True,
+            "id": cliente.id,
+            "nombre": cliente.nombre,
+            "apellido_paterno": cliente.apellido_paterno,
+            "apellido_materno": cliente.apellido_materno,
+            "direccion": cliente.direccion,
+        })
+
+    return JsonResponse({"exists": False})
+
+@login_required
+def consultarEnvioDomicilio(request):
+    venta_id = request.GET.get("venta_id")
+    if not venta_id:
+        return JsonResponse({"error": "venta_id requerido"}, status=400)
+
+    envio = VentaEnvio.objects.filter(venta_id=venta_id).first()
+
+    if envio:
+        cliente = envio.cliente
+        nombre = cliente.nombre if cliente else ""
+        apellido_paterno = cliente.apellido_paterno if cliente else ""
+        apellido_materno = cliente.apellido_materno if cliente else ""
+
+        return JsonResponse({
+            "existe": True,
+            "id": envio.id,
+            "telefono": envio.telefono,
+            "nombre": nombre,
+            "apellido_paterno": apellido_paterno,
+            "apellido_materno": apellido_materno,
+            "domicilio": envio.domicilio,
+            "observaciones": envio.observaciones_envio,
+            "cliente_id": envio.cliente_id,
+        })
+
+    return JsonResponse({"existe": False})
+
+@login_required
+def guardarEnvioDomicilio(request):
+    venta_id = request.GET.get("venta_id")
+    empresa_id = request.GET.get("empresa_id")
+    telefono = request.GET.get("telefono")
+    nombre = request.GET.get("nombre")
+    apellido_paterno = request.GET.get("apellido_paterno")
+    apellido_materno = request.GET.get("apellido_materno")
+    domicilio = request.GET.get("domicilio")
+    observaciones = request.GET.get("observaciones")
+    cliente_id = request.GET.get("cliente_id")  # puede venir null
+
+    if not venta_id or not empresa_id:
+        return JsonResponse({"success": False})
+
+    # 1) Si no viene cliente_id → buscar o crear cliente
+    if not cliente_id:
+        cliente = Cliente.objects.filter(
+            telefono=telefono,
+            empresa_id=empresa_id
+        ).first()
+
+        if not cliente:
+            cliente = Cliente.objects.create(
+                empresa_id=empresa_id,
+                nombre=nombre,
+                apellido_paterno=apellido_paterno,
+                apellido_materno=apellido_materno,
+                telefono=telefono
+            )
+    else:
+        cliente = Cliente.objects.filter(id=cliente_id).first()
+
+    if not cliente:
+        return JsonResponse({"success": False})
+
+    # 2) Prevenir error por OneToOne
+    if VentaEnvio.objects.filter(venta_id=venta_id).exists():
+        return JsonResponse({"success": True})  # ya está guardado
+
+    # 3) Guardar el envío
+    VentaEnvio.objects.create(
+        venta_id=venta_id,
+        cliente=cliente,
+        telefono=telefono,
+        nombre_cliente=f"{nombre} {apellido_paterno} {apellido_materno}".strip(),
+        domicilio=domicilio,
+        observaciones_envio=observaciones,
+        # fecha_registro se llena solo
+    )
+
+    return JsonResponse({"success": True})
+
+
+@login_required
+def modificarEnvioDomicilio(request):
+    venta_id = request.GET.get("venta_id")
+    telefono = request.GET.get("telefono")
+    nombre = request.GET.get("nombre")
+    apellido_paterno = request.GET.get("apellido_paterno")
+    apellido_materno = request.GET.get("apellido_materno")
+    domicilio = request.GET.get("domicilio")
+    observaciones = request.GET.get("observaciones")
+    
+    if not venta_id:
+        return JsonResponse({"success": False})
+
+    # Tomar el envío existente relacionado a la venta (OneToOne)
+    envio = VentaEnvio.objects.filter(venta_id=venta_id).first()
+    if envio:
+        envio.telefono = telefono
+        envio.nombre_cliente = f"{nombre} {apellido_paterno} {apellido_materno}".strip()
+        envio.domicilio = domicilio
+        envio.observaciones_envio = observaciones
+        envio.save()
+        return JsonResponse({"success": True})
+
+    # Si no existe el envío para esa venta
+    return JsonResponse({"success": False})
 
 @login_required
 def generar_pdf_corte_caja(request, corte_id):
