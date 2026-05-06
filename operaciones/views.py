@@ -162,7 +162,6 @@ def comandaPorZona(request):
         estatus=1,
         empresa=empresa.id
     ).first()
-
     return render(request, 'operaciones/comanda_por_zona.html', {
         'title': "Comanda por zona",
         'empresa': empresa,

@@ -15,7 +15,7 @@
         vm.empresaId = $scope.empresaId;
         vm.nombrePersonal = $scope.nombrePersonal;
         vm.corteCajaId = $scope.corteCajaId;
-
+        
         const firebaseConfig = {
             apiKey: "AIzaSyCOmQFHQlVFPIiBUyx1k7eshNW4JM-Z-rg",
             authDomain: "signals-test-lasser.firebaseapp.com",
@@ -50,7 +50,8 @@
         // ========================
         function getComandasPendientes() {
             $scope.isLoadPanelVisible = true;
-            console.log(zonaSeleccionada);
+          //  console.log(zonaSeleccionada);
+            console.log(vm.corteCajaId);
             const url = "/comandas_pendientes/";
             $http.get(url, { params: { zona: zonaSeleccionada, estado: 1, corteCaja: vm.corteCajaId, } })
                 .then(function (response) {

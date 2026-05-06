@@ -12,7 +12,8 @@
 {% endblock personal_styles %}
 {% block ng_app %}
 <html class="no-js" lang="es" ng-app="operaciones.operacion"
-    ng-init="empresaId={{ empresa.id }}; nombrePersonal='{{ nombre_personal|escapejs }}'; corteCajaId={{ corte_caja }}; personaId={{ personal_id }}">
+    ng-init="empresaId={{ empresa.id }};nombrePersonal='{{ nombre_personal|escapejs }}';corteCajaId={{ corte_caja|default:'null' }};personaId={{ personaId }}"
+   
 {% endblock ng_app %}
 {% block head_title %}Alertas de Firebase{% endblock head_title %}
 {% block contenido %}
