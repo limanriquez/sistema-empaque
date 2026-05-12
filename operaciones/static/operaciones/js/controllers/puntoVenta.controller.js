@@ -47,13 +47,12 @@
         // console.log("Empresa:", vm.empresaId);
         //  console.log("Nombre:", vm.nombrePersonal);
         const firebaseConfig = {
-            apiKey: "AIzaSyCOmQFHQlVFPIiBUyx1k7eshNW4JM-Z-rg",
-            authDomain: "signals-test-lasser.firebaseapp.com",
-            projectId: "signals-test-lasser",
-            storageBucket: "signals-test-lasser.appspot.com",
-            messagingSenderId: "901814785470",
-            appId: "1:901814785470:web:221e517efbd5f4a40d15ef",
-            databaseURL: "https://signals-test-lasser-default-rtdb.firebaseio.com"
+            apiKey: "AIzaSyB5eHzqMNt-8rtY509ACnQr1Eo023RWzBM",
+            authDomain: "arco-de-rosas.firebaseapp.com",
+            projectId: "arco-de-rosas",
+            storageBucket: "arco-de-rosas.firebasestorage.app",
+            messagingSenderId: "640067846329",
+            appId: "1:640067846329:web:6cdc7a1f801c4b3ecadb68"
         };
 
         if (!firebase.apps.length) {
