@@ -22,11 +22,7 @@ SECRET_KEY = '2f&8#l^z)1u@9x!4sd1#%gk$w7mvj=+p0^zq4n3r8(c&yb5m6k'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
-ALLOWED_HOSTS = [
-    'kaylinsiloe.niidia.com',
-    'www.kaylinsiloe.niidia.com',
-    '44.245.248.8',
-]
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -86,7 +82,7 @@ TEMPLATES = [
 
 JAZZMIN_SETTINGS = {
 
-    "site_brand": "Pollo en Gordito",
+    "site_brand": "Auditoria",
     "site_title": "LASSER",
     "welcome_sign": "Bienvenido al Panel Administrativo",
 
@@ -125,9 +121,9 @@ WSGI_APPLICATION = 'inventario.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'MainPuntoVenta',
+        'NAME': 'MainAuditoria',
         'USER': 'root',
-        'PASSWORD': 'HaHd=82VLWjz',
+        'PASSWORD': 'NinJax82Jlml',
         'HOST': 'localhost',  # Cambia esto si tu MySQL está en un host remoto
         'PORT': '3306',       # Puerto predeterminado de MySQL
     }
