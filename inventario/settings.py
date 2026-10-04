@@ -106,6 +106,16 @@ JAZZMIN_SETTINGS = {
     # También puedes agregar tus propios widgets personalizados aquí
 }
 
+JAZZMIN_SETTINGS = {
+    "navigation_expanded": False,
+      # Identidad
+    "site_title": "Sistema de Auditoría",
+    "site_header": "Sistema de Auditoría",
+    "site_brand": "Auditoría",
+    "welcome_sign": "Bienvenido al Sistema de Auditoría",
+    "copyright": "JLML",
+}
+
 WSGI_APPLICATION = 'inventario.wsgi.application'
 
 
