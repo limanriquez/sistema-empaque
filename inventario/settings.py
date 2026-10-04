@@ -75,7 +75,7 @@ TEMPLATES = [
 ]
 
 JAZZMIN_SETTINGS = {
-
+    "navigation_expanded": False,
     "site_brand": "Auditoria",
     "site_title": "LASSER",
     "welcome_sign": "Bienvenido al Panel Administrativo",
@@ -104,16 +104,6 @@ JAZZMIN_SETTINGS = {
 
     "copyright": "Derechos reservados a lasser",  # Para quitar el texto, déjalo vacío
     # También puedes agregar tus propios widgets personalizados aquí
-}
-
-JAZZMIN_SETTINGS = {
-    "navigation_expanded": False,
-      # Identidad
-    "site_title": "Sistema de Auditoría",
-    "site_header": "Sistema de Auditoría",
-    "site_brand": "Auditoría",
-    "welcome_sign": "Bienvenido al Sistema de Auditoría",
-    "copyright": "JLML",
 }
 
 WSGI_APPLICATION = 'inventario.wsgi.application'
