@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db.models import Prefetch
 
 from .models import (
     Persona,
@@ -6,6 +7,10 @@ from .models import (
     PersonaGrupo,
 )
 
+
+# ============================================================
+# ADSCRIPCIÓN
+# ============================================================
 
 class PersonaAdscripcionInline(admin.StackedInline):
     model = PersonaAdscripcion
@@ -18,6 +23,7 @@ class PersonaAdscripcionInline(admin.StackedInline):
         "departamento",
         "unidad_operativa",
         "fecha_inicio",
+        "fecha_fin",
     )
 
     def get_queryset(self, request):
@@ -62,6 +68,10 @@ class PersonaAdscripcionInline(admin.StackedInline):
         )
 
 
+# ============================================================
+# GRUPOS
+# ============================================================
+
 class PersonaGrupoInline(admin.TabularInline):
     model = PersonaGrupo
     extra = 1
@@ -69,6 +79,7 @@ class PersonaGrupoInline(admin.TabularInline):
     fields = (
         "grupo",
         "fecha_inicio",
+        "fecha_fin",
     )
 
     def get_queryset(self, request):
@@ -98,8 +109,16 @@ class PersonaGrupoInline(admin.TabularInline):
         return False
 
 
+# ============================================================
+# PERSONA
+# ============================================================
+
 @admin.register(Persona)
 class PersonaAdmin(admin.ModelAdmin):
+
+    # --------------------------------------------------------
+    # TABLA
+    # --------------------------------------------------------
 
     list_display = (
         "id",
@@ -107,7 +126,9 @@ class PersonaAdmin(admin.ModelAdmin):
         "curp",
         "correo_institucional",
         "telefono_institucional",
-        "extension",
+        "puesto_actual",
+        "departamento_actual",
+        "unidad_actual",
         "activo",
     )
 
@@ -116,24 +137,150 @@ class PersonaAdmin(admin.ModelAdmin):
         "nombre_completo",
     )
 
+    # --------------------------------------------------------
+    # BÚSQUEDA
+    # --------------------------------------------------------
+
     search_fields = (
         "nombre",
         "apellido_paterno",
         "apellido_materno",
-        "curp",
-        "correo_institucional",
+        "=curp",
+        "=correo_institucional",
         "telefono_institucional",
+        "extension",
+
+        "adscripciones__puesto__descripcion",
+        "adscripciones__departamento__descripcion",
+        "adscripciones__unidad_operativa__nombre",
+
+        "grupos__grupo__nombre",
     )
+
+    search_help_text = (
+        "Busca por nombre, CURP, correo, teléfono, "
+        "puesto, departamento, unidad operativa o grupo."
+    )
+
+    # --------------------------------------------------------
+    # FILTROS
+    # --------------------------------------------------------
 
     list_filter = (
         "activo",
+        "adscripciones__puesto",
+        "adscripciones__departamento",
+        "adscripciones__unidad_operativa",
+        "grupos__grupo",
     )
+
+    # --------------------------------------------------------
+    # ORDEN
+    # --------------------------------------------------------
 
     ordering = (
         "apellido_paterno",
         "apellido_materno",
         "nombre",
     )
+
+    # --------------------------------------------------------
+    # PAGINACIÓN
+    # --------------------------------------------------------
+
+    list_per_page = 50
+    list_max_show_all = 200
+
+    # --------------------------------------------------------
+    # RENDIMIENTO
+    # --------------------------------------------------------
+
+    def get_queryset(self, request):
+
+        adscripcion_actual = (
+            PersonaAdscripcion.objects
+            .filter(fecha_fin__isnull=True)
+            .select_related(
+                "puesto",
+                "departamento",
+                "unidad_operativa",
+            )
+        )
+
+        grupos_actuales = (
+            PersonaGrupo.objects
+            .filter(fecha_fin__isnull=True)
+            .select_related("grupo")
+        )
+
+        return (
+            super()
+            .get_queryset(request)
+            .prefetch_related(
+                Prefetch(
+                    "adscripciones",
+                    queryset=adscripcion_actual,
+                    to_attr="adscripcion_actual",
+                ),
+                Prefetch(
+                    "grupos",
+                    queryset=grupos_actuales,
+                    to_attr="grupos_actuales",
+                ),
+            )
+        )
+
+    # --------------------------------------------------------
+    # COLUMNAS CALCULADAS
+    # --------------------------------------------------------
+
+    @admin.display(
+        description="Nombre",
+        ordering=(
+            "apellido_paterno",
+            "apellido_materno",
+            "nombre",
+        ),
+    )
+    def nombre_completo(self, obj):
+        return str(obj)
+
+    @admin.display(
+        description="Puesto",
+        ordering="adscripciones__puesto__descripcion",
+    )
+    def puesto_actual(self, obj):
+
+        if not obj.adscripcion_actual:
+            return "-"
+
+        return obj.adscripcion_actual[0].puesto.descripcion
+
+    @admin.display(
+        description="Departamento",
+        ordering="adscripciones__departamento__descripcion",
+    )
+    def departamento_actual(self, obj):
+
+        if not obj.adscripcion_actual:
+            return "-"
+
+        return obj.adscripcion_actual[0].departamento.descripcion
+
+    @admin.display(
+        description="Unidad",
+        ordering="adscripciones__unidad_operativa__nombre",
+    )
+    def unidad_actual(self, obj):
+
+        if not obj.adscripcion_actual:
+            return "-"
+
+        return obj.adscripcion_actual[0].unidad_operativa.nombre
+
+    # --------------------------------------------------------
+    # FORMULARIO
+    # --------------------------------------------------------
 
     fieldsets = (
         (
@@ -172,10 +319,13 @@ class PersonaAdmin(admin.ModelAdmin):
         PersonaGrupoInline,
     )
 
-    def nombre_completo(self, obj):
-        return str(obj)
+    # --------------------------------------------------------
+    # OPCIONES DEL ADMIN
+    # --------------------------------------------------------
 
-    nombre_completo.short_description = "Nombre"
+    save_on_top = True
+    save_as = False
+    preserve_filters = True
 
     def has_delete_permission(self, request, obj=None):
         return False
