@@ -100,8 +100,6 @@ JAZZMIN_SETTINGS = {
         "jazzmin.widgets.QuickLinks",
     ],
 
-
-
     "copyright": "Derechos reservados a lasser",  # Para quitar el texto, déjalo vacío
     # También puedes agregar tus propios widgets personalizados aquí
 }
