@@ -1,6 +1,11 @@
 from django.db import models
 
-
+class GoHome(models.Model):
+    class Meta:
+        verbose_name = "A inicio"
+        verbose_name_plural = "A inicio"
+        managed = False  # No crea tabla
+        
 class Puesto(models.Model):
     descripcion = models.CharField(max_length=150)
     activo = models.BooleanField(default=True)
