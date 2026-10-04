@@ -1,4 +1,4 @@
-"""
+""
 
 from pathlib import Path
 import os
@@ -222,7 +222,6 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20 MB
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 AUTH_USER_MODEL = 'users.User'
 
