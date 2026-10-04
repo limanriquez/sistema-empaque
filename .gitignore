@@ -21,3 +21,4 @@ local_settings.py
 # Django-specific: Archivo local de desarrollo
 inventario/developer.py
 imagenes_subidas.txt
+*.pem

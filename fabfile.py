@@ -1,4 +1,4 @@
-from fabric import Connection
+from fabric import Connection, task
 
 
 # ============================================================
@@ -35,8 +35,8 @@ def connection():
 # ============================================================
 # DEPLOY
 # ============================================================
-
-def deploy():
+@task
+def deploy(ctx):
     c = connection()
 
     try:
