@@ -7,6 +7,8 @@ from .models import (
     UnidadOperativa,
     Grupo,
     GoHome,
+    TipoComite,
+    CargoComite,
 )
 
 @admin.register(GoHome)
@@ -114,6 +116,79 @@ class UnidadOperativaAdmin(admin.ModelAdmin):
 
 @admin.register(Grupo)
 class GrupoAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "nombre",
+        "descripcion",
+        "activo",
+    )
+
+    list_display_links = (
+        "id",
+        "nombre",
+    )
+
+    search_fields = (
+        "nombre",
+        "descripcion",
+    )
+
+    list_filter = (
+        "activo",
+    )
+
+    ordering = (
+        "nombre",
+    )
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+# ============================================================
+# CATÁLOGOS DEL MÓDULO DE COMITÉS
+# ============================================================
+# Catálogos utilizados para la configuración y operación
+# de los comités.
+#
+# La baja de estos registros es lógica mediante el campo
+# 'activo'. No se permite su eliminación física.
+# ============================================================
+
+
+@admin.register(TipoComite)
+class TipoComiteAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "nombre",
+        "descripcion",
+        "activo",
+    )
+
+    list_display_links = (
+        "id",
+        "nombre",
+    )
+
+    search_fields = (
+        "nombre",
+        "descripcion",
+    )
+
+    list_filter = (
+        "activo",
+    )
+
+    ordering = (
+        "nombre",
+    )
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(CargoComite)
+class CargoComiteAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "nombre",
