@@ -212,6 +212,34 @@ class TipoDocumento(models.Model):
 # ============================================================
 
 
+class TipoDocumento(models.Model):
+    """
+    Catálogo de tipos de documentos institucionales.
+
+    Clasifica los documentos utilizados en el sistema.
+    """
+
+    nombre = models.CharField(
+        max_length=50,
+        unique=True,
+        help_text="Nombre de la clasificación del documento."
+    )
+
+    activo = models.BooleanField(
+        default=True,
+        help_text="Indica si el tipo está disponible para nuevos registros."
+    )
+
+    class Meta:
+        db_table = "catalogo_tipo_documento"
+        ordering = ["nombre"]
+        verbose_name = "Tipo de documento"
+        verbose_name_plural = "Tipos de documento"
+
+    def __str__(self):
+        return self.nombre
+
+
 class Documento(models.Model):
     """
     Catálogo de documentos institucionales.
@@ -260,7 +288,7 @@ class Documento(models.Model):
     )
 
     class Meta:
-        db_table = "documento"
+        db_table = "catalogo_documento"
         ordering = ["nombre", "version"]
         verbose_name = "Documento"
         verbose_name_plural = "Documentos"
@@ -312,7 +340,7 @@ class Proceso(models.Model):
     )
 
     class Meta:
-        db_table = "proceso"
+        db_table = "catalogo_proceso"
         ordering = ["nombre"]
         verbose_name = "Proceso"
         verbose_name_plural = "Procesos"
