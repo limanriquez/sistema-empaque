@@ -347,3 +347,58 @@ class Proceso(models.Model):
 
     def __str__(self):
         return f"{self.clave_control} - {self.nombre}"
+
+
+
+from django.db import models
+
+
+# ============================================================
+# CATÁLOGO: TIPO DE DOCUMENTO DE PROCESO
+# ============================================================
+# Propósito:
+# Clasificar los documentos operativos que se registran durante
+# los procesos de auditoría, por ejemplo: informes, oficios,
+# solicitudes, cartas, presentaciones y evidencias.
+#
+# Este catálogo es transversal y puede ser utilizado por
+# diferentes módulos del Sistema de Administración de Auditorías.
+#
+# Nota:
+# No sustituye al catálogo TipoDocumento existente, destinado
+# a clasificar documentos institucionales como manuales,
+# políticas y guías.
+# ============================================================
+class TipoDocumentoProceso(models.Model):
+
+    # Nombre de la clasificación documental.
+    # Ejemplo: Informe, Oficio, Solicitud o Evidencia.
+    nombre = models.CharField(
+        max_length=100,
+        unique=True
+    )
+
+    # Descripción opcional para explicar el uso del tipo documental.
+    descripcion = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    # Indica si el tipo documental está disponible para utilizarse.
+    # Si se desactiva, se conserva el registro histórico.
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        # Nombre de la tabla en la base de datos.
+        db_table = "tipo_documento_proceso"
+
+        # Orden predeterminado al consultar el catálogo.
+        ordering = ["nombre"]
+
+        # Nombres descriptivos en Django Admin.
+        verbose_name = "Tipo de documento de proceso"
+        verbose_name_plural = "Tipos de documentos de proceso"
+
+    def __str__(self):
+        # Representación del registro en Django Admin y formularios.
+        return self.nombre

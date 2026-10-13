@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 from auditoriaCatalogos.models import (
     TipoComite,
@@ -8,6 +9,9 @@ from auditoriaCatalogos.models import (
 from auditoriaPersonas.models import (
     Persona,
 )
+
+# Importar el catálogo transversal de documentos de proceso.
+from auditoriaCatalogos.models import TipoDocumentoProceso
 
 
 class Comite(models.Model):
@@ -268,3 +272,348 @@ class ComiteIntegrante(models.Model):
             f"{self.comite} - "
             f"{self.cargo_comite}"
         )
+
+
+
+
+# ============================================================
+# MODELO: SESIÓN DE COMITÉ
+# ============================================================
+# Registra las sesiones ordinarias y extraordinarias de un
+# comité, incluyendo su fecha, horario, estado y observaciones.
+#
+# Cada sesión pertenece a un registro de Comite. La numeración
+# es única dentro de ese comité y puede reiniciarse cuando se
+# crea un nuevo registro para otro periodo del comité.
+# ============================================================
+class SesionComite(models.Model):
+
+    # Opciones para clasificar la sesión.
+    TIPO_SESION_CHOICES = [
+        ("ORDINARIA", "Ordinaria"),
+        ("EXTRAORDINARIA", "Extraordinaria"),
+    ]
+
+    # Estado operativo de la sesión.
+    ESTADO_CHOICES = [
+        ("BORRADOR", "Borrador"),
+        ("ABIERTA", "Abierta"),
+        ("CERRADA", "Cerrada"),
+        ("CANCELADA", "Cancelada"),
+    ]
+
+    # Comité al que pertenece la sesión.
+    # Se protege el registro para conservar la trazabilidad.
+    comite = models.ForeignKey(
+        "auditoriaComites.Comite",
+        on_delete=models.PROTECT,
+        related_name="sesiones"
+    )
+
+    # Número consecutivo de la sesión dentro del comité.
+    numero_sesion = models.PositiveIntegerField()
+
+    # Clasificación ordinaria o extraordinaria.
+    tipo_sesion = models.CharField(
+        max_length=15,
+        choices=TIPO_SESION_CHOICES
+    )
+
+    # Fecha y hora programadas o registradas de inicio.
+    fecha_inicio = models.DateField()
+    hora_inicio = models.TimeField()
+
+    # Fecha y hora de finalización.
+    # Pueden permanecer vacías mientras la sesión no concluya.
+    fecha_fin = models.DateField(
+        blank=True,
+        null=True
+    )
+    hora_fin = models.TimeField(
+        blank=True,
+        null=True
+    )
+
+    # Lugar físico o referencia de ubicación de la sesión.
+    lugar = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True
+    )
+
+    # Estado actual de la sesión.
+    estado = models.CharField(
+        max_length=10,
+        choices=ESTADO_CHOICES,
+        default="BORRADOR"
+    )
+
+    # Observaciones generales de la sesión.
+    observaciones = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    # Fecha y hora de creación del registro.
+    fecha_registro = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        db_table = "sesion_comite"
+        ordering = ["-fecha_inicio", "-numero_sesion"]
+        verbose_name = "Sesión de comité"
+        verbose_name_plural = "Sesiones de comité"
+
+        # No se permite repetir el número de sesión
+        # dentro del mismo registro de comité.
+        constraints = [
+            models.UniqueConstraint(
+                fields=["comite", "numero_sesion"],
+                name="uq_sesion_comite_numero"
+            )
+        ]
+
+    def clean(self):
+        # La fecha de fin no puede ser anterior a la de inicio.
+        if self.fecha_fin and self.fecha_inicio:
+            if self.fecha_fin < self.fecha_inicio:
+                raise ValidationError({
+                    "fecha_fin": (
+                        "La fecha de finalización no puede "
+                        "ser anterior a la fecha de inicio."
+                    )
+                })
+
+        # Si ambas fechas son iguales, la hora de fin debe
+        # ser posterior o igual a la hora de inicio.
+        if (
+            self.fecha_fin == self.fecha_inicio
+            and self.hora_fin
+            and self.hora_inicio
+            and self.hora_fin < self.hora_inicio
+        ):
+            raise ValidationError({
+                "hora_fin": (
+                    "La hora de finalización no puede ser "
+                    "anterior a la hora de inicio."
+                )
+            })
+
+    def __str__(self):
+        return f"Sesión {self.numero_sesion} - {self.comite}"
+
+
+# ============================================================
+# MODELO: ASISTENCIA A SESIÓN
+# ============================================================
+# Registra a las personas que efectivamente asistieron a una
+# sesión y el tipo de asistencia que tuvieron.
+#
+# No representa personas convocadas ni personas ausentes.
+# ============================================================
+class AsistenciaSesion(models.Model):
+
+    # Modalidad en que participó la persona.
+    TIPO_ASISTENCIA_CHOICES = [
+        ("PRESENCIAL", "Presencial"),
+        ("VIRTUAL", "Virtual"),
+    ]
+
+    # Sesión a la que corresponde la asistencia.
+    sesion = models.ForeignKey(
+        SesionComite,
+        on_delete=models.PROTECT,
+        related_name="asistencias"
+    )
+
+    # Persona que asistió a la sesión.
+    persona = models.ForeignKey(
+        Persona,
+        on_delete=models.PROTECT,
+        related_name="asistencias_sesion"
+    )
+
+    # Modalidad de participación.
+    tipo_asistencia = models.CharField(
+        max_length=12,
+        choices=TIPO_ASISTENCIA_CHOICES
+    )
+
+    # Observaciones opcionales sobre la asistencia.
+    observaciones = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    class Meta:
+        db_table = "asistencia_sesion"
+        ordering = ["persona__apellido_paterno", "persona__nombre"]
+        verbose_name = "Asistencia a sesión"
+        verbose_name_plural = "Asistencias a sesión"
+
+        # Una persona no puede registrarse dos veces
+        # en la asistencia de una misma sesión.
+        constraints = [
+            models.UniqueConstraint(
+                fields=["sesion", "persona"],
+                name="uq_asistencia_sesion_persona"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.persona} - {self.sesion}"
+
+
+# ============================================================
+# MODELO: AGENDA DE SESIÓN
+# ============================================================
+# Contiene los puntos del orden del día de cada sesión.
+# El número de orden identifica la posición del punto dentro
+# de una sesión específica.
+# ============================================================
+class AgendaSesion(models.Model):
+
+    # Sesión a la que pertenece el punto de agenda.
+    sesion = models.ForeignKey(
+        SesionComite,
+        on_delete=models.PROTECT,
+        related_name="agenda"
+    )
+
+    # Posición consecutiva del punto dentro de la agenda.
+    numero_orden = models.PositiveIntegerField()
+
+    # Título breve del punto.
+    titulo = models.CharField(max_length=200)
+
+    # Descripción o detalle del asunto a tratar.
+    descripcion = models.TextField()
+
+    # Nota adicional opcional.
+    nota = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    class Meta:
+        db_table = "agenda_sesion"
+        ordering = ["numero_orden"]
+        verbose_name = "Punto de agenda"
+        verbose_name_plural = "Puntos de agenda"
+
+        # El número de orden no se puede repetir
+        # dentro de la misma sesión.
+        constraints = [
+            models.UniqueConstraint(
+                fields=["sesion", "numero_orden"],
+                name="uq_agenda_sesion_orden"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.numero_orden}. {self.titulo}"
+
+
+# ============================================================
+# MODELO: DOCUMENTO DE SESIÓN
+# ============================================================
+# Registra documentos recibidos o generados durante una sesión.
+#
+# tipo_movimiento:
+#   1 = Entrada
+#   2 = Salida
+#
+# El documento puede asociarse a un punto de agenda cuando
+# corresponda. La ubicación almacena una referencia al archivo
+# o a su repositorio autorizado, no el archivo binario.
+# ============================================================
+class DocumentoSesion(models.Model):
+
+    # Clasificación del movimiento documental.
+    TIPO_MOVIMIENTO_CHOICES = [
+        (1, "Entrada"),
+        (2, "Salida"),
+    ]
+
+    # Sesión a la que corresponde el documento.
+    sesion = models.ForeignKey(
+        SesionComite,
+        on_delete=models.PROTECT,
+        related_name="documentos"
+    )
+
+    # Punto de agenda relacionado, si aplica.
+    agenda_sesion = models.ForeignKey(
+        AgendaSesion,
+        on_delete=models.PROTECT,
+        related_name="documentos",
+        blank=True,
+        null=True
+    )
+
+    # Indica si el documento se recibe o se genera.
+    tipo_movimiento = models.PositiveSmallIntegerField(
+        choices=TIPO_MOVIMIENTO_CHOICES
+    )
+
+    # Clasificación documental del catálogo transversal.
+    tipo_documento_proceso = models.ForeignKey(
+        TipoDocumentoProceso,
+        on_delete=models.PROTECT,
+        related_name="documentos_sesion"
+    )
+
+    # Nombre o título con el que se identifica el documento.
+    nombre = models.CharField(max_length=200)
+
+    # Fecha que aparece en el documento, si está disponible.
+    fecha_documento = models.DateField(
+        blank=True,
+        null=True
+    )
+
+    # Ruta, URL o identificador del documento en el repositorio.
+    ubicacion = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True
+    )
+
+    # Observaciones adicionales.
+    observaciones = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    # Fecha y hora en que el sistema registra el documento.
+    fecha_registro = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        db_table = "documento_sesion"
+        ordering = ["tipo_movimiento", "nombre"]
+        verbose_name = "Documento de sesión"
+        verbose_name_plural = "Documentos de sesión"
+
+    def clean(self):
+        # Si se vincula un punto de agenda, debe pertenecer
+        # a la misma sesión indicada en este documento.
+        if (
+            self.agenda_sesion_id
+            and self.sesion_id
+            and not AgendaSesion.objects.filter(
+                pk=self.agenda_sesion_id,
+                sesion_id=self.sesion_id
+            ).exists()
+        ):
+            raise ValidationError({
+                "agenda_sesion": (
+                    "El punto de agenda debe pertenecer "
+                    "a la misma sesión del documento."
+                )
+            })
+
+    def __str__(self):
+        return f"{self.nombre} - {self.sesion}"
