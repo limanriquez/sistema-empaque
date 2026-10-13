@@ -11,6 +11,7 @@ from .models import (
     TipoComite,
     CargoComite,
     TipoDocumento,
+     TipoDocumentoProceso,  # Nuevo catálogo
     Documento,
     Proceso,
 )
@@ -287,6 +288,45 @@ class ProcesoAdmin(admin.ModelAdmin):
     list_filter = ("activo", "documento__tipo_documento")
     ordering = ("nombre",)
     readonly_fields = ("fecha_registro",)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+# ============================================================
+# TIPO DE DOCUMENTO DE PROCESO
+# ============================================================
+# Catálogo transversal para clasificar documentos operativos
+# utilizados en los módulos del Sistema de Administración
+# de Auditorías.
+# ============================================================
+
+@admin.register(TipoDocumentoProceso)
+class TipoDocumentoProcesoAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "id",
+        "nombre",
+        "activo",
+    )
+
+    list_display_links = (
+        "id",
+        "nombre",
+    )
+
+    search_fields = (
+        "nombre",
+        "descripcion",
+    )
+
+    list_filter = (
+        "activo",
+    )
+
+    ordering = (
+        "nombre",
+    )
 
     def has_delete_permission(self, request, obj=None):
         return False
