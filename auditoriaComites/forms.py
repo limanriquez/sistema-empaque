@@ -37,6 +37,28 @@ class ComiteForm(forms.ModelForm):
             "estatus",
             "observaciones",
         )
+    def clean(self):
+        cleaned_data = super().clean()
+
+        tipo_comite = cleaned_data.get("tipo_comite")
+        estatus = cleaned_data.get("estatus")
+
+        if tipo_comite and estatus == "ACTIVO":
+            existe = Comite.objects.filter(
+                tipo_comite=tipo_comite,
+                estatus="ACTIVO",
+            )
+
+            if self.instance.pk:
+                existe = existe.exclude(pk=self.instance.pk)
+
+            if existe.exists():
+                self.add_error(
+                    "tipo_comite",
+                    "Ya existe un comité activo de este tipo."
+                )
+
+        return cleaned_data
 
 
 class ComiteIntegranteForm(forms.ModelForm):
@@ -183,6 +205,7 @@ class ComiteIntegranteForm(forms.ModelForm):
 # ============================================================
 # Permite crear una sesión y completar sus datos posteriormente.
 # La sesión puede guardarse sin fecha de finalización.
+# Solo permite seleccionar comités activos.
 # ============================================================
 
 class SesionComiteForm(forms.ModelForm):
@@ -219,6 +242,15 @@ class SesionComiteForm(forms.ModelForm):
                 attrs={"rows": 3}
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["comite"].queryset = (
+            Comite.objects
+            .filter(estatus="ACTIVO")
+            .order_by("nombre")
+        )
 
     def clean(self):
         cleaned_data = super().clean()

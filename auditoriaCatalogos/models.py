@@ -212,49 +212,30 @@ class TipoDocumento(models.Model):
 # ============================================================
 
 
-class TipoDocumento(models.Model):
-    """
-    Catálogo de tipos de documentos institucionales.
-
-    Clasifica los documentos utilizados en el sistema.
-    """
-
-    nombre = models.CharField(
-        max_length=50,
-        unique=True,
-        help_text="Nombre de la clasificación del documento."
-    )
-
-    activo = models.BooleanField(
-        default=True,
-        help_text="Indica si el tipo está disponible para nuevos registros."
-    )
-
-    class Meta:
-        db_table = "catalogo_tipo_documento"
-        ordering = ["nombre"]
-        verbose_name = "Tipo de documento"
-        verbose_name_plural = "Tipos de documento"
-
-    def __str__(self):
-        return self.nombre
-
-
 class Documento(models.Model):
     """
     Catálogo de documentos institucionales.
 
-    Registra la identificación, versión y datos de publicación
-    de los documentos utilizados como referencia en el sistema.
+    Registra la identificación, versión, clasificación de la
+    información y datos de publicación de los documentos
+    utilizados como referencia en el sistema.
 
-    Cada documento pertenece a un tipo de documento.
+    Cada documento pertenece a un tipo de documento y tiene
+    un nivel de clasificación de la información asignado.
     """
 
     tipo_documento = models.ForeignKey(
         TipoDocumento,
         on_delete=models.PROTECT,
         related_name="documentos",
-        help_text="Clasificación a la que pertenece el documento."
+        help_text="Tipo de documento, por ejemplo: manual o política."
+    )
+
+    clasificacion = models.ForeignKey(
+        "ClasificacionDocumento",
+        on_delete=models.PROTECT,
+        related_name="documentos",
+        help_text="Nivel de clasificación de la información del documento."
     )
 
     nombre = models.CharField(
@@ -401,4 +382,40 @@ class TipoDocumentoProceso(models.Model):
 
     def __str__(self):
         # Representación del registro en Django Admin y formularios.
+        return self.nombre
+
+# ============================================================
+# MODELO: CLASIFICACIÓN DE LA INFORMACIÓN
+# ============================================================
+
+class ClasificacionDocumento(models.Model):
+    """
+    Catálogo de niveles de clasificación de la información.
+
+    Determina el nivel de clasificación asignado a cada
+    documento institucional, de acuerdo con la sensibilidad
+    y las reglas de acceso aplicables a su contenido.
+
+    Cada documento tendrá una clasificación seleccionada
+    de este catálogo.
+    """
+
+    nombre = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="Nombre del nivel de clasificación de la información."
+    )
+
+    activo = models.BooleanField(
+        default=True,
+        help_text="Indica si el nivel de clasificación está disponible."
+    )
+
+    class Meta:
+        db_table = "catalogo_clasificacion_documento"
+        ordering = ["nombre"]
+        verbose_name = "Clasificación de la información"
+        verbose_name_plural = "Clasificaciones de la información"
+
+    def __str__(self):
         return self.nombre

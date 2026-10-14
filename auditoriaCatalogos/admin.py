@@ -11,7 +11,8 @@ from .models import (
     TipoComite,
     CargoComite,
     TipoDocumento,
-     TipoDocumentoProceso,  # Nuevo catálogo
+    ClasificacionDocumento,
+    TipoDocumentoProceso,  # Nuevo catálogo
     Documento,
     Proceso,
 )
@@ -226,13 +227,21 @@ class CargoComiteAdmin(admin.ModelAdmin):
 # ============================================================
 # MÓDULO DE DOCUMENTOS Y PROCESOS
 # ============================================================
-
 class SinAutocompletadoAdminForm(forms.ModelForm):
+    """
+    Formulario base para desactivar las sugerencias del navegador
+    en los campos de captura de texto del administrador.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         for field in self.fields.values():
-            if isinstance(field.widget, forms.TextInput):
+            if isinstance(
+                field.widget,
+                (forms.TextInput, forms.Textarea, forms.URLInput,
+                 forms.EmailInput, forms.PasswordInput)
+            ):
                 field.widget.attrs["autocomplete"] = "off"
 
 
@@ -258,19 +267,24 @@ class DocumentoAdmin(admin.ModelAdmin):
         "id",
         "nombre",
         "tipo_documento",
+        "clasificacion",
         "version",
         "fecha_publicacion",
         "activo",
     )
     list_display_links = ("id", "nombre")
     search_fields = ("nombre", "version")
-    list_filter = ("tipo_documento", "activo", "fecha_publicacion")
+    list_filter = (
+        "tipo_documento",
+        "clasificacion",
+        "activo",
+        "fecha_publicacion",
+    )
     ordering = ("nombre", "version")
     readonly_fields = ("fecha_registro",)
 
     def has_delete_permission(self, request, obj=None):
         return False
-
 
 @admin.register(Proceso)
 class ProcesoAdmin(admin.ModelAdmin):
@@ -318,6 +332,41 @@ class TipoDocumentoProcesoAdmin(admin.ModelAdmin):
     search_fields = (
         "nombre",
         "descripcion",
+    )
+
+    list_filter = (
+        "activo",
+    )
+
+    ordering = (
+        "nombre",
+    )
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+# ============================================================
+# CATÁLOGO: CLASIFICACIÓN DE LA INFORMACIÓN
+# ============================================================
+
+@admin.register(ClasificacionDocumento)
+class ClasificacionDocumentoAdmin(admin.ModelAdmin):
+    form = SinAutocompletadoAdminForm
+
+    list_display = (
+        "id",
+        "nombre",
+        "activo",
+    )
+
+    list_display_links = (
+        "id",
+        "nombre",
+    )
+
+    search_fields = (
+        "nombre",
     )
 
     list_filter = (
