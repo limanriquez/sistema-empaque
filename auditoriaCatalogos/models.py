@@ -277,13 +277,12 @@ class Documento(models.Model):
     def __str__(self):
         return f"{self.nombre} ({self.version})"
 
-
 class Proceso(models.Model):
     """
     Catálogo de procesos relacionados con documentos institucionales.
 
-    Registra el nombre y la clave de control interno de cada proceso.
-    Cada proceso se relaciona con un documento existente.
+    Registra la clave de control interno, el nombre, el departamento
+    responsable y la información general y de auditoría del proceso.
     """
 
     clave_control = models.CharField(
@@ -297,11 +296,44 @@ class Proceso(models.Model):
         help_text="Nombre del proceso."
     )
 
+    departamento = models.ForeignKey(
+        Departamento,
+        on_delete=models.PROTECT,
+        related_name="procesos",
+        null=True,
+        blank=True,
+        help_text="Departamento al que pertenece el proceso."
+    )
+
     documento = models.ForeignKey(
         Documento,
         on_delete=models.PROTECT,
         related_name="procesos",
         help_text="Documento relacionado con el proceso."
+    )
+
+    objetivo = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Objetivo general del proceso."
+    )
+
+    alcance = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Alcance general del proceso."
+    )
+
+    objetivo_auditoria = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Objetivo de auditoría del proceso."
+    )
+
+    alcance_auditoria = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Alcance de auditoría del proceso."
     )
 
     fecha_registro = models.DateTimeField(
@@ -331,7 +363,6 @@ class Proceso(models.Model):
 
 
 
-from django.db import models
 
 
 # ============================================================
