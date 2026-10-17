@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'auditoriaCatalogos',
     'auditoriaComites',
     'auditoriaPlanAnual',
+    'upload',
 ]
 
 MIDDLEWARE = [

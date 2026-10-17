@@ -125,4 +125,9 @@ urlpatterns = [
         ),
         name="password_reset_complete",
     ),
+
+    path(
+        "api/upload/",
+        include("upload.urls"),
+    ),
 ]
