@@ -143,27 +143,41 @@ def validar_login_excel(request):
             "mensaje": "Solicitud inválida."
         }, status=400)
 
-
 @require_GET
 def consultar_registro(request, id):
     try:
         registro = RegistroAuditoria.objects.get(pk=id)
 
-        return JsonResponse({
-            "ok": True,
-            "id": registro.pk,
-            "id_revision": registro.id_revision,
-            "id_criterio": registro.id_criterio,
-            "tipo": registro.tipo,
-            "observacion": registro.observacion,
-            "recomendacion": registro.recomendacion,
-            "notas": registro.notas,
-            "status": registro.status,
-            "archivo": registro.archivo.url if registro.archivo else None,
-        })
+        return JsonResponse(
+            {
+                "ok": True,
+                "id": registro.pk,
+                "id_revision": registro.id_revision,
+                "id_criterio": registro.id_criterio,
+                "tipo": registro.tipo,
+                "observacion": registro.observacion,
+                "recomendacion": registro.recomendacion,
+                "notas": registro.notas,
+                "status": registro.status,
+                "archivo": (
+                    registro.archivo.url
+                    if registro.archivo
+                    else None
+                ),
+            },
+            json_dumps_params={
+                "ensure_ascii": False
+            },
+        )
 
     except RegistroAuditoria.DoesNotExist:
-        return JsonResponse({
-            "ok": False,
-            "mensaje": "No se encontró el registro."
-        }, status=404)
+        return JsonResponse(
+            {
+                "ok": False,
+                "mensaje": "No se encontró el registro.",
+            },
+            status=404,
+            json_dumps_params={
+                "ensure_ascii": False
+            },
+        )
