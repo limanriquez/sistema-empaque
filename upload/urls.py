@@ -21,4 +21,10 @@ urlpatterns = [
         views.consultar_registro,
         name="consultar_registro",
     ),
+    path(
+        "eliminar/<int:id>/",
+        views.eliminar_registro,
+        name="eliminar_registro",
+    ),
 ]
+

@@ -5,7 +5,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-
+from django.views.decorators.http import require_http_methods
 from .models import RegistroAuditoria
 
 import json
@@ -181,3 +181,48 @@ def consultar_registro(request, id):
                 "ensure_ascii": False
             },
         )
+
+    
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+
+from .models import RegistroAuditoria
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def eliminar_registro(request, id):
+    try:
+        registro = RegistroAuditoria.objects.get(pk=id)
+
+        id_eliminado = registro.pk
+        registro.delete()
+
+        # Verificar que realmente ya no exista.
+        existe = RegistroAuditoria.objects.filter(
+            pk=id_eliminado
+        ).exists()
+
+        if existe:
+            return JsonResponse({
+                "ok": False,
+                "eliminado": False,
+                "id": id_eliminado,
+                "error": "El registro continúa existiendo en la base de datos.",
+            }, status=500)
+
+        return JsonResponse({
+            "ok": True,
+            "eliminado": True,
+            "id": id_eliminado,
+            "mensaje": "Registro eliminado correctamente.",
+        })
+
+    except RegistroAuditoria.DoesNotExist:
+        return JsonResponse({
+            "ok": False,
+            "eliminado": False,
+            "id": id,
+            "error": "El registro no existe en esta base de datos.",
+        }, status=404)
