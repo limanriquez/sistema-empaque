@@ -1,5 +1,5 @@
 (function(){
-	angular.module('agricola.directives')
+	angular.module('auditoria.directives')
 	.directive("scroll", scroll);
 
 	scroll.$inject = ['$window', '$rootScope'];
