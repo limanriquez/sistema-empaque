@@ -1,14 +1,10 @@
-from inventarios.views import *
 from catalogos.views import *
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
-router.register('puesto',PuestoViewSet)
-router.register('zonaNotificacion',ZonaNotificacionViewSet)
-router.register('TipoProducto',TipoProductoViewSet)
-router.register('lugarEntrega',LugarEntregaViewSet)
-router.register('metodoPago',MetodoPagoViewSet)
+#router.register('puesto',PuestoViewSet)
+
 
 
 app_name = 'catalogos'

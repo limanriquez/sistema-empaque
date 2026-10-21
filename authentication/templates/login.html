@@ -1,250 +1,529 @@
-{% load staticfiles %}
-<!doctype html>
+```html
+{% load static %}
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>Inicio de Sesión</title>
+    <title>Empaque Triple | Acceso al sistema</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Animate.css -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
+    <!-- Configuración de colores Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        apple: {
+                            DEFAULT: '#78A943',
+                            light: '#A6CC70',
+                            dark: '#426D26',
+                            deeper: '#29451C',
+                            pale: '#F2F8E9'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Estilos del proyecto Django -->
     {% include 'stylesheets.html' %}
+
     <style>
-        /*body, html {*/
-           /* height: 100%;*/
-            /*background-color: #eef9f8;  Fondo claro */
-           /* z-index: 0;*/
-        /*}*/
-
-        .card {
-            border: none;
-            border-radius: 1.5rem; /* Esquinas uniformemente redondeadas */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra inicial */
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            z-index: 2;
+        :root {
+            --apple: #78A943;
+            --apple-light: #A6CC70;
+            --apple-dark: #426D26;
+            --apple-deep: #29451C;
+            --apple-pale: #F2F8E9;
         }
 
-        .card:hover {
-            transform: translateY(-5px); /* Movimiento vertical reducido */
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Sombra menos intensa */
+        * {
+            box-sizing: border-box;
         }
 
-        .card-header {
-            background-color: #4682b4; /* Azul medio */
-            color: white;
-            font-size: 1.8rem;
-            font-weight: bold;
-            text-align: center;
-            border-radius: 1.5rem 1.5rem 0 0; /* Esquinas superiores redondeadas */
-        }
-
-        .btn-primary {
-            background-color: #4682b4; /* Azul medio */
-            border-color: #3a6d99;
-        }
-
-        .btn-primary:hover {
-            background-color: #3a6d99; /* Azul más oscuro al pasar el mouse */
-            border-color: #2e5879;
-        }
-
-        .container-centered {
-            height: 100%; 
-            display: flex; 
-            align-items: flex-start; /* Alinear más arriba */
-            justify-content: center; 
-            padding-top: 5rem; /* Ajustar altura superior */
-            z-index: 2;
+        html,
+        body {
+            min-height: 100%;
+            margin: 0;
         }
 
         body {
+            min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            background: linear-gradient(to right, #287AA9, #226b9c);
-            color: white;
-            overflow: hidden;
+            padding: 32px 16px;
             position: relative;
-            height: 100%;
-            z-index: 0;
+            isolation: isolate;
+            overflow-x: hidden;
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+
+            background:
+                linear-gradient(
+                    115deg,
+                    rgba(24, 43, 18, 0.48),
+                    rgba(35, 57, 24, 0.20) 50%,
+                    rgba(17, 33, 15, 0.48)
+                ),
+                url("{% static 'img/huerta-empaque.png' %}")
+                center center / cover no-repeat fixed;
         }
 
-        canvas {
-            background-color: transparent;
+        /* Luces ambientales */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background:
+                radial-gradient(
+                    ellipse at 15% 15%,
+                    rgba(166, 204, 112, 0.18),
+                    transparent 42%
+                ),
+                radial-gradient(
+                    ellipse at 85% 85%,
+                    rgba(120, 169, 67, 0.18),
+                    transparent 40%
+                );
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 440px;
+            position: relative;
+            z-index: 1;
+            animation: appear 0.8s ease-out both;
+        }
+
+        .login-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.68);
+            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.92);
+            -webkit-backdrop-filter: blur(18px);
+            backdrop-filter: blur(18px);
+            box-shadow:
+                0 28px 80px rgba(15, 35, 10, 0.32),
+                0 6px 18px rgba(15, 35, 10, 0.10);
+        }
+
+        /* Línea superior distintiva */
+        .login-card::before {
+            content: "";
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1; /* Canvas detrás */
-            transition: box-shadow 2s ease-in-out, filter 2s ease-in-out; /* Animación de sombra y filtro */
+            inset: 0 0 auto;
+            height: 6px;
+            background: linear-gradient(
+                90deg,
+                var(--apple-dark),
+                var(--apple),
+                var(--apple-light),
+                var(--apple)
+            );
         }
 
-        input {
-            margin: 10px;
-            padding: 10px;
-            border: 2px solid white;
-            border-radius: 5px;
-            z-index: 3; /* Cajas de texto encima del canvas */
+        .login-content {
+            padding: 38px 38px 30px;
+        }
+
+        .brand-icon {
+            width: 76px;
+            height: 76px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 17px;
+            border-radius: 24px;
+            color: var(--apple-dark);
+            background: linear-gradient(
+                145deg,
+                #F3F9E9,
+                #E3F0D1
+            );
+            border: 1px solid rgba(120, 169, 67, 0.22);
+            box-shadow: 0 8px 22px rgba(66, 109, 38, 0.10);
+        }
+
+        .brand-icon svg {
+            width: 45px;
+            height: 45px;
+        }
+
+        .brand-title {
+            color: var(--apple-deep);
+            font-size: 2rem;
+            line-height: 1.15;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+        }
+
+        .brand-accent {
+            color: var(--apple);
+        }
+
+        .brand-subtitle {
+            margin-top: 10px;
+            color: #687363;
+            font-size: 0.93rem;
+            line-height: 1.6;
+        }
+
+        .section-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #35432F;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            top: 50%;
+            left: 14px;
+            width: 19px;
+            height: 19px;
+            transform: translateY(-50%);
+            color: #7D9270;
+            pointer-events: none;
+        }
+
+        .login-input {
+            display: block;
+            width: 100%;
+            min-height: 51px;
+            padding: 13px 15px 13px 44px;
+            border: 1px solid #DCE5D5;
+            border-radius: 12px;
+            outline: none;
+            color: #253322;
+            background: rgba(255, 255, 255, 0.88);
+            font-size: 0.94rem;
+            transition:
+                border-color 0.2s ease,
+                box-shadow 0.2s ease,
+                background 0.2s ease;
+        }
+
+        .login-input::placeholder {
+            color: #A0AA99;
+        }
+
+        .login-input:hover {
+            border-color: #B4CBA1;
+        }
+
+        .login-input:focus {
+            border-color: var(--apple);
+            background: #FFFFFF;
+            box-shadow: 0 0 0 4px rgba(120, 169, 67, 0.16);
+        }
+
+        .forgot-link {
+            color: var(--apple-dark);
+            font-size: 0.84rem;
+            font-weight: 650;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .forgot-link:hover {
+            color: var(--apple);
+            text-decoration: underline;
+        }
+
+        .login-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            min-height: 53px;
+            padding: 14px 20px;
+            border: 0;
+            border-radius: 12px;
+            color: #FFFFFF;
+            background: linear-gradient(
+                135deg,
+                #78A943,
+                #5E9133
+            );
+            box-shadow: 0 8px 18px rgba(87, 133, 46, 0.27);
+            font-size: 0.97rem;
+            font-weight: 750;
+            cursor: pointer;
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease,
+                filter 0.2s ease;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+            filter: brightness(0.96);
+            box-shadow: 0 12px 24px rgba(66, 109, 38, 0.32);
+        }
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+        .login-button:focus-visible,
+        .forgot-link:focus-visible {
+            outline: 3px solid rgba(120, 169, 67, 0.55);
+            outline-offset: 3px;
+        }
+
+        .security-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            margin-top: 18px;
+            color: #788371;
+            font-size: 0.77rem;
+        }
+
+        .security-note svg {
+            width: 15px;
+            height: 15px;
+            color: var(--apple-dark);
+        }
+
+        .alert-error {
+            padding: 12px 14px;
+            border: 1px solid #F2C4C4;
+            border-radius: 11px;
+            color: #9B2929;
+            background: #FFF1F1;
+            font-size: 0.88rem;
+        }
+
+        .login-footer {
+            padding: 18px 24px;
+            border-top: 1px solid rgba(66, 109, 38, 0.10);
+            color: #7C8775;
+            background: rgba(242, 248, 233, 0.58);
+            text-align: center;
+            font-size: 0.78rem;
+        }
+
+        .login-footer strong {
+            color: var(--apple-dark);
+            font-weight: 750;
+        }
+
+        @keyframes appear {
+            from {
+                opacity: 0;
+                transform: translateY(16px) scale(0.985);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 20px 13px;
+                background-attachment: scroll;
+            }
+
+            .login-content {
+                padding: 32px 24px 25px;
+            }
+
+            .login-card {
+                border-radius: 23px;
+            }
+
+            .brand-title {
+                font-size: 1.8rem;
+            }
+
+            .brand-icon {
+                width: 68px;
+                height: 68px;
+                border-radius: 21px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
         }
     </style>
-
 </head>
+
 <body>
-    <div class="container-centered">
-        <div class="card" style="width: 32rem;">
-            <div class="card-header">
-                Bienvenido(a)
-                <br>
-                Acceso al Sistema
-            </div>
-            <div class="card-body">
-                <form class="form-signin" method="POST" action="">
+
+    <main class="login-wrapper">
+        <section class="login-card animate__animated animate__fadeIn">
+
+            <div class="login-content">
+
+                <!-- Identidad visual: manzana y hoja -->
+                <header class="text-center mb-8">
+
+                    <h1 class="brand-title">
+                        Empaque <span class="brand-accent">Triple</span>
+                    </h1>
+
+                    <p class="brand-subtitle">
+                        Gestión inteligente para el empaque de manzana
+                    </p>
+
+                    <div class="flex items-center justify-center gap-2 mt-4"
+                         aria-hidden="true">
+                        <span class="block h-1 w-8 rounded-full"
+                              style="background:#426D26"></span>
+                        <span class="block h-1 w-3 rounded-full"
+                              style="background:#78A943"></span>
+                        <span class="block h-1 w-1 rounded-full"
+                              style="background:#A6CC70"></span>
+                    </div>
+
+                </header>
+
+                {% if error %}
+                    <div class="alert-error mb-5 animate__animated animate__shakeX"
+                         role="alert">
+                        {{ message|default:"Usuario o contraseña incorrectos" }}
+                    </div>
+                {% endif %}
+
+                {% if form.errors %}
+                    <div class="alert-error mb-5 animate__animated animate__shakeX"
+                         role="alert">
+                        Usuario o contraseña incorrectos
+                    </div>
+                {% endif %}
+
+                <form method="POST" action="" class="space-y-5">
                     {% csrf_token %}
 
-                    {% if error %}
-                        <div class="alert alert-danger">{{ message }}</div>
-                    {% endif %}
+                    <div>
+                        <label for="login__email" class="section-label">
+                            Correo electrónico
+                        </label>
 
-                    <div class="mb-3">
-                        <label for="login__email" class="form-label">Email</label>
-                        <input type="text" class="form-control" id="login__email" name="email" placeholder="ej. nombre@ejemplo.com" />
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor"
+                                 stroke-width="1.8" aria-hidden="true">
+                                <rect x="3" y="5" width="18" height="14" rx="3"/>
+                                <path d="m4 7 8 6 8-6"/>
+                            </svg>
+
+                            <input
+                                type="email"
+                                name="email"
+                                id="login__email"
+                                placeholder="nombre@ejemplo.com"
+                                autocomplete="username"
+                                required
+                                autofocus
+                                class="login-input">
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="login__password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="login__password" name="password" placeholder="ej. Contraseña" />
+                    <div>
+                        <div class="flex items-center justify-between gap-3 mb-2">
+                            <label for="login__password" class="section-label"
+                                   style="margin-bottom:0">
+                                Contraseña
+                            </label>
+
+                            <a href="/accounts/password_reset/"
+                               class="forgot-link">
+                                ¿La olvidaste?
+                            </a>
+                        </div>
+
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor"
+                                 stroke-width="1.8" aria-hidden="true">
+                                <rect x="4" y="10" width="16" height="11" rx="2.5"/>
+                                <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+                                <path d="M12 14v3"/>
+                            </svg>
+
+                            <input
+                                type="password"
+                                name="password"
+                                id="login__password"
+                                placeholder="Ingresa tu contraseña"
+                                autocomplete="current-password"
+                                required
+                                class="login-input">
+                        </div>
                     </div>
 
-                    <input type="hidden" name="next" value="{{ next }}" />
+                    <input type="hidden" name="next"
+                           value="{{ next|default:'' }}">
 
-                    <button class="btn btn-primary w-100" type="submit">Iniciar sesión</button>
+                    <button type="submit" class="login-button mt-2">
+                        <span>Iniciar sesión</span>
+
+                        <svg width="19" height="19" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor"
+                             stroke-width="2" aria-hidden="true">
+                            <path d="M5 12h14"/>
+                            <path d="m13 6 6 6-6 6"/>
+                        </svg>
+                    </button>
                 </form>
-                <div class="text-center mt-3">
-                    <a href="/accounts/password_reset/" class="text-decoration-none">Olvidé mi contraseña</a>
+
+                <div class="security-note">
+                    <svg viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         aria-hidden="true">
+                        <rect x="4" y="10" width="16" height="11" rx="2"/>
+                        <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+                    </svg>
+
+                    <span>Acceso seguro al sistema de empaque</span>
                 </div>
+
             </div>
-        </div>
-    </div>
-    <canvas id="lenteCanvas"></canvas>
+
+            <footer class="login-footer">
+                &copy; {% now "Y" %}
+                <strong>Empaque Triple</strong>
+                <span class="mx-1">·</span>
+                Administración de empaques
+            </footer>
+
+        </section>
+    </main>
+
+    <!-- Scripts propios del proyecto Django -->
     {% include 'javascripts.html' %}
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const canvas = document.getElementById("lenteCanvas");
-        const ctx = canvas.getContext("2d");
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
 
-        let angle = 0;
-        let posX = Math.random() * canvas.width;
-        let posY = Math.random() * canvas.height;
-        let velocityX = (Math.random() - 0.5) * 2;
-        let velocityY = (Math.random() - 0.5) * 2;
-        let isHovered = false;
-
-        let color1 = "rgba(50, 150, 255, 0.3)";
-        let color2 = "rgba(70, 200, 255, 0.3)";
-        let color3 = "rgba(50, 150, 255, 0.3)";
-        
-        let targetColor1 = color1;
-        let targetColor2 = color2;
-        let targetColor3 = color3;
-
-        function drawLens() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.save();
-            ctx.translate(posX, posY);
-            ctx.rotate(angle * Math.PI / 180);
-            
-            // Colores originales
-            const gradient = ctx.createLinearGradient(-240, -320, 240, 320);
-            gradient.addColorStop(0, color1);
-            gradient.addColorStop(0.5, color2);
-            gradient.addColorStop(1, color3);
-            
-            // Reducir el tamaño de la figura un 10%
-            ctx.beginPath();
-            ctx.moveTo(-216, -180); // Cambié de -240, -200 a -216, -180
-            ctx.bezierCurveTo(-252, 50, 252, 50, 216, -180); // Cambié de -280, 56 a -252, 50
-            ctx.bezierCurveTo(180, -288, -180, -576, -216, -180); // Cambié de 200, -320 a 180, -288
-            ctx.fillStyle = gradient;
-            ctx.fill();
-            
-            ctx.restore();
-        }
-
-        function animate() {
-            angle += 0.3;
-            posX += velocityX;
-            posY += velocityY;
-            
-            if (posX - 168 < 0 || posX + 168 > canvas.width) velocityX *= -1;
-            if (posY - 224 < 0 || posY + 224 > canvas.height) velocityY *= -1;
-            
-            // Lógica para animar los colores
-            color1 = lerpColor(color1, targetColor1, 0.05);
-            color2 = lerpColor(color2, targetColor2, 0.05);
-            color3 = lerpColor(color3, targetColor3, 0.05);
-            
-            drawLens();
-            requestAnimationFrame(animate);
-        }
-
-        // Función para hacer la interpolación de colores
-        function lerpColor(color1, color2, t) {
-            const rgb1 = hexToRgb(color1);
-            const rgb2 = hexToRgb(color2);
-            
-            const r = Math.round(lerp(rgb1.r, rgb2.r, t));
-            const g = Math.round(lerp(rgb1.g, rgb2.g, t));
-            const b = Math.round(lerp(rgb1.b, rgb2.b, t));
-            const a = lerp(rgb1.a, rgb2.a, t);
-            
-            return `rgba(${r}, ${g}, ${b}, ${a})`;
-        }
-
-        function lerp(start, end, t) {
-            return start + (end - start) * t;
-        }
-
-        function hexToRgb(hex) {
-            const result = /^rgba?\((\d+), (\d+), (\d+), (\d+(\.\d+)?)\)$/.exec(hex);
-            return result ? {
-                r: parseInt(result[1]),
-                g: parseInt(result[2]),
-                b: parseInt(result[3]),
-                a: parseFloat(result[4])
-            } : null;
-        }
-
-        canvas.addEventListener("mousemove", (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            const dx = mouseX - posX;
-            const dy = mouseY - posY;
-            isHovered = Math.sqrt(dx * dx + dy * dy) < 224; // 70% de 320
-
-            // Aplicar el desenfoque cuando el ratón está encima
-            if (isHovered) {
-                canvas.style.boxShadow = "0 0 100px rgba(0, 0, 0, 0.6)";
-                canvas.style.filter = "blur(3px)";  // Agregar filtro de desenfoque
-                // Transición de colores al pasar el ratón
-                targetColor1 = "rgba(255, 105, 180, 0.7)";
-                targetColor2 = "rgba(200, 100, 255, 0.7)";
-                targetColor3 = "rgba(135, 206, 250, 0.7)";
-            } else {
-                canvas.style.boxShadow = "0 0 0px rgba(0, 0, 0, 0.6)";
-                canvas.style.filter = "none";  // Eliminar el filtro de desenfoque
-                // Colores originales cuando no hay hover
-                targetColor1 = "rgba(50, 150, 255, 0.3)";
-                targetColor2 = "rgba(70, 200, 255, 0.3)";
-                targetColor3 = "rgba(50, 150, 255, 0.3)";
-            }
-        });
-
-        animate();
-    </script>
 </body>
 </html>
+```

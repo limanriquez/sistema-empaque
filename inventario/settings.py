@@ -13,7 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '2f&8#l^z)1u@9x!4sd1#%gk$w7mvj=+p0^zq4n3r8(c&yb5m6k'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 # Application definition
@@ -29,17 +29,9 @@ INSTALLED_APPS = [
     'authentication',
     'rest_framework',
     'catalogos',
-    'inventarios',
     'empresa',
     'usuarios',
     'users',
-    'operaciones',
-    'servicios',
-    'auditoriaPersonas',
-    'auditoriaCatalogos',
-    'auditoriaComites',
-    'auditoriaPlanAnual',
-    'upload',
 ]
 
 MIDDLEWARE = [
@@ -116,9 +108,9 @@ WSGI_APPLICATION = 'inventario.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'MainAuditoria',
+        'NAME': 'MainEmpaque',
         'USER': 'root',
-        'PASSWORD': 'NinJax82Jlml',
+        'PASSWORD': 'HaHd=82VLWjz',
         'HOST': 'localhost',  # Cambia esto si tu MySQL está en un host remoto
         'PORT': '3306',       # Puerto predeterminado de MySQL
     }

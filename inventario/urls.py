@@ -48,21 +48,7 @@ urlpatterns = [
 
     # path("", include("personas.urls")),
 
-    path(
-        "",
-        include("operaciones.urls", namespace="operaciones"),
-    ),
-
-    path(
-        "",
-        include("servicios.urls", namespace="servicios"),
-    ),
-
-    path(
-        "",
-        include("inventarios.urls", namespace="inventarios"),
-    ),
-
+   
     path(
         "",
         include("usuarios.urls", namespace="usuarios"),
@@ -126,8 +112,4 @@ urlpatterns = [
         name="password_reset_complete",
     ),
 
-    path(
-        "api/upload/",
-        include("upload.urls"),
-    ),
 ]
