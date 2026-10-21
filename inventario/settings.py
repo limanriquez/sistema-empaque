@@ -71,7 +71,7 @@ TEMPLATES = [
 
 JAZZMIN_SETTINGS = {
     "navigation_expanded": False,
-    "site_brand": "Auditoria",
+    "site_brand": "Triple",
     "site_title": "LASSER",
     "welcome_sign": "Bienvenido al Panel Administrativo",
 
