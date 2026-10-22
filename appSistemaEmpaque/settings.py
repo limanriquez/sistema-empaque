@@ -13,8 +13,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '2f&8#l^z)1u@9x!4sd1#%gk$w7mvj=+p0^zq4n3r8(c&yb5m6k'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-ALLOWED_HOSTS = ['*']
+DEBUG = False
+ALLOWED_HOSTS = [
+    "empaque.niidia.com",
+]
 
 # Application definition
 
