@@ -1,3 +1,4 @@
+
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
@@ -10,63 +11,28 @@ handler500 = error_500
 
 
 class PasswordResetViewHTML(auth_views.PasswordResetView):
-    email_template_name = "registration/password_reset_email.html"
+    template_name = "registration/password_reset_form.html"
+    email_template_name = "registration/password_reset_email.txt"
     html_email_template_name = "registration/password_reset_email.html"
     subject_template_name = "registration/password_reset_subject.txt"
 
 
 urlpatterns = [
+    path("admin/", admin.site.urls),
 
-    path(
-        "admin/",
-        admin.site.urls,
-    ),
+    path("", home, name="home"),
 
-    path(
-        "",
-        home,
-        name="home",
-    ),
+    # Modulos
+    path("", include("usuarios.urls", namespace="usuarios")),
+    path("", include("empresa.urls", namespace="empresa")),
+    path("", include("catalogos.urls", namespace="catalogos")),
+    path("user/", include("users.urls", namespace="user")),
+    path("", include("authentication.urls", namespace="authentication")),
 
-    # path("", include("personas.urls")),
-
-   
-    path(
-        "",
-        include("usuarios.urls", namespace="usuarios"),
-    ),
-
-    path(
-        "",
-        include("empresa.urls", namespace="empresa"),
-    ),
-
-    path(
-        "",
-        include("catalogos.urls", namespace="catalogos"),
-    ),
-
-    # path("", include("users.urls", namespace="users")),
-
-    path(
-        "user/",
-        include("users.urls", namespace="user"),
-    ),
-
-    path(
-        "",
-        include("authentication.urls", namespace="authentication"),
-    ),
-
-    # ========================================================
-    # RESTABLECIMIENTO DE CONTRASEÑA
-    # ========================================================
-
+    # Restablecimiento de contraseña
     path(
         "password_reset/",
-        PasswordResetViewHTML.as_view(
-            template_name="registration/password_reset_form.html",
-        ),
+        PasswordResetViewHTML.as_view(),
         name="password_reset",
     ),
 
@@ -93,5 +59,4 @@ urlpatterns = [
         ),
         name="password_reset_complete",
     ),
-
 ]
