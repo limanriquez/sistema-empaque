@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
-from inventario.views import home, error_404, error_500
+from appSistemaEmpaque.views import home, error_404, error_500
 
 
 handler404 = error_404

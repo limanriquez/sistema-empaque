@@ -44,7 +44,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'inventario.urls'
+ROOT_URLCONF = 'appSistemaEmpaque.urls'
 
 TEMPLATES = [
     {
@@ -94,12 +94,24 @@ JAZZMIN_SETTINGS = {
         "jazzmin.widgets.UserWidget",
         "jazzmin.widgets.QuickLinks",
     ],
+    "hide_models": [
+        "catalogos.gohome",
+    ],
+    "custom_links": {
+        "catalogos": [
+            {
+                "name": "A inicio",
+                "url": "/",
+                "icon": "fas fa-home",
+            },
+        ],
+    },
 
     "copyright": "Derechos reservados a lasser",  # Para quitar el texto, déjalo vacío
     # También puedes agregar tus propios widgets personalizados aquí
 }
 
-WSGI_APPLICATION = 'inventario.wsgi.application'
+WSGI_APPLICATION = 'appSistemaEmpaque.wsgi.application'
 
 
 # Database
@@ -175,7 +187,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 #LANGUAGE_CODE = 'en-us'
 LANGUAGE_CODE = 'es-mx'
-TIME_ZONE = 'America/Chicago'
+TIME_ZONE = 'America/Chihuahua'
 USE_I18N = True
 USE_TZ = True
 
