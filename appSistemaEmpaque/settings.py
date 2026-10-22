@@ -246,7 +246,7 @@ EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
-EMAIL_HOST_USER = "auditoria.ucacsa@gmail.com"
-EMAIL_HOST_PASSWORD = "qrzq vmez qwwg cafx"
+EMAIL_HOST_USER = "empaque.triple.junta@gmail.com"
+EMAIL_HOST_PASSWORD = "aweb mhxv lqrb vwjx"
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
