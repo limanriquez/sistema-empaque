@@ -17,7 +17,14 @@ DEBUG = False
 ALLOWED_HOSTS = [
     "empaque.niidia.com",
 ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://empaque.niidia.com",
+]
 
+SECURE_PROXY_SSL_HEADER = (
+    "HTTP_X_FORWARDED_PROTO",
+    "https",
+)
 # Application definition
 
 INSTALLED_APPS = [
