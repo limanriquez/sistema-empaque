@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'empresa',
     'usuarios',
     'users',
+    'personas',
 ]
 
 MIDDLEWARE = [
@@ -69,34 +70,44 @@ TEMPLATES = [
     },
 ]
 
+
 JAZZMIN_SETTINGS = {
+    # =====================================================
+    # IDENTIDAD DEL ADMINISTRADOR
+    # =====================================================
+
     "navigation_expanded": False,
     "site_brand": "Triple",
     "site_title": "LASSER",
     "welcome_sign": "Bienvenido al Panel Administrativo",
 
-    # Para renombrar el label "catalogos" a "Catálogos"
-    # ... otras configuraciones ...
-    # Habilita la barra lateral derecha (Right Sidebar)
-    "show_sidebar": True,  # activa barra lateral izquierda (default)
-    "show_ui_builder": True,  # agrega botón para personalizar admin
+    # =====================================================
+    # BARRAS LATERALES Y PERSONALIZACIÓN
+    # =====================================================
 
-    # Habilita panel de personalización (barra derecha)
+    "show_sidebar": True,
+    "show_ui_builder": True,
     "right_sidebar": True,
+    "right_sidebar_collapsed": False,
 
-    # Puedes configurar si quieres que la barra derecha esté oculta o visible al cargar
-    "right_sidebar_collapsed": False,  # false para mostrarla por defecto
-
-    # Configura qué widgets aparecen en la barra lateral derecha
-    # Por ejemplo, configuración de tema y otras opciones
     "custom_widgets": [
         "jazzmin.widgets.ThemePicker",
         "jazzmin.widgets.UserWidget",
         "jazzmin.widgets.QuickLinks",
     ],
+
+    # =====================================================
+    # OCULTAR MODELOS DEL MENÚ
+    # =====================================================
+
     "hide_models": [
         "catalogos.gohome",
     ],
+
+    # =====================================================
+    # ENLACES PERSONALIZADOS
+    # =====================================================
+
     "custom_links": {
         "catalogos": [
             {
@@ -107,10 +118,18 @@ JAZZMIN_SETTINGS = {
         ],
     },
 
-    "copyright": "Derechos reservados a lasser",  # Para quitar el texto, déjalo vacío
-    # También puedes agregar tus propios widgets personalizados aquí
+    # =====================================================
+    # PIE DE PÁGINA
+    # =====================================================
+
+    "copyright": "Derechos reservados a lasser",
 }
 
+
+
+JAZZMIN_UI_TWEAKS = {
+    # Conserva aquí tu configuración actual de JAZZMIN_UI_TWEAKS.
+}
 WSGI_APPLICATION = 'appSistemaEmpaque.wsgi.application'
 
 

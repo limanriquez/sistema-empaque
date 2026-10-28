@@ -1,0 +1,22 @@
+
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+    {# Botón para registrar una persona física #}
+    <li style="list-style: none; margin-left: 12px;">
+        <a href="{% url 'admin:personas_persona_add_fisica' %}"
+           class="btn btn-success">
+            <i class="fas fa-user-plus"></i>
+            Agregar persona física
+        </a>
+    </li>
+
+    {# Botón para registrar una persona moral #}
+    <li style="list-style: none; margin-left: 12px;">
+        <a href="{% url 'admin:personas_persona_add_moral' %}"
+           class="btn btn-success">
+            <i class="fas fa-building"></i>
+            Agregar persona moral
+        </a>
+    </li>
+{% endblock %}
