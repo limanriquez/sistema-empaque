@@ -4,14 +4,16 @@ from django.urls import path, reverse
 from django.utils.html import format_html
 
 from .forms import (
+    ClienteForm,
+    EmpleadoForm,
     PersonaAdminForm,
     PersonaFisicaAdminForm,
     PersonaMoralAdminForm,
-    
+    ProveedorForm,
+    DestinatarioForm
 )
-from .models import Persona, Direccion, Telefono
-from .models import Empleado, EmpleadoExtra
-from .forms import EmpleadoExtraForm
+from .models import Direccion, Empleado, EmpleadoExtra, Persona, Telefono, Cliente, Proveedor, Destinatario
+
 # ==========================================================
 # INLINE: DIRECCIONES
 # ==========================================================
@@ -142,8 +144,8 @@ class PersonaAdmin(admin.ModelAdmin):
             )
 
         return queryset
-    
-       # Filtra los resultados del autocompletado cuando se selecciona
+
+    # Filtra los resultados del autocompletado cuando se selecciona
     # una persona para el formulario de empleado.
     # En los demás formularios conserva el comportamiento existente.
     def get_search_results(self, request, queryset, search_term):
@@ -163,7 +165,7 @@ class PersonaAdmin(admin.ModelAdmin):
 
         return queryset, use_distinct
 
-       # ------------------------------------------------------
+    # ------------------------------------------------------
     # IMPEDIR ELIMINACIÓN DE PERSONAS
     # ------------------------------------------------------
 
@@ -263,7 +265,6 @@ class PersonaAdmin(admin.ModelAdmin):
     # CAMPOS PARA ALTA DE PERSONA FÍSICA O MORAL
     # ------------------------------------------------------
 
-   
     def get_fieldsets(self, request, obj=None):
         tipo_alta = getattr(request, "_persona_tipo_alta", None)
 
@@ -360,7 +361,6 @@ class PersonaAdmin(admin.ModelAdmin):
             change,
         )
 
-    
     # ------------------------------------------------------
     # IDENTIFICACIÓN EN EL LISTADO
     # Muestra el nombre o razón social como enlace al
@@ -394,8 +394,6 @@ class PersonaAdmin(admin.ModelAdmin):
             nombre,
         )
 
-
-    
     # ------------------------------------------------------
     # PREPARAR LOS BOTONES DE ALTA DEL LISTADO
     # Proporciona a la plantilla las rutas específicas para
@@ -418,9 +416,14 @@ class PersonaAdmin(admin.ModelAdmin):
             extra_context=extra_context,
         )
 
-    
+
+# ==========================================================
+# INLINE: EXTRAS DEL EMPLEADO
+# ==========================================================
+
 # Administra los conceptos extras asignados a cada empleado.
 # El concepto muestra su monto y no requiere una columna de captura.
+# El monto se asigna al guardar, en EmpleadoAdmin.save_formset.
 class EmpleadoExtraInline(admin.TabularInline):
     model = EmpleadoExtra
     extra = 1
@@ -430,62 +433,50 @@ class EmpleadoExtraInline(admin.TabularInline):
     verbose_name_plural = "Extras asignados"
     show_change_link = False
 
-    # Solo permite seleccionar conceptos extras activos.
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "concepto_extra":
-            kwargs["queryset"] = db_field.remote_field.model.objects.filter(
-                activo=True
-            )
-
-        return super().formfield_for_foreignkey(
-            db_field, request, **kwargs
-        )
-
-    # Asigna automáticamente el monto vigente del catálogo al guardar.
-    def save_new(self, form, commit=True):
-        instancia = form.save(commit=False)
-        instancia.monto = instancia.concepto_extra.monto
-
-        if commit:
-            instancia.save()
-            form.save_m2m()
-
-        return instancia
-
-    # Actualiza el monto cuando se modifica una asignación existente.
-    def save_existing(self, form, instancia, commit=True):
-        instancia = form.save(commit=False)
-        instancia.monto = instancia.concepto_extra.monto
-
-        if commit:
-            instancia.save()
-            form.save_m2m()
-
-        return instancia
+    # Los conceptos inactivos se ocultan del autocompletado en
+    # ConceptoExtraAdmin.get_search_results (catalogos/admin.py).
+    # No se filtra aquí para no impedir guardar empleados que ya
+    # tienen asignado un concepto que después se desactivó.
 
 
-
+# ==========================================================
+# ADMIN: EMPLEADOS
+# ==========================================================
 # Configura el administrador de empleados.
 # Permite administrar los datos laborales y sus extras asignados.
 @admin.register(Empleado)
 class EmpleadoAdmin(admin.ModelAdmin):
-
+ 
+    form = EmpleadoForm
+ 
     list_display = (
         "id",
-        "persona",
+        "empleado",
         "puesto",
         "nss",
-        "sueldo_diario",
+        "mostrar_sueldo_diario",
         "fecha_ingreso",
         "activo",
     )
-
-    list_display_links = ("id", "persona")
-    search_fields = ("persona__curp", "persona__rfc", "nss")
+ 
+    list_display_links = ("id", "empleado")
+ 
+    # Evita una consulta adicional por fila para persona y puesto.
+    list_select_related = ("persona", "puesto")
+ 
+    search_fields = (
+        "persona__nombres",
+        "persona__apellido_paterno",
+        "persona__apellido_materno",
+        "persona__curp",
+        "persona__rfc",
+        "nss",
+    )
+ 
     list_filter = ("activo", "puesto")
     ordering = ("persona__id",)
     inlines = (EmpleadoExtraInline,)
-
+ 
     fields = (
         "persona",
         "nss",
@@ -494,35 +485,263 @@ class EmpleadoAdmin(admin.ModelAdmin):
         "fecha_ingreso",
         "activo",
     )
-
+ 
+    # Los puestos inactivos se ocultan del autocompletado en
+    # PuestoAdmin.get_search_results (catalogos/admin.py) y se
+    # validan en EmpleadoForm.clean_puesto.
     autocomplete_fields = ("persona", "puesto")
-
-    # Solo permite seleccionar puestos activos en el formulario.
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "puesto":
-            kwargs["queryset"] = db_field.remote_field.model.objects.filter(
-                activo=True
-            )
-
-        return super().formfield_for_foreignkey(
-            db_field, request, **kwargs
-        )
-
+ 
+    # Impide cambiar la persona una vez asignada al empleado.
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ("persona",) + tuple(self.readonly_fields)
+ 
+        return self.readonly_fields
+ 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-
+ 
         for field in form.base_fields.values():
             field.widget.attrs["autocomplete"] = "off"
-
+ 
         return form
-
-        # Impide eliminar empleados desde Django Admin.
+ 
+    # Asigna el monto vigente del catálogo a los extras nuevos o
+    # modificados. Las filas sin cambios conservan su monto.
+    def save_formset(self, request, form, formset, change):
+        if formset.model is not EmpleadoExtra:
+            return super().save_formset(request, form, formset, change)
+ 
+        instancias = formset.save(commit=False)
+ 
+        for obj in formset.deleted_objects:
+            obj.delete()
+ 
+        for instancia in instancias:
+            instancia.monto = instancia.concepto_extra.monto
+            instancia.save()
+ 
+        formset.save_m2m()
+ 
+    # Impide eliminar empleados desde Django Admin.
     def has_delete_permission(self, request, obj=None):
         return False
-
+ 
     # Elimina la acción de borrado masivo del listado.
     def get_actions(self, request):
         actions = super().get_actions(request)
         actions.pop("delete_selected", None)
         return actions
+ 
+    # Muestra la persona asociada bajo la columna Empleado.
+    @admin.display(description="Empleado")
+    def empleado(self, obj):
+        return obj.persona
+ 
+    # Muestra el sueldo diario con separador de miles y dos decimales.
+    @admin.display(description="Sueldo diario", ordering="sueldo_diario")
+    def mostrar_sueldo_diario(self, obj):
+        return f"${obj.sueldo_diario:,.2f}"
 
+# Administra los clientes registrados en el sistema.
+# Permite consultar, buscar y filtrar clientes sin habilitar su eliminación.
+@admin.register(Cliente)
+class ClienteAdmin(admin.ModelAdmin):
+    form = ClienteForm
+
+    list_display = (
+        "id",
+        "cliente",
+        "mostrar_limite_credito",
+        "fecha_registro",
+        "activo",
+    )
+
+    list_display_links = ("id", "cliente")
+    list_select_related = ("persona",)
+
+    search_fields = (
+        "persona__nombres",
+        "persona__apellido_paterno",
+        "persona__apellido_materno",
+        "persona__razon_social",
+        "persona__nombre_comercial",
+        "persona__rfc",
+        "persona__curp",
+    )
+
+    list_filter = ("activo", "persona__tipo_persona")
+    ordering = ("persona__id",)
+
+    autocomplete_fields = ("persona",)
+
+    fields = (
+        "persona",
+        "limite_credito",
+        "fecha_registro",
+        "activo",
+    )
+
+    readonly_fields = ("fecha_registro",)
+
+    # Muestra la persona asociada bajo la columna Cliente.
+    @admin.display(description="Cliente")
+    def cliente(self, obj):
+        return obj.persona
+
+    # Al editar, la persona no se puede cambiar.
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ("persona",) + tuple(self.readonly_fields)
+
+        return self.readonly_fields
+
+    # Impide eliminar clientes desde el administrador.
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    # Oculta la acción de eliminación masiva.
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        actions.pop("delete_selected", None)
+        return actions
+
+   # Muestra el límite de crédito con separador de miles y dos decimales.
+    @admin.display(description="Límite de crédito", ordering="limite_credito")
+    def mostrar_limite_credito(self, obj):
+        return f"${obj.limite_credito:,.2f}"
+
+
+
+# Administra los proveedores registrados en el sistema.
+# Permite consultar y modificar sus datos comerciales sin habilitar su eliminación.
+@admin.register(Proveedor)
+class ProveedorAdmin(admin.ModelAdmin):
+ 
+    form = ProveedorForm
+ 
+    list_display = (
+        "id",
+        "proveedor",
+        "mostrar_limite_credito",
+        "fecha_registro",
+        "activo",
+    )
+ 
+    list_display_links = ("id", "proveedor")
+    list_select_related = ("persona",)
+ 
+    search_fields = (
+        "persona__nombres",
+        "persona__apellido_paterno",
+        "persona__apellido_materno",
+        "persona__razon_social",
+        "persona__nombre_comercial",
+        "persona__rfc",
+        "persona__curp",
+    )
+ 
+    list_filter = ("activo", "persona__tipo_persona")
+ 
+    autocomplete_fields = ("persona",)
+ 
+    fields = (
+        "persona",
+        "limite_credito",
+        "fecha_registro",
+        "activo",
+    )
+ 
+    readonly_fields = ("fecha_registro",)
+ 
+    # Impide cambiar la persona una vez asignada al proveedor.
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ("persona",) + tuple(self.readonly_fields)
+ 
+        return self.readonly_fields
+ 
+    # Muestra la persona asociada bajo la columna Proveedor.
+    @admin.display(description="Proveedor")
+    def proveedor(self, obj):
+        return obj.persona
+ 
+    # Muestra el límite de crédito con separador de miles y dos decimales.
+    @admin.display(
+        description="Límite de crédito",
+        ordering="limite_credito",
+    )
+    def mostrar_limite_credito(self, obj):
+        return f"${obj.limite_credito:,.2f}"
+ 
+    # Impide eliminar proveedores desde Django Admin.
+    # Sin este permiso, Django también oculta la acción de borrado masivo.
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+# Administra los destinatarios registrados en el sistema.
+# Permite consultar y modificar su estado sin habilitar su eliminación.
+@admin.register(Destinatario)
+class DestinatarioAdmin(admin.ModelAdmin):
+
+    form = DestinatarioForm
+
+    list_display = (
+        "id",
+        "destinatario",
+        "fecha_registro",
+        "activo",
+    )
+
+    list_display_links = ("id", "destinatario")
+    list_select_related = ("persona",)
+
+    search_fields = (
+        "persona__nombres",
+        "persona__apellido_paterno",
+        "persona__apellido_materno",
+        "persona__razon_social",
+        "persona__nombre_comercial",
+        "persona__rfc",
+        "persona__curp",
+    )
+
+    list_filter = ("activo", "persona__tipo_persona")
+
+    autocomplete_fields = ("persona",)
+
+    fields = (
+        "persona",
+        "fecha_registro",
+        "activo",
+    )
+
+    readonly_fields = ("fecha_registro",)
+
+    # Al editar, impide cambiar la persona asignada.
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ("persona",) + tuple(self.readonly_fields)
+
+        return self.readonly_fields
+
+    # Muestra la persona asociada bajo la columna Destinatario.
+    # Se ordena por razón social, apellidos y nombres para cubrir
+    # personas físicas y morales.
+    @admin.display(
+        description="Destinatario",
+        ordering=(
+            "persona__razon_social",
+            "persona__apellido_paterno",
+            "persona__apellido_materno",
+            "persona__nombres",
+        ),
+    )
+    def destinatario(self, obj):
+        return obj.persona
+
+    # Impide eliminar destinatarios desde Django Admin.
+    # Sin este permiso, Django también oculta la acción de borrado masivo.
+    def has_delete_permission(self, request, obj=None):
+        return False

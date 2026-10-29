@@ -1,6 +1,7 @@
 from django import forms
 
-from .models import Empleado, EmpleadoExtra, Persona
+from .models import Empleado, EmpleadoExtra, Persona, Cliente, Proveedor, Destinatario
+
 
 class PersonaAdminForm(forms.ModelForm):
     """
@@ -55,6 +56,8 @@ class PersonaAdminForm(forms.ModelForm):
 class PersonaFisicaAdminForm(forms.ModelForm):
     """
     Formulario exclusivo para registrar personas físicas.
+    El tipo de persona y la limpieza de campos de persona moral
+    se resuelven en PersonaAdmin.save_model.
     """
 
     class Meta:
@@ -121,17 +124,14 @@ class PersonaFisicaAdminForm(forms.ModelForm):
                 "Capture el apellido paterno.",
             )
 
-        # Limpiar campos exclusivos de persona moral.
-        cleaned_data["razon_social"] = ""
-        cleaned_data["nombre_comercial"] = ""
-        cleaned_data["tipo_persona"] = Persona.TipoPersona.FISICA
-
         return cleaned_data
 
 
 class PersonaMoralAdminForm(forms.ModelForm):
     """
     Formulario exclusivo para registrar personas morales.
+    El tipo de persona y la limpieza de campos de persona física
+    se resuelven en PersonaAdmin.save_model.
     """
 
     class Meta:
@@ -186,17 +186,7 @@ class PersonaMoralAdminForm(forms.ModelForm):
                 "Capture la razón social.",
             )
 
-        # Limpiar campos exclusivos de persona física.
-        cleaned_data["curp"] = None
-        cleaned_data["nombres"] = ""
-        cleaned_data["apellido_paterno"] = ""
-        cleaned_data["apellido_materno"] = ""
-
-        # El tipo se determina en el servidor.
-        cleaned_data["tipo_persona"] = Persona.TipoPersona.MORAL
-
         return cleaned_data
-
 
 
 # Formulario para registrar y modificar empleados.
@@ -213,42 +203,48 @@ class EmpleadoForm(forms.ModelForm):
             "fecha_ingreso",
             "activo",
         )
-
-        widgets = {
-            "nss": forms.TextInput(attrs={
-                "autocomplete": "off",
-                "maxlength": "11",
-                "placeholder": "11 dígitos (opcional)",
-            }),
-            "sueldo_diario": forms.NumberInput(attrs={
-                "min": "0",
-                "step": "0.01",
-                "autocomplete": "off",
-            }),
-            "fecha_ingreso": forms.DateInput(attrs={
-                "type": "date",
-                "autocomplete": "off",
-            }),
-        }
+        # No se definen widgets: el admin usa los suyos por defecto
+        # (calendario de Django en la fecha, estilos del admin, etc.).
+        # El autocomplete="off" lo aplica EmpleadoAdmin.get_form.
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # El selector del formulario solo debe incluir personas físicas.
-        self.fields["persona"].queryset = Persona.objects.filter(
-            tipo_persona=1
+        # Al editar, el admin muestra la persona de solo lectura y
+        # el campo no existe en el formulario.
+        if "persona" in self.fields:
+            # El selector solo debe incluir personas físicas.
+            self.fields["persona"].queryset = Persona.objects.filter(
+                tipo_persona=Persona.TipoPersona.FISICA
+            )
+
+        self.fields["nss"].widget.attrs["placeholder"] = (
+            "11 dígitos (opcional)"
         )
 
     def clean_persona(self):
         # Impide asignar una persona moral, incluso si se envía manualmente.
         persona = self.cleaned_data["persona"]
 
-        if persona.tipo_persona != 1:
+        if persona.tipo_persona != Persona.TipoPersona.FISICA:
             raise forms.ValidationError(
                 "Solo se pueden registrar personas físicas como empleados."
             )
 
         return persona
+
+    def clean_puesto(self):
+        # No permite elegir un puesto inactivo, pero sí conservar el que
+        # el empleado ya tiene aunque se haya desactivado después.
+        puesto = self.cleaned_data["puesto"]
+        puesto_actual_id = self.instance.puesto_id if self.instance.pk else None
+
+        if not puesto.activo and puesto.pk != puesto_actual_id:
+            raise forms.ValidationError(
+                "El puesto seleccionado no está activo."
+            )
+
+        return puesto
 
     def clean_nss(self):
         # El NSS es opcional; si se captura, debe contener 11 dígitos.
@@ -275,6 +271,8 @@ class EmpleadoForm(forms.ModelForm):
 
 # Formulario para asignar conceptos extras a un empleado.
 # El monto se obtiene del catálogo y no puede editarse manualmente.
+# Actualmente no se usa en el admin; se conserva por si se requiere
+# fuera de él.
 class EmpleadoExtraForm(forms.ModelForm):
 
     class Meta:
@@ -286,3 +284,100 @@ class EmpleadoExtraForm(forms.ModelForm):
                 "step": "0.01",
             }),
         }
+
+
+# Formulario para registrar y modificar clientes.
+# En el alta solo ofrece personas activas que aún no son clientes.
+class ClienteForm(forms.ModelForm):
+
+    class Meta:
+        model = Cliente
+        fields = (
+            "persona",
+            "limite_credito",
+            "activo",
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Al editar, el admin muestra la persona de solo lectura y
+        # el campo no existe en el formulario.
+        if "persona" in self.fields:
+            self.fields["persona"].queryset = Persona.objects.filter(
+                activo=True,
+                cliente__isnull=True,
+            )
+
+    def clean_limite_credito(self):
+        # El límite de crédito no puede ser negativo.
+        limite = self.cleaned_data["limite_credito"]
+
+        if limite < 0:
+            raise forms.ValidationError(
+                "El límite de crédito no puede ser negativo."
+            )
+
+        return limite
+
+
+# Formulario para registrar y modificar proveedores.
+# En el alta solo ofrece personas activas que aún no son proveedores.
+# El límite de crédito se valida mediante las reglas del modelo.
+class ProveedorForm(forms.ModelForm):
+
+    class Meta:
+        model = Proveedor
+        fields = (
+            "persona",
+            "limite_credito",
+            "activo",
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Al editar, el admin muestra la persona de solo lectura y
+        # el campo no existe en el formulario.
+        if "persona" in self.fields:
+            self.fields["persona"].queryset = Persona.objects.filter(
+                activo=True,
+                proveedor__isnull=True,
+            )
+
+
+# Formulario para registrar y modificar destinatarios.
+# En el alta solo ofrece personas activas que aún no son destinatarios.
+# Al editar, la persona queda bloqueada y no puede cambiarse.
+# Reutiliza los datos generales almacenados en Persona.
+class DestinatarioForm(forms.ModelForm):
+
+    class Meta:
+        model = Destinatario
+        fields = (
+            "persona",
+            "activo",
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Si el campo no está (por ejemplo, el admin lo muestra de solo
+        # lectura al editar), no hay nada que configurar.
+        if "persona" not in self.fields:
+            return
+
+        if self.instance.pk:
+            # Edición: la persona no se puede cambiar. Con disabled,
+            # Django ignora lo enviado y conserva el valor de la instancia.
+            self.fields["persona"].disabled = True
+        else:
+            # Alta: solo personas activas que aún no son destinatarios.
+            self.fields["persona"].queryset = Persona.objects.filter(
+                activo=True,
+                destinatario__isnull=True,
+            ).order_by(
+                "apellido_paterno",
+                "apellido_materno",
+                "nombres",
+            )

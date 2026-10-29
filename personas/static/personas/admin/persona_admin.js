@@ -64,11 +64,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // 2. LOCALIZAR LAS SECCIONES
     // =====================================================
 
-    const personaFieldset = Array.from(form.children).find(
-        function (elemento) {
-            return elemento.tagName === "FIELDSET";
-        }
-    );
+    // Primer fieldset que no pertenece a un inline: son los
+    // datos de la persona.
+    const personaFieldset = Array.from(
+        form.querySelectorAll("fieldset")
+    ).find(function (fieldset) {
+        return !fieldset.closest(".inline-group");
+    });
 
     const direcciones =
         form.querySelector("#direcciones-group");
@@ -91,17 +93,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // =====================================================
-    // 3. DETERMINAR EL TIPO DE PERSONA
+    // 3. TÍTULO DE LA PESTAÑA DE PERSONA
     // =====================================================
 
-    const rutaActual = window.location.pathname;
+    // Se toma del encabezado del fieldset, que ya define el
+    // admin ("Datos de persona física" o "Datos de persona moral")
+    // tanto en alta como en edición.
+    const encabezado = personaFieldset.querySelector("h2, legend");
+    const esAltaMoral = window.location.pathname.includes("/add/moral/");
 
-    const esPersonaMoral =
-        rutaActual.includes("/add/moral/");
-
-    const tituloPersona = esPersonaMoral
-        ? "Datos de persona moral"
-        : "Datos de persona física";
+    const tituloPersona =
+        (encabezado && encabezado.textContent.trim()) ||
+        (esAltaMoral
+            ? "Datos de persona moral"
+            : "Datos de persona física");
 
     // =====================================================
     // 4. CONFIGURAR LAS TRES PESTAÑAS
@@ -111,14 +116,17 @@ document.addEventListener("DOMContentLoaded", function () {
         {
             title: tituloPersona,
             element: personaFieldset,
+            id: personaFieldset.id || "persona-datos-panel",
         },
         {
             title: "Direcciones",
             element: direcciones,
+            id: direcciones.id,
         },
         {
             title: "Teléfonos",
             element: telefonos,
+            id: telefonos.id,
         },
     ];
 
@@ -132,7 +140,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // 5. ACTIVAR PESTAÑA
     // =====================================================
 
-    function activarPestana(indice) {
+    function activarPestana(indice, enfocar) {
         panels.forEach(function (panel, i) {
             const activa = i === indice;
 
@@ -143,8 +151,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 String(activa)
             );
 
+            panel.button.tabIndex = activa ? 0 : -1;
+
             panel.element.hidden = !activa;
         });
+
+        if (enfocar) {
+            panels[indice].button.focus();
+        }
     }
 
     // =====================================================
@@ -155,26 +169,91 @@ document.addEventListener("DOMContentLoaded", function () {
         const button = document.createElement("button");
 
         button.type = "button";
+        button.id = "persona-tab-" + indice;
         button.className = "persona-tab-button";
         button.textContent = panel.title;
 
         button.setAttribute("role", "tab");
         button.setAttribute("aria-selected", "false");
+        button.setAttribute("aria-controls", panel.id);
 
         button.addEventListener("click", function () {
-            activarPestana(indice);
+            activarPestana(indice, false);
+        });
+
+        // Navegación con el teclado: flechas, Inicio y Fin.
+        button.addEventListener("keydown", function (evento) {
+            let destino = null;
+
+            if (evento.key === "ArrowRight") {
+                destino = (indice + 1) % panels.length;
+            } else if (evento.key === "ArrowLeft") {
+                destino = (indice - 1 + panels.length) % panels.length;
+            } else if (evento.key === "Home") {
+                destino = 0;
+            } else if (evento.key === "End") {
+                destino = panels.length - 1;
+            }
+
+            if (destino !== null) {
+                evento.preventDefault();
+                activarPestana(destino, true);
+            }
         });
 
         panel.button = button;
+
+        panel.element.id = panel.id;
+        panel.element.setAttribute("role", "tabpanel");
+        panel.element.setAttribute("aria-labelledby", button.id);
 
         tabs.appendChild(button);
     });
 
     // =====================================================
-    // 7. INSERTAR PESTAÑAS Y MOSTRAR LA PRIMERA
+    // 7. INSERTAR PESTAÑAS Y MOSTRAR LA INICIAL
     // =====================================================
 
     form.insertBefore(tabs, form.firstChild);
 
-    activarPestana(0);
+    // Si el servidor devolvió errores de validación, abrir la
+    // primera pestaña que los contenga para que no queden ocultos.
+    const indiceConError = panels.findIndex(function (panel) {
+        return panel.element.querySelector(".errorlist, .errors");
+    });
+
+    activarPestana(indiceConError >= 0 ? indiceConError : 0, false);
+
+    // =====================================================
+    // 8. VALIDACIÓN NATIVA DEL NAVEGADOR
+    // =====================================================
+
+    // Si un campo obligatorio está vacío en una pestaña oculta, el
+    // navegador no puede enfocarlo. Se abre la pestaña del primer
+    // campo inválido antes de que intente hacerlo.
+    let invalidoManejado = false;
+
+    form.addEventListener(
+        "invalid",
+        function (evento) {
+            if (invalidoManejado) {
+                return;
+            }
+
+            invalidoManejado = true;
+
+            setTimeout(function () {
+                invalidoManejado = false;
+            }, 0);
+
+            const indice = panels.findIndex(function (panel) {
+                return panel.element.contains(evento.target);
+            });
+
+            if (indice >= 0) {
+                activarPestana(indice, false);
+            }
+        },
+        true
+    );
 });

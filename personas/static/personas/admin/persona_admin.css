@@ -83,19 +83,19 @@
 
 /* =====================================================
    3. PANELES
+   El script marca los tres paneles con role="tabpanel",
+   por lo que no se depende de la estructura del admin.
    ===================================================== */
 
 /* Respetar la propiedad hidden aplicada por JavaScript */
 
-#persona_form > fieldset[hidden],
-#persona_form #direcciones-group[hidden],
-#persona_form #telefonos-group[hidden] {
+#persona_form [role="tabpanel"][hidden] {
     display: none !important;
 }
 
 /* Panel de datos de la persona */
 
-#persona_form > fieldset {
+#persona_form fieldset[role="tabpanel"] {
     width: 100%;
     min-width: 0;
     margin: 0;
@@ -103,6 +103,13 @@
     border: 1px solid var(--border-color, #ddd);
     border-radius: 6px;
     background: var(--body-bg, #fff);
+}
+
+/* Paneles de direcciones y teléfonos */
+
+#persona_form .inline-group[role="tabpanel"] {
+    width: 100%;
+    min-width: 0;
 }
 
 /* =====================================================
@@ -113,7 +120,6 @@
 #persona_form textarea,
 #persona_form select {
     max-width: 100%;
-    box-sizing: border-box;
 }
 
 /* Evitar que los campos largos desborden el panel */
@@ -122,9 +128,9 @@
     max-width: 100%;
 }
 
-/* Etiquetas */
+/* Etiquetas (sin afectar las de casillas de verificación) */
 
-#persona_form label {
+#persona_form .form-row label:not(.vCheckboxLabel) {
     font-weight: 600;
 }
 
@@ -136,17 +142,12 @@
 }
 
 /* =====================================================
-   5. DIRECCIONES
+   5. DIRECCIONES Y TELÉFONOS
    ===================================================== */
 
-#direcciones-group {
-    width: 100%;
-    min-width: 0;
-}
+/* Cada dirección o teléfono */
 
-/* Cada dirección */
-
-#direcciones-group .inline-related {
+:is(#direcciones-group, #telefonos-group) .inline-related {
     margin-bottom: 16px;
     padding: 16px;
     border: 1px solid var(--border-color, #ddd);
@@ -154,56 +155,26 @@
     background: var(--body-bg, #fff);
 }
 
-/* Encabezado de cada dirección */
+/* Encabezado de cada registro */
 
-#direcciones-group .inline-related h3 {
+:is(#direcciones-group, #telefonos-group) .inline-related h3 {
     margin-top: 0;
 }
 
-/* =====================================================
-   6. TELÉFONOS
-   ===================================================== */
+/* Botones para agregar registros */
 
-#telefonos-group {
-    width: 100%;
-    min-width: 0;
-}
-
-/* Cada teléfono */
-
-#telefonos-group .inline-related {
-    margin-bottom: 16px;
-    padding: 16px;
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 6px;
-    background: var(--body-bg, #fff);
-}
-
-/* Encabezado de cada teléfono */
-
-#telefonos-group .inline-related h3 {
-    margin-top: 0;
-}
-
-/* =====================================================
-   7. BOTONES PARA AGREGAR REGISTROS
-   ===================================================== */
-
-#direcciones-group .add-row,
-#telefonos-group .add-row {
+:is(#direcciones-group, #telefonos-group) .add-row {
     margin-top: 12px;
     padding: 10px 0;
 }
 
 /* =====================================================
-   8. DISEÑO RESPONSIVO
+   6. DISEÑO RESPONSIVO
    ===================================================== */
 
 @media (max-width: 767px) {
     .persona-tabs {
-        display: flex;
         flex-direction: column;
-        gap: 6px;
         border-bottom: none;
     }
 
@@ -219,21 +190,20 @@
         margin-bottom: 0;
         border: 1px solid var(--primary, #417690);
         background: var(--primary, #417690);
-        color: #fff;
+        color: var(--primary-fg, #fff);
     }
 
-    #persona_form > fieldset {
+    #persona_form fieldset[role="tabpanel"] {
         padding: 14px;
     }
 
-    #direcciones-group .inline-related,
-    #telefonos-group .inline-related {
+    :is(#direcciones-group, #telefonos-group) .inline-related {
         padding: 12px;
     }
 }
 
 /* =====================================================
-   9. RESPETAR PREFERENCIAS DE MOVIMIENTO
+   7. RESPETAR PREFERENCIAS DE MOVIMIENTO
    ===================================================== */
 
 @media (prefers-reduced-motion: reduce) {

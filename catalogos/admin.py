@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.shortcuts import redirect
 from django.urls import reverse
 
-from .models import GoHome, Puesto, ConceptoExtra
+from .models import ConceptoExtra, GoHome, Puesto
 
 
 @admin.register(GoHome)
@@ -60,7 +60,7 @@ class PuestoAdmin(admin.ModelAdmin):
 
         return form
 
-      # En el autocompletado de empleados, muestra únicamente
+    # En el autocompletado de empleados, muestra únicamente
     # los puestos activos, sin alterar el listado del catálogo.
     def get_search_results(self, request, queryset, search_term):
         queryset, use_distinct = super().get_search_results(
@@ -79,8 +79,6 @@ class PuestoAdmin(admin.ModelAdmin):
     # Impide eliminar puestos desde Django Admin.
     def has_delete_permission(self, request, obj=None):
         return False
-
-
 
 
 # Administrador del catálogo de conceptos extras para empleados.
@@ -113,8 +111,8 @@ class ConceptoExtraAdmin(admin.ModelAdmin):
             field.widget.attrs["autocomplete"] = "off"
 
         return form
-    
-        # En el autocompletado de extras del empleado, muestra
+
+    # En el autocompletado de extras del empleado, muestra
     # únicamente los conceptos activos.
     def get_search_results(self, request, queryset, search_term):
         queryset, use_distinct = super().get_search_results(
@@ -129,7 +127,7 @@ class ConceptoExtraAdmin(admin.ModelAdmin):
             queryset = queryset.filter(activo=True)
 
         return queryset, use_distinct
-    
-     # Impide eliminar conceptos extras desde Django Admin.
+
+    # Impide eliminar conceptos extras desde Django Admin.
     def has_delete_permission(self, request, obj=None):
         return False

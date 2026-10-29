@@ -1,6 +1,7 @@
 from django.db import models
+from django.db.models import Q
+from django.core.validators import MinValueValidator
 
-from django.db import models
 
 
 class Persona(models.Model):
@@ -294,3 +295,134 @@ class EmpleadoExtra(models.Model):
     def __str__(self):
         return f"{self.empleado} - {self.concepto_extra}"
 
+
+
+
+# Registra la relación comercial de una persona como cliente.
+# Define su límite de crédito y estado, sin duplicar los datos
+# personales y fiscales almacenados en Persona.
+class Cliente(models.Model):
+    id = models.BigAutoField(
+        primary_key=True,
+        verbose_name="ID",
+    )
+    persona = models.OneToOneField(
+        "personas.Persona",
+        on_delete=models.PROTECT,
+        related_name="cliente",
+        verbose_name="Persona",
+    )
+    fecha_registro = models.DateField(
+        auto_now_add=True,
+        verbose_name="Fecha de registro",
+    )
+    limite_credito = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+        verbose_name="Límite de crédito",
+        help_text="Importe máximo autorizado para ventas a crédito.",
+    )
+    activo = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+
+    class Meta:
+        db_table = "personas_cliente"
+        verbose_name = "Cliente"
+        verbose_name_plural = "Clientes"
+        ordering = ["persona__id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(limite_credito__gte=0),
+                name="ck_cliente_limite_credito_no_negativo",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Cliente {self.pk} - {self.persona}"
+
+
+
+# Registra la relación comercial de una persona como proveedor.
+# Define el crédito que el proveedor otorga y su estado, sin duplicar
+# los datos personales y fiscales almacenados en Persona.
+class Proveedor(models.Model):
+ 
+    persona = models.OneToOneField(
+        "personas.Persona",
+        on_delete=models.PROTECT,
+        related_name="proveedor",
+        verbose_name="Persona",
+    )
+    fecha_registro = models.DateField(
+        auto_now_add=True,
+        verbose_name="Fecha de registro",
+    )
+    limite_credito = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+        verbose_name="Límite de crédito",
+        help_text=(
+            "Importe máximo de crédito otorgado por el proveedor. "
+            "0 = solo contado."
+        ),
+    )
+    activo = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+ 
+    class Meta:
+        db_table = "personas_proveedor"
+        verbose_name = "Proveedor"
+        verbose_name_plural = "Proveedores"
+        ordering = ["id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(limite_credito__gte=0),
+                name="ck_proveedor_limite_credito_no_negativo",
+            ),
+        ]
+ 
+    def __str__(self):
+        return f"Proveedor {self.pk} - {self.persona}"
+
+
+
+# Registra la relación de una persona como destinatario de mercancía.
+# Reutiliza los datos personales almacenados en Persona, sin duplicarlos.
+# Permite controlar su vigencia sin eliminar el registro.
+class Destinatario(models.Model):
+
+    id = models.BigAutoField(
+        primary_key=True,
+        verbose_name="ID",
+    )
+    persona = models.OneToOneField(
+        "personas.Persona",
+        on_delete=models.PROTECT,
+        related_name="destinatario",
+        verbose_name="Persona",
+    )
+    fecha_registro = models.DateField(
+        auto_now_add=True,
+        verbose_name="Fecha de registro",
+    )
+    activo = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+
+    class Meta:
+        db_table = "personas_destinatario"
+        verbose_name = "Destinatario"
+        verbose_name_plural = "Destinatarios"
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"Destinatario {self.pk} - {self.persona}"
