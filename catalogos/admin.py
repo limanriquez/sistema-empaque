@@ -2,8 +2,8 @@ from django.contrib import admin
 from django.shortcuts import redirect
 from django.urls import reverse
 
-from .models import ConceptoExtra, GoHome, Puesto
-
+from .forms import UnidadMedidaForm
+from .models import ConceptoExtra, GoHome, Puesto, UnidadMedida
 
 @admin.register(GoHome)
 class GoHomeAdmin(admin.ModelAdmin):
@@ -129,5 +129,37 @@ class ConceptoExtraAdmin(admin.ModelAdmin):
         return queryset, use_distinct
 
     # Impide eliminar conceptos extras desde Django Admin.
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+# Administra las unidades de medida de los materiales.
+# No habilita la eliminación: una unidad en uso está protegida y las
+# demás se retiran desactivándolas.
+@admin.register(UnidadMedida)
+class UnidadMedidaAdmin(admin.ModelAdmin):
+
+    form = UnidadMedidaForm
+
+    list_display = (
+        "id",
+        "nombre",
+        "abreviatura",
+        "permite_decimales",
+        "activo",
+    )
+
+    list_display_links = ("id", "nombre")
+    list_filter = ("activo", "permite_decimales")
+    search_fields = ("nombre", "abreviatura")
+
+    fields = (
+        "nombre",
+        "abreviatura",
+        "permite_decimales",
+        "activo",
+    )
+
+    # Impide eliminar unidades desde Django Admin.
     def has_delete_permission(self, request, obj=None):
         return False

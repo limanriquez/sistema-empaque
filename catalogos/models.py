@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.db.models.functions import Lower
 
 class GoHome(models.Model):
     class Meta:
@@ -79,3 +79,41 @@ class ConceptoExtra(models.Model):
     def __str__(self):
         return f"{self.nombre} - ${self.monto:,.2f}"
 
+
+
+# Registra las unidades de medida utilizadas para expresar las
+# cantidades de materiales en las operaciones de compra e inventario.
+# Cada material usa una sola unidad, y todas sus cantidades (movimientos
+# y recetas) se expresan en ella. Las unidades de conteo, como pieza o
+# caja, pueden restringirse a cantidades enteras.
+class UnidadMedida(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    nombre = models.CharField(max_length=50, unique=True)
+    abreviatura = models.CharField(max_length=10, unique=True)
+    permite_decimales = models.BooleanField(
+        default=True,
+        help_text=(
+            "Desmarque si la unidad solo admite cantidades enteras "
+            "(piezas, cajas)."
+        ),
+    )
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "inventario_unidad_medida"
+        verbose_name = "Unidad de medida"
+        verbose_name_plural = "Unidades de medida"
+        ordering = ["nombre"]
+        constraints = [
+            models.UniqueConstraint(
+                Lower("nombre"),
+                name="uq_unidad_nombre_ci",
+            ),
+            models.UniqueConstraint(
+                Lower("abreviatura"),
+                name="uq_unidad_abreviatura_ci",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.nombre} ({self.abreviatura})"
