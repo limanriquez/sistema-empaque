@@ -1,38 +1,31 @@
-from django.contrib import admin
-from django.db.models import F
 
-from .forms import MaterialForm, MovimientoInventarioForm
-from .models import ExistenciaMaterial, Material, MovimientoInventario
+from django.contrib import admin, messages
+from django.urls import path, reverse
+from django.utils.html import format_html, format_html_join
+
+from .forms import (
+    MaterialForm,
+    EntradaInventarioForm,
+    SalidaInventarioForm,
+    TraspasoAlmacenForm,
+    TraspasoClienteForm,
+)
+
+from .models import (
+    ExistenciaMaterial,
+    Material,
+    MovimientoInventario,
+)
+
 from .services import registrar_movimiento
 
-# Filtro del listado por nivel de existencia respecto al stock mínimo.
-class NivelStockFilter(admin.SimpleListFilter):
-    title = "nivel de stock"
-    parameter_name = "nivel_stock"
 
-    def lookups(self, request, model_admin):
-        return (
-            ("bajo", "En o bajo el mínimo"),
-            ("agotado", "Agotado"),
-        )
+# ============================================================
+# MATERIALES
+# ============================================================
 
-    def queryset(self, request, queryset):
-        if self.value() == "bajo":
-            return queryset.filter(
-                stock_minimo__gt=0,
-                existencia__lte=F("stock_minimo"),
-            )
-
-        if self.value() == "agotado":
-            return queryset.filter(existencia__lte=0)
-
-        return queryset
-
-
-# Administra los materiales de empaque y su existencia consolidada.
-# La existencia es de solo lectura: la modifican los movimientos de
-# inventario. La unidad no cambia una vez creado el material. No
-# habilita la eliminación.
+# Administra el catálogo general de materiales.
+# No administra existencias ni stock mínimo.
 @admin.register(Material)
 class MaterialAdmin(admin.ModelAdmin):
 
@@ -42,24 +35,16 @@ class MaterialAdmin(admin.ModelAdmin):
         "id",
         "codigo",
         "nombre",
-        "mostrar_existencia",
-        "mostrar_stock_minimo",
-        "stock_suficiente",
+        "unidad_medida",
         "activo",
     )
 
     list_display_links = ("id", "nombre")
 
-    # Evita una consulta adicional por fila para la unidad de medida.
     list_select_related = ("unidad_medida",)
 
-    list_filter = (
-        "activo",
-        NivelStockFilter,
-        "unidad_medida",
-    )
+    list_filter = ("activo", "unidad_medida")
 
-    # Requerido por autocomplete_fields en movimientos y BOM.
     search_fields = (
         "codigo",
         "nombre",
@@ -71,159 +56,70 @@ class MaterialAdmin(admin.ModelAdmin):
         "nombre",
         "descripcion",
         "unidad_medida",
-        "existencia",
-        "stock_minimo",
         "activo",
     )
 
-    # La existencia solo cambia por movimientos de inventario.
-    # La unidad no cambia una vez creado el material, para no alterar
-    # el significado de las cantidades ya registradas.
     def get_readonly_fields(self, request, obj=None):
         if obj:
-            return ("existencia", "unidad_medida")
+            return ("unidad_medida",)
+        return ()
 
-        return ("existencia",)
-
-    # Muestra la existencia con la abreviatura de su unidad.
-    @admin.display(description="Existencia", ordering="existencia")
-    def mostrar_existencia(self, obj):
-        return f"{obj.existencia:,.3f} {obj.unidad_medida.abreviatura}"
-
-    # Muestra el stock mínimo con la abreviatura de su unidad.
-    @admin.display(description="Stock mínimo", ordering="stock_minimo")
-    def mostrar_stock_minimo(self, obj):
-        return f"{obj.stock_minimo:,.3f} {obj.unidad_medida.abreviatura}"
-
-    # Indica si la existencia supera el stock mínimo.
-    @admin.display(description="Stock suficiente", boolean=True)
-    def stock_suficiente(self, obj):
-        if obj.stock_minimo > 0:
-            return obj.existencia > obj.stock_minimo
-
-        return obj.existencia > 0
-
-    # Impide eliminar materiales desde Django Admin.
     def has_delete_permission(self, request, obj=None):
         return False
 
 
-# Administra el libro de movimientos de inventario. Solo permite
-# registrar movimientos nuevos: no se editan ni se eliminan, y los
-# errores se corrigen con otro movimiento. Al registrar, actualiza los
-# saldos por sección y la existencia consolidada del material.
-@admin.register(MovimientoInventario)
-class MovimientoInventarioAdmin(admin.ModelAdmin):
+# ============================================================
+# EXISTENCIAS
+# ============================================================
 
-    form = MovimientoInventarioForm
+# Consulta de existencias por material, sección y propietario.
+# Es de solo lectura. Los saldos se actualizan mediante movimientos.
+@admin.register(ExistenciaMaterial)
+class ExistenciaMaterialAdmin(admin.ModelAdmin):
 
     list_display = (
-        "id",
-        "fecha",
-        "tipo",
         "material",
-        "mostrar_cantidad",
-        "ubicacion_origen",
-        "ubicacion_destino",
-        "proveedor",
-        "documento",
+        "cliente",
+        "almacen",
+        "espacio",
+        "seccion",
+        "cantidad",
+        "stock_minimo",
     )
 
-    list_display_links = ("id", "material")
-    date_hierarchy = "fecha"
-
-    # Evita consultas adicionales por fila.
     list_select_related = (
-        "material__unidad_medida",
-        "ubicacion_origen__espacio__almacen",
-        "ubicacion_destino__espacio__almacen",
-        "proveedor__persona",
+        "material",
+        "cliente__persona",
+        "seccion__espacio__almacen",
     )
 
-    list_filter = ("tipo", "fecha", "material__unidad_medida")
+    list_filter = (
+        "cliente",
+        "seccion__espacio__almacen",
+        "seccion__espacio",
+    )
 
     search_fields = (
         "material__nombre",
         "material__codigo",
-        "documento",
-        "descripcion",
-        "proveedor__persona__razon_social",
-        "proveedor__persona__nombre_comercial",
-        "proveedor__persona__nombres",
-        "proveedor__persona__apellido_paterno",
+        "seccion__nombre",
+        "cliente__persona__razon_social",
+        "cliente__persona__nombre_comercial",
+        "cliente__persona__nombres",
+        "cliente__persona__apellido_paterno",
     )
-
-    autocomplete_fields = (
-        "material",
-        "ubicacion_origen",
-        "ubicacion_destino",
-        "proveedor",
-    )
-
-    campos_captura = (
-        "tipo",
-        "material",
-        "cantidad",
-        "ubicacion_origen",
-        "ubicacion_destino",
-        "proveedor",
-        "costo_unitario",
-        "documento",
-        "fecha",
-        "descripcion",
-    )
-
-    # Al consultar un movimiento se agregan quién y cuándo lo registró.
-    def get_fields(self, request, obj=None):
-        if obj:
-            return self.campos_captura + ("creado_por", "creado_en")
-
-        return self.campos_captura
-
-    # Un movimiento registrado es de solo lectura.
-    def get_readonly_fields(self, request, obj=None):
-        if obj:
-            return self.get_fields(request, obj)
-
-        return ()
-
-    # Registra al usuario responsable y delega en el servicio, que
-    # guarda el movimiento y actualiza los saldos en una transacción.
-    def save_model(self, request, obj, form, change):
-        obj.creado_por = request.user
-        registrar_movimiento(obj)
-
-    # Muestra la cantidad con la abreviatura de la unidad del material.
-    @admin.display(description="Cantidad", ordering="cantidad")
-    def mostrar_cantidad(self, obj):
-        return f"{obj.cantidad:,.3f} {obj.material.unidad_medida.abreviatura}"
-
-    # Solo se registran movimientos nuevos.
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-
-# Consulta de existencias por material y sección. Es de solo lectura:
-# los saldos solo cambian por movimientos de inventario. Con el filtro
-# por almacén se ve el stock de cada uno.
-@admin.register(ExistenciaMaterial)
-class ExistenciaMaterialAdmin(admin.ModelAdmin):
-
-    list_display = ("material", "almacen", "espacio", "seccion", "cantidad")
-    list_select_related = ("material", "seccion__espacio__almacen")
-    list_filter = ("seccion__espacio__almacen", "seccion__espacio")
-    search_fields = ("material__nombre", "material__codigo", "seccion__nombre")
 
     @admin.display(
-        description="Almacén", ordering="seccion__espacio__almacen__nombre"
+        description="Almacén",
+        ordering="seccion__espacio__almacen__nombre",
     )
     def almacen(self, obj):
         return obj.seccion.espacio.almacen
 
-    @admin.display(description="Espacio", ordering="seccion__espacio__nombre")
+    @admin.display(
+        description="Espacio",
+        ordering="seccion__espacio__nombre",
+    )
     def espacio(self, obj):
         return obj.seccion.espacio
 
@@ -235,3 +131,284 @@ class ExistenciaMaterialAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+# ============================================================
+# MOVIMIENTOS DE INVENTARIO
+# ============================================================
+
+# Administra el libro histórico de movimientos.
+# Las capturas se realizan mediante cuatro formularios especializados.
+# Los movimientos registrados no se editan ni se eliminan.
+@admin.register(MovimientoInventario)
+class MovimientoInventarioAdmin(admin.ModelAdmin):
+
+    form = EntradaInventarioForm
+
+    list_display = (
+        "id",
+        "fecha",
+        "tipo",
+        "material",
+        "mostrar_cantidad",
+        "ubicacion_origen",
+        "propietario_origen",
+        "ubicacion_destino",
+        "propietario_destino",
+        "proveedor",
+        "documento",
+    )
+
+    list_display_links = None
+
+    date_hierarchy = "fecha"
+
+    list_select_related = (
+        "material__unidad_medida",
+        "ubicacion_origen__espacio__almacen",
+        "ubicacion_destino__espacio__almacen",
+        "propietario_origen__persona",
+        "propietario_destino__persona",
+        "proveedor__persona",
+    )
+
+    list_filter = (
+        "tipo",
+        "fecha",
+        "material__unidad_medida",
+        "propietario_origen",
+        "propietario_destino",
+    )
+
+    search_fields = (
+        "material__nombre",
+        "material__codigo",
+        "documento",
+        "descripcion",
+        "propietario_origen__persona__razon_social",
+        "propietario_origen__persona__nombre_comercial",
+        "propietario_origen__persona__nombres",
+        "propietario_origen__persona__apellido_paterno",
+        "propietario_destino__persona__razon_social",
+        "propietario_destino__persona__nombre_comercial",
+        "propietario_destino__persona__nombres",
+        "propietario_destino__persona__apellido_paterno",
+        "proveedor__persona__razon_social",
+        "proveedor__persona__nombre_comercial",
+        "proveedor__persona__nombres",
+        "proveedor__persona__apellido_paterno",
+    )
+
+    # --------------------------------------------------------
+    # FORMULARIOS SEGÚN LA OPERACIÓN
+    # --------------------------------------------------------
+
+    formularios_operacion = {
+        "entrada": EntradaInventarioForm,
+        "salida": SalidaInventarioForm,
+        "traspaso_almacen": TraspasoAlmacenForm,
+        "traspaso_cliente": TraspasoClienteForm,
+    }
+
+    titulos_operacion = {
+        "entrada": "Registrar entrada de materiales",
+        "salida": "Registrar salida de materiales",
+        "traspaso_almacen": "Traspaso entre almacenes",
+        "traspaso_cliente": "Traspaso entre clientes",
+    }
+
+    # --------------------------------------------------------
+    # RUTAS PERSONALIZADAS
+    # --------------------------------------------------------
+
+    def get_urls(self):
+
+        urls = super().get_urls()
+
+        urls_personalizadas = [
+            path(
+                "entrada/",
+                self.admin_site.admin_view(self.entrada_view),
+                name="inventarios_movimientoinventario_entrada",
+            ),
+            path(
+                "salida/",
+                self.admin_site.admin_view(self.salida_view),
+                name="inventarios_movimientoinventario_salida",
+            ),
+            path(
+                "traspaso-almacen/",
+                self.admin_site.admin_view(self.traspaso_almacen_view),
+                name="inventarios_movimientoinventario_traspaso_almacen",
+            ),
+            path(
+                "traspaso-cliente/",
+                self.admin_site.admin_view(self.traspaso_cliente_view),
+                name="inventarios_movimientoinventario_traspaso_cliente",
+            ),
+        ]
+
+        return urls_personalizadas + urls
+
+    # --------------------------------------------------------
+    # VISTAS DE CAPTURA
+    # --------------------------------------------------------
+
+    def entrada_view(self, request):
+        return self._vista_operacion(request, "entrada")
+
+    def salida_view(self, request):
+        return self._vista_operacion(request, "salida")
+
+    def traspaso_almacen_view(self, request):
+        return self._vista_operacion(request, "traspaso_almacen")
+
+    def traspaso_cliente_view(self, request):
+        return self._vista_operacion(request, "traspaso_cliente")
+
+    def _vista_operacion(self, request, operacion):
+
+        request._operacion_inventario = operacion
+
+        return self.add_view(
+            request,
+            form_url="",
+            extra_context={
+                "title": self.titulos_operacion[operacion],
+                "titulo_operacion": self.titulos_operacion[operacion],
+                "operacion_inventario": operacion,
+            },
+        )
+
+    # --------------------------------------------------------
+    # SELECCIÓN DEL FORMULARIO
+    # --------------------------------------------------------
+
+    def get_form(self, request, obj=None, **kwargs):
+
+        if obj is None:
+
+            operacion = getattr(
+                request,
+                "_operacion_inventario",
+                "entrada",
+            )
+
+            formulario = self.formularios_operacion.get(
+                operacion,
+                EntradaInventarioForm,
+            )
+
+            kwargs["form"] = formulario
+
+        return super().get_form(request, obj, **kwargs)
+
+    # --------------------------------------------------------
+    # NAVEGACIÓN DEL HISTORIAL
+    # --------------------------------------------------------
+
+    def changelist_view(self, request, extra_context=None):
+
+        response = super().changelist_view(
+            request,
+            extra_context=extra_context,
+        )
+
+        if request.method == "GET" and self.has_add_permission(request):
+
+            enlaces = [
+                (
+                    reverse(
+                        "admin:inventarios_movimientoinventario_entrada"
+                    ),
+                    "Registrar entrada",
+                ),
+                (
+                    reverse(
+                        "admin:inventarios_movimientoinventario_salida"
+                    ),
+                    "Registrar salida",
+                ),
+                (
+                    reverse(
+                        "admin:inventarios_movimientoinventario_traspaso_almacen"
+                    ),
+                    "Traspaso entre almacenes",
+                ),
+                (
+                    reverse(
+                        "admin:inventarios_movimientoinventario_traspaso_cliente"
+                    ),
+                    "Traspaso entre clientes",
+                ),
+            ]
+
+            botones = format_html(
+                '<style>'
+                '.object-tools {{ display: none !important; }}'
+                '</style>'
+                '<div style="display:flex; flex-wrap:wrap; gap:10px;">'
+                '{}'
+                '</div>',
+                format_html_join(
+                    "",
+                    '<a href="{}" style="display:inline-block; '
+                    'padding:9px 14px; '
+                    'background-color:#198754; '
+                    'color:#ffffff; '
+                    'border-radius:5px; '
+                    'text-decoration:none; '
+                    'font-weight:500;">'
+                    '{}'
+                    '</a>',
+                    enlaces,
+                ),
+            )
+
+            self.message_user(
+                request,
+                botones,
+                level=messages.INFO,
+            )
+
+        return response
+
+    # --------------------------------------------------------
+    # REGISTRO DEL MOVIMIENTO
+    # --------------------------------------------------------
+
+    def save_model(self, request, obj, form, change):
+
+        obj.creado_por = request.user
+
+        # El servicio registra el movimiento y actualiza las existencias
+        # dentro de una sola transacción.
+        registrar_movimiento(obj)
+
+    # --------------------------------------------------------
+    # PRESENTACIÓN
+    # --------------------------------------------------------
+
+    @admin.display(
+        description="Cantidad",
+        ordering="cantidad",
+    )
+    def mostrar_cantidad(self, obj):
+
+        return (
+            f"{obj.cantidad:,.3f} "
+            f"{obj.material.unidad_medida.abreviatura}"
+        )
+
+    # --------------------------------------------------------
+    # PROTECCIÓN DEL HISTORIAL
+    # --------------------------------------------------------
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+    

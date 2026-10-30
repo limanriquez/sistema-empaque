@@ -3,7 +3,7 @@ from django.db.models import Q
 
 from inventarios.models import Material
 
-from .models import ComponenteEmpaque, ProductoEmpaque, ClienteProductoEmpaque
+from .models import ComponenteEmpaque, ProductoEmpaque
 
 from django.core.exceptions import ValidationError
 
@@ -135,47 +135,3 @@ class ComponenteEmpaqueFormSet(forms.BaseInlineFormSet):
             )
 
 
-# Formulario para administrar las presentaciones autorizadas de cada cliente.
-class ClienteProductoEmpaqueForm(forms.ModelForm):
-
-    class Meta:
-        model = ClienteProductoEmpaque
-        fields = ["cliente", "producto_empaque", "activo"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        productos = ProductoEmpaque.objects.filter(activo=True)
-
-        # Permite conservar la presentación actual si posteriormente
-        # se desactiva, sin ofrecerla para nuevas relaciones.
-        if self.instance.pk and self.instance.producto_empaque_id:
-            productos = ProductoEmpaque.objects.filter(
-                activo=True
-            ) | ProductoEmpaque.objects.filter(
-                pk=self.instance.producto_empaque_id
-            )
-
-        self.fields["producto_empaque"].queryset = productos.distinct()
-
-    def clean(self):
-        cleaned_data = super().clean()
-        cliente = cleaned_data.get("cliente")
-        producto = cleaned_data.get("producto_empaque")
-
-        if cliente and producto:
-            duplicado = ClienteProductoEmpaque.objects.filter(
-                cliente=cliente,
-                producto_empaque=producto,
-            )
-
-            if self.instance.pk:
-                duplicado = duplicado.exclude(pk=self.instance.pk)
-
-            if duplicado.exists():
-                raise ValidationError(
-                    "Este producto de empaque ya está relacionado "
-                    "con el cliente seleccionado."
-                )
-
-        return cleaned_data

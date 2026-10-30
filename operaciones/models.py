@@ -129,37 +129,3 @@ class ComponenteEmpaque(models.Model):
                 )
 
 
-# Relaciona los clientes con los productos de empaque que tienen
-# autorizados. Permite determinar qué presentaciones puede seleccionar
-# cada cliente al iniciar un lote de empaque.
-class ClienteProductoEmpaque(models.Model):
-    id = models.BigAutoField(primary_key=True)
-
-    cliente = models.ForeignKey(
-        "personas.Cliente",
-        on_delete=models.PROTECT,
-        related_name="productos_empaque",
-    )
-    producto_empaque = models.ForeignKey(
-        "ProductoEmpaque",
-        on_delete=models.PROTECT,
-        related_name="autorizaciones_cliente",
-    )
-    activo = models.BooleanField(default=True)
-    creado_en = models.DateTimeField(auto_now_add=True)
-    actualizado_en = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = "operaciones_cliente_producto_empaque"
-        verbose_name = "Producto de empaque por cliente"
-        verbose_name_plural = "Productos de empaque por cliente"
-        ordering = ["cliente", "producto_empaque"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["cliente", "producto_empaque"],
-                name="uq_cliente_producto_empaque",
-            ),
-        ]
-
-    def __str__(self):
-        return f"{self.cliente} - {self.producto_empaque}"

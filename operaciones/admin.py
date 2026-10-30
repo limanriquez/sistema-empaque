@@ -7,7 +7,6 @@ from .forms import (
     ProductoEmpaqueForm,
 )
 from .models import ComponenteEmpaque, ProductoEmpaque
-from .models import ClienteProductoEmpaque
 
 # Tabla de materiales dentro del producto: se elige el material, se
 # captura la cantidad por unidad empacada y se ve su unidad. El
@@ -109,41 +108,3 @@ class ProductoEmpaqueAdmin(admin.ModelAdmin):
         return False
 
 
-# Admin para la relación entre clientes y productos de empaque.
-@admin.register(ClienteProductoEmpaque)
-class ClienteProductoEmpaqueAdmin(admin.ModelAdmin):
-    list_display = (
-        "cliente",
-        "producto_empaque",
-        "activo",
-        "creado_en",
-        "actualizado_en",
-    )
-
-    list_filter = (
-        "activo",
-        ("cliente", admin.RelatedOnlyFieldListFilter),
-        ("producto_empaque", admin.RelatedOnlyFieldListFilter),
-    )
-
-    search_fields = (
-        "cliente__persona__nombres",
-        "cliente__persona__apellido_paterno",
-        "cliente__persona__apellido_materno",
-        "cliente__persona__razon_social",
-        "cliente__persona__nombre_comercial",
-        "cliente__persona__rfc",
-        "cliente__persona__curp",
-        "producto_empaque__nombre",
-        "producto_empaque__codigo",
-    )
-
-    autocomplete_fields = ("cliente", "producto_empaque")
-
-    readonly_fields = ("creado_en", "actualizado_en")
-
-    list_select_related = ("cliente__persona", "producto_empaque")
-
-    ordering = ("cliente", "producto_empaque")
-    list_per_page = 25
-    

@@ -13,7 +13,6 @@ from .forms import (
     DestinatarioForm
 )
 from .models import Direccion, Empleado, EmpleadoExtra, Persona, Telefono, Cliente, Proveedor, Destinatario
-from operaciones.admin_inlines import ClienteProductoEmpaqueInline
 
 # ==========================================================
 # INLINE: DIRECCIONES
@@ -549,9 +548,6 @@ class EmpleadoAdmin(admin.ModelAdmin):
 @admin.register(Cliente)
 class ClienteAdmin(admin.ModelAdmin):
     form = ClienteForm
-    inlines = [
-        ClienteProductoEmpaqueInline,
-    ]
     list_display = (
         "id",
         "cliente",
