@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django import forms
-from .models import UnidadMedida
+from .models import UnidadMedida, EstacionTrabajo
 
 # Formulario para registrar y modificar unidades de medida.
 # Limpia espacios y evita nombres y abreviaturas duplicados sin
@@ -69,3 +69,46 @@ class UnidadMedidaForm(forms.ModelForm):
                     break
 
         return cleaned_data
+
+    
+# ==========================================================
+# FORMULARIO: ESTACIÓN DE TRABAJO
+#
+# Permite registrar y modificar las estaciones de trabajo
+# de la empacadora, controlando sus datos generales y estado.
+#
+# Se desactiva el autocompletado para evitar que el navegador
+# muestre sugerencias de registros capturados anteriormente.
+# ==========================================================
+
+class EstacionTrabajoForm(forms.ModelForm):
+
+    class Meta:
+        model = EstacionTrabajo
+
+        fields = [
+            "nombre",
+            "descripcion",
+            "activo",
+        ]
+
+        widgets = {
+            "nombre": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Nombre de la estación",
+                "autocomplete": "new-password",
+            }),
+
+            "descripcion": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "Descripción de la estación",
+                "autocomplete": "off",
+            }),
+
+            "activo": forms.CheckboxInput(attrs={
+                "class": "form-check-input",
+            }),
+        }
+
+

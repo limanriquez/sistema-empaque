@@ -1,8 +1,9 @@
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
-from django.db import models
-
+from django.db import models, transaction, IntegrityError
+from django.db.models import Q, F
+from django.utils import timezone
 
 # Producto que se empaca, por ejemplo una caja de cierta presentación.
 # Guarda el costo total de empacar una unidad y el precio que se cobra
@@ -129,3 +130,212 @@ class ComponenteEmpaque(models.Model):
                 )
 
 
+# ==========================================================
+# MODELO: OPERACIÓN DIARIA
+#
+# Representa el expediente general de una jornada de trabajo
+# dentro de la empacadora.
+#
+# Controla la apertura y cierre de la operación. La
+# información específica de personal, estaciones, lotes
+# y producción se administra mediante modelos relacionados.
+# ==========================================================
+
+class OperacionDiaria(models.Model):
+
+    id = models.BigAutoField(
+        primary_key=True,
+        verbose_name="ID",
+    )
+
+    fecha = models.DateField(
+        default=timezone.localdate,
+        verbose_name="Fecha operativa",
+    )
+
+    abierta = models.BooleanField(
+        default=False,
+        editable=False,
+        verbose_name="Abierta",
+    )
+
+    hora_apertura = models.DateTimeField(
+        null=True,
+        blank=True,
+        editable=False,
+        verbose_name="Hora de apertura",
+    )
+
+    hora_cierre = models.DateTimeField(
+        null=True,
+        blank=True,
+        editable=False,
+        verbose_name="Hora de cierre",
+    )
+
+    abierto_por = models.ForeignKey(
+        "personas.Persona",
+        on_delete=models.PROTECT,
+        related_name="operaciones_abiertas",
+        null=True,
+        blank=True,
+        editable=False,
+        verbose_name="Abierto por",
+    )
+
+    cerrado_por = models.ForeignKey(
+        "personas.Persona",
+        on_delete=models.PROTECT,
+        related_name="operaciones_cerradas",
+        null=True,
+        blank=True,
+        editable=False,
+        verbose_name="Cerrado por",
+    )
+
+    observaciones = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="Observaciones",
+    )
+
+    class Meta:
+        db_table = "operacion_diaria"
+        verbose_name = "Operación diaria"
+        verbose_name_plural = "Operaciones diarias"
+        ordering = ["-fecha", "-id"]
+
+        constraints = [
+
+            # Solo puede existir una operación abierta a la vez.
+            models.UniqueConstraint(
+                fields=["abierta"],
+                condition=Q(abierta=True),
+                name="una_sola_operacion_abierta",
+            ),
+
+            # Una operación abierta debe tener hora de apertura
+            # y no debe tener hora de cierre.
+            models.CheckConstraint(
+                check=(
+                    Q(
+                        abierta=True,
+                        hora_apertura__isnull=False,
+                        hora_cierre__isnull=True,
+                    )
+                    |
+                    Q(
+                        abierta=False,
+                        hora_apertura__isnull=True,
+                        hora_cierre__isnull=True,
+                    )
+                    |
+                    Q(
+                        abierta=False,
+                        hora_apertura__isnull=False,
+                        hora_cierre__isnull=False,
+                    )
+                ),
+                name="operacion_estado_horas_coherentes",
+            ),
+
+            # El cierre no puede ser anterior a la apertura.
+            models.CheckConstraint(
+                check=(
+                    Q(hora_cierre__isnull=True)
+                    | Q(hora_cierre__gte=F("hora_apertura"))
+                ),
+                name="cierre_posterior_a_apertura",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Operación {self.fecha} (#{self.id})"
+
+    # ------------------------------------------------------
+    # Estado
+    # ------------------------------------------------------
+
+    @property
+    def cerrada(self):
+        return self.hora_cierre is not None
+
+    # ------------------------------------------------------
+    # Apertura de operación
+    # ------------------------------------------------------
+
+    @transaction.atomic
+    def abrir(self, persona):
+
+        # Recuperar el estado actual y bloquear el registro.
+        operacion = (
+            OperacionDiaria.objects
+            .select_for_update()
+            .get(pk=self.pk)
+        )
+
+        if operacion.abierta:
+            raise ValidationError("La operación ya está abierta.")
+
+        if operacion.hora_cierre is not None:
+            raise ValidationError(
+                "La operación ya fue cerrada y no puede reabrirse."
+            )
+
+        operacion.abierta = True
+        operacion.hora_apertura = timezone.now()
+        operacion.abierto_por = persona
+
+        try:
+            with transaction.atomic():
+                operacion.save(
+                    update_fields=[
+                        "abierta",
+                        "hora_apertura",
+                        "abierto_por",
+                    ]
+                )
+        except IntegrityError:
+            raise ValidationError(
+                "Ya existe otra operación abierta."
+            )
+
+        # Actualizar la instancia original.
+        self.refresh_from_db()
+
+    # ------------------------------------------------------
+    # Cierre de operación
+    # ------------------------------------------------------
+
+    @transaction.atomic
+    def cerrar(self, persona):
+
+        # Recuperar el estado actual y bloquear el registro.
+        operacion = (
+            OperacionDiaria.objects
+            .select_for_update()
+            .get(pk=self.pk)
+        )
+
+        if not operacion.abierta:
+            raise ValidationError("La operación no está abierta.")
+
+        if operacion.hora_apertura is None:
+            raise ValidationError(
+                "La operación no tiene registrada su apertura."
+            )
+
+        operacion.abierta = False
+        operacion.hora_cierre = timezone.now()
+        operacion.cerrado_por = persona
+
+        operacion.save(
+            update_fields=[
+                "abierta",
+                "hora_cierre",
+                "cerrado_por",
+            ]
+        )
+
+        # Actualizar la instancia original.
+        self.refresh_from_db()

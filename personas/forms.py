@@ -197,23 +197,20 @@ class EmpleadoForm(forms.ModelForm):
         model = Empleado
         fields = (
             "persona",
+            "usuario",
             "nss",
             "puesto",
             "sueldo_diario",
             "fecha_ingreso",
             "activo",
         )
-        # No se definen widgets: el admin usa los suyos por defecto
-        # (calendario de Django en la fecha, estilos del admin, etc.).
+        # No se definen widgets: el admin usa los suyos por defecto.
         # El autocomplete="off" lo aplica EmpleadoAdmin.get_form.
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Al editar, el admin muestra la persona de solo lectura y
-        # el campo no existe en el formulario.
         if "persona" in self.fields:
-            # El selector solo debe incluir personas físicas.
             self.fields["persona"].queryset = Persona.objects.filter(
                 tipo_persona=Persona.TipoPersona.FISICA
             )
@@ -223,7 +220,6 @@ class EmpleadoForm(forms.ModelForm):
         )
 
     def clean_persona(self):
-        # Impide asignar una persona moral, incluso si se envía manualmente.
         persona = self.cleaned_data["persona"]
 
         if persona.tipo_persona != Persona.TipoPersona.FISICA:
@@ -234,8 +230,6 @@ class EmpleadoForm(forms.ModelForm):
         return persona
 
     def clean_puesto(self):
-        # No permite elegir un puesto inactivo, pero sí conservar el que
-        # el empleado ya tiene aunque se haya desactivado después.
         puesto = self.cleaned_data["puesto"]
         puesto_actual_id = self.instance.puesto_id if self.instance.pk else None
 
@@ -247,7 +241,6 @@ class EmpleadoForm(forms.ModelForm):
         return puesto
 
     def clean_nss(self):
-        # El NSS es opcional; si se captura, debe contener 11 dígitos.
         nss = self.cleaned_data.get("nss", "").strip()
 
         if nss and (not nss.isdigit() or len(nss) != 11):
@@ -258,7 +251,6 @@ class EmpleadoForm(forms.ModelForm):
         return nss
 
     def clean_sueldo_diario(self):
-        # El sueldo diario no puede ser negativo.
         sueldo = self.cleaned_data["sueldo_diario"]
 
         if sueldo < 0:
@@ -267,6 +259,7 @@ class EmpleadoForm(forms.ModelForm):
             )
 
         return sueldo
+
 
 
 # Formulario para asignar conceptos extras a un empleado.

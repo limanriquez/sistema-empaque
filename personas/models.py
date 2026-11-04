@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Q
 from django.core.validators import MinValueValidator
-
+from django.conf import settings
 
 
 class Persona(models.Model):
@@ -211,6 +211,15 @@ class Empleado(models.Model):
         on_delete=models.PROTECT,
         related_name="empleado",
         verbose_name="Persona",
+    )
+
+    usuario = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="perfil_empleado",
+        null=True,
+        blank=True,
+        verbose_name="Usuario del sistema",
     )
 
     nss = models.CharField(

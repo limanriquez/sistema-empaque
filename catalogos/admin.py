@@ -2,8 +2,9 @@ from django.contrib import admin
 from django.shortcuts import redirect
 from django.urls import reverse
 
-from .forms import UnidadMedidaForm
-from .models import ConceptoExtra, GoHome, Puesto, UnidadMedida
+from .forms import UnidadMedidaForm, EstacionTrabajoForm
+from .models import ConceptoExtra, GoHome, Puesto, UnidadMedida, EstacionTrabajo
+
 
 @admin.register(GoHome)
 class GoHomeAdmin(admin.ModelAdmin):
@@ -163,3 +164,52 @@ class UnidadMedidaAdmin(admin.ModelAdmin):
     # Impide eliminar unidades desde Django Admin.
     def has_delete_permission(self, request, obj=None):
         return False
+
+# ==========================================================
+# ADMIN: ESTACIÓN DE TRABAJO
+#
+# Administra el catálogo de estaciones de la empacadora.
+# Los registros no pueden eliminarse; únicamente pueden
+# modificarse o desactivarse.
+# ==========================================================
+
+@admin.register(EstacionTrabajo)
+class EstacionTrabajoAdmin(admin.ModelAdmin):
+
+    form = EstacionTrabajoForm
+
+    list_display = (
+        "id",
+        "nombre",
+        "activo",
+    )
+
+    search_fields = (
+        "nombre",
+        "descripcion",
+    )
+
+    list_filter = (
+        "activo",
+    )
+
+    ordering = (
+        "nombre",
+    )
+
+    readonly_fields = (
+        "id",
+    )
+
+    fields = (
+        "id",
+        "nombre",
+        "descripcion",
+        "activo",
+    )
+
+    # Impide eliminar registros desde Django Admin.
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+

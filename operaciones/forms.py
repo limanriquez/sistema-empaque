@@ -1,10 +1,7 @@
 from django import forms
 from django.db.models import Q
-
 from inventarios.models import Material
-
-from .models import ComponenteEmpaque, ProductoEmpaque
-
+from .models import ComponenteEmpaque, ProductoEmpaque, OperacionDiaria
 from django.core.exceptions import ValidationError
 
 
@@ -135,3 +132,90 @@ class ComponenteEmpaqueFormSet(forms.BaseInlineFormSet):
             )
 
 
+
+from django import forms
+from django.core.exceptions import ValidationError
+
+from .models import OperacionDiaria
+
+
+# ==========================================================
+# FORMULARIO: OPERACIÓN DIARIA
+#
+# Permite capturar las observaciones generales de la jornada.
+# La creación inicia automáticamente la operación y la
+# edición de una operación abierta permite cerrarla.
+# ==========================================================
+
+class OperacionDiariaForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
+        super().__init__(*args, **kwargs)
+
+    class Meta:
+        model = OperacionDiaria
+        fields = [
+            "observaciones",
+        ]
+
+        widgets = {
+            "observaciones": forms.Textarea(attrs={
+                "rows": 3,
+                "placeholder": "Observaciones de la operación",
+            }),
+        }
+
+    def clean(self):
+
+        cleaned_data = super().clean()
+
+        # Validar que el usuario tenga un empleado activo asociado.
+        if self.request and self.request.user.is_authenticated:
+
+            empleado = getattr(
+                self.request.user,
+                "perfil_empleado",
+                None,
+            )
+
+            if empleado is None:
+                raise ValidationError(
+                    "Tu usuario no tiene un empleado asociado. "
+                    "Solicita al administrador que lo vincule."
+                )
+
+            if not empleado.activo:
+                raise ValidationError(
+                    "Tu empleado está inactivo. "
+                    "No puedes abrir ni cerrar operaciones."
+                )
+
+        # Validar creación.
+        if self.instance._state.adding:
+
+            if OperacionDiaria.objects.filter(abierta=True).exists():
+                raise ValidationError(
+                    "Ya existe una operación abierta. "
+                    "Debes cerrarla antes de crear otra."
+                )
+
+        # Validar modificación.
+        else:
+
+            operacion = OperacionDiaria.objects.filter(
+                pk=self.instance.pk
+            ).first()
+
+            if operacion is None:
+                raise ValidationError(
+                    "La operación ya no existe."
+                )
+
+            if not operacion.abierta:
+                raise ValidationError(
+                    "Esta operación ya está cerrada. "
+                    "Debes crear una nueva."
+                )
+
+        return cleaned_data

@@ -117,3 +117,50 @@ class UnidadMedida(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.abreviatura})"
+
+
+# ==========================================================
+# MODELO: ESTACIÓN DE TRABAJO
+#
+# Define las estaciones físicas de la empacadora donde se
+# realizan las actividades operativas, como empaque,
+# tarimado, almacén y administración.
+#
+# Este catálogo se utilizará para organizar y asignar al
+# personal durante cada operación diaria.
+# ==========================================================
+
+class EstacionTrabajo(models.Model):
+
+    id = models.BigAutoField(
+        primary_key=True,
+        verbose_name="ID",
+    )
+
+    nombre = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name="Nombre de la estación",
+    )
+
+    descripcion = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="Descripción",
+    )
+
+    activo = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+
+    class Meta:
+        db_table = "operacion_estacion_trabajo"
+        verbose_name = "Estación de trabajo"
+        verbose_name_plural = "Estaciones de trabajo"
+        ordering = ["nombre"]
+
+    def __str__(self):
+        return self.nombre
+
+

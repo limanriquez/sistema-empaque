@@ -13,6 +13,7 @@ from .forms import (
     DestinatarioForm
 )
 from .models import Direccion, Empleado, EmpleadoExtra, Persona, Telefono, Cliente, Proveedor, Destinatario
+from fruticultura.models import ClienteHuerta
 
 # ==========================================================
 # INLINE: DIRECCIONES
@@ -446,24 +447,25 @@ class EmpleadoExtraInline(admin.TabularInline):
 # Permite administrar los datos laborales y sus extras asignados.
 @admin.register(Empleado)
 class EmpleadoAdmin(admin.ModelAdmin):
- 
+
     form = EmpleadoForm
- 
+
     list_display = (
         "id",
         "empleado",
+        "usuario",
         "puesto",
         "nss",
         "mostrar_sueldo_diario",
         "fecha_ingreso",
         "activo",
     )
- 
+
     list_display_links = ("id", "empleado")
- 
-    # Evita una consulta adicional por fila para persona y puesto.
-    list_select_related = ("persona", "puesto")
- 
+
+    # Evita consultas adicionales por fila para persona, usuario y puesto.
+    list_select_related = ("persona", "usuario", "puesto")
+
     search_fields = (
         "persona__nombres",
         "persona__apellido_paterno",
@@ -471,83 +473,93 @@ class EmpleadoAdmin(admin.ModelAdmin):
         "persona__curp",
         "persona__rfc",
         "nss",
+        "usuario__username",
     )
- 
+
     list_filter = ("activo", "puesto")
     ordering = ("persona__id",)
     inlines = (EmpleadoExtraInline,)
- 
+
     fields = (
         "persona",
+        "usuario",
         "nss",
         "puesto",
         "sueldo_diario",
         "fecha_ingreso",
         "activo",
     )
- 
-    # Los puestos inactivos se ocultan del autocompletado en
-    # PuestoAdmin.get_search_results (catalogos/admin.py) y se
-    # validan en EmpleadoForm.clean_puesto.
+
     autocomplete_fields = ("persona", "puesto")
- 
+
     # Impide cambiar la persona una vez asignada al empleado.
     def get_readonly_fields(self, request, obj=None):
         if obj:
             return ("persona",) + tuple(self.readonly_fields)
- 
+
         return self.readonly_fields
- 
+
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
- 
+
         for field in form.base_fields.values():
             field.widget.attrs["autocomplete"] = "off"
- 
+
         return form
- 
+
     # Asigna el monto vigente del catálogo a los extras nuevos o
     # modificados. Las filas sin cambios conservan su monto.
     def save_formset(self, request, form, formset, change):
         if formset.model is not EmpleadoExtra:
             return super().save_formset(request, form, formset, change)
- 
+
         instancias = formset.save(commit=False)
- 
+
         for obj in formset.deleted_objects:
             obj.delete()
- 
+
         for instancia in instancias:
             instancia.monto = instancia.concepto_extra.monto
             instancia.save()
- 
+
         formset.save_m2m()
- 
+
     # Impide eliminar empleados desde Django Admin.
     def has_delete_permission(self, request, obj=None):
         return False
- 
+
     # Elimina la acción de borrado masivo del listado.
     def get_actions(self, request):
         actions = super().get_actions(request)
         actions.pop("delete_selected", None)
         return actions
- 
+
     # Muestra la persona asociada bajo la columna Empleado.
     @admin.display(description="Empleado")
     def empleado(self, obj):
         return obj.persona
- 
+
     # Muestra el sueldo diario con separador de miles y dos decimales.
     @admin.display(description="Sueldo diario", ordering="sueldo_diario")
     def mostrar_sueldo_diario(self, obj):
         return f"${obj.sueldo_diario:,.2f}"
 
+
+class ClienteHuertaInline(admin.TabularInline):
+    model = ClienteHuerta
+    extra = 1
+    autocomplete_fields = ("huerta",)
+    fields = ("huerta",)
+    verbose_name = "Huerta asignada"
+    verbose_name_plural = "Huertas asignadas"
+    show_change_link = False
+    
 # Administra los clientes registrados en el sistema.
 # Permite consultar, buscar y filtrar clientes sin habilitar su eliminación.
 @admin.register(Cliente)
 class ClienteAdmin(admin.ModelAdmin):
     form = ClienteForm
+    inlines = (ClienteHuertaInline,)
     list_display = (
         "id",
         "cliente",

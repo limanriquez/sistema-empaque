@@ -44,7 +44,9 @@ INSTALLED_APPS = [
     'personas',
     'almacenes',
     'inventarios',
-    'operaciones'
+    'operaciones',
+    'fruticultura',
+    'inventarioFruta',
 ]
 
 MIDDLEWARE = [
