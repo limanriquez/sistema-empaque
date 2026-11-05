@@ -1,8 +1,11 @@
 from django import forms
 from django.db.models import Q
 from inventarios.models import Material
-from .models import ComponenteEmpaque, ProductoEmpaque, OperacionDiaria
+from .models import ComponenteEmpaque, ProductoEmpaque, OperacionDiaria, LoteEmpaque
 from django.core.exceptions import ValidationError
+
+from django.apps import apps
+from django.db.models import Sum, Count, Min
 
 
 # Formulario para registrar y modificar productos de empaque.
@@ -218,6 +221,313 @@ class OperacionDiariaForm(forms.ModelForm):
                 raise ValidationError(
                     "Esta operación ya está cerrada. "
                     "Debes crear una nueva."
+                )
+
+        return cleaned_data
+
+
+
+# ==========================================================
+# FORMULARIO: LOTE DE EMPAQUE
+#
+# Permite registrar una corrida de producción utilizando
+# lotes agrícolas que tengan fruta disponible en bodega.
+#
+# Las existencias se consultan desde ExistenciaFruta.
+# Únicamente se muestran lotes con cajones disponibles
+# pertenecientes a un solo cliente.
+#
+# LoteEmpaque conserva exclusivamente su relación directa
+# con LoteHuerta.
+#
+# El selector muestra:
+# - Cliente propietario.
+# - Lote agrícola.
+# - Huerta.
+# - Total de cajones disponibles.
+#
+# La variedad se limita a las existencias del lote
+# agrícola seleccionado y de su propietario.
+# ==========================================================
+
+class LoteEmpaqueForm(forms.ModelForm):
+
+    class Meta:
+        model = LoteEmpaque
+
+        fields = [
+            "lote_huerta",
+            "variedad",
+            "observaciones",
+        ]
+
+        widgets = {
+            "lote_huerta": forms.Select(),
+        }
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        ExistenciaFruta = apps.get_model(
+            "inventarioFruta",
+            "ExistenciaFruta",
+        )
+
+        LoteHuerta = apps.get_model(
+            "fruticultura",
+            "LoteHuerta",
+        )
+
+        Cliente = apps.get_model(
+            "personas",
+            "Cliente",
+        )
+
+        Variedad = apps.get_model(
+            "fruticultura",
+            "Variedad",
+        )
+
+        # --------------------------------------------------
+        # 1. CONSULTAR EXISTENCIAS AGRUPADAS POR LOTE
+        # --------------------------------------------------
+
+        resumen = (
+            ExistenciaFruta.objects
+            .filter(cantidad_cajones__gt=0)
+            .values("lote_huerta_id")
+            .annotate(
+                total_cajones=Sum("cantidad_cajones"),
+                total_clientes=Count(
+                    "cliente_id",
+                    distinct=True,
+                ),
+                cliente_id_unico=Min("cliente_id"),
+            )
+            .filter(total_clientes=1)
+        )
+
+        resumen_por_lote = {
+            registro["lote_huerta_id"]: registro
+            for registro in resumen
+        }
+
+        lote_ids = list(resumen_por_lote.keys())
+
+        # --------------------------------------------------
+        # 2. CONSULTAR LOTES AGRÍCOLAS DISPONIBLES
+        # --------------------------------------------------
+
+        lotes = (
+            LoteHuerta.objects
+            .filter(
+                pk__in=lote_ids,
+                activo=True,
+            )
+            .select_related("huerta")
+        )
+
+        # --------------------------------------------------
+        # 3. CONSULTAR CLIENTES PROPIETARIOS
+        # --------------------------------------------------
+
+        cliente_ids = [
+            registro["cliente_id_unico"]
+            for registro in resumen_por_lote.values()
+        ]
+
+        clientes = {
+            cliente.pk: cliente
+            for cliente in Cliente.objects.filter(
+                pk__in=cliente_ids
+            ).select_related("persona")
+        }
+
+        # --------------------------------------------------
+        # 4. CONSTRUIR OPCIONES DEL SELECTOR
+        # --------------------------------------------------
+
+        opciones = [
+            ("", "---------"),
+        ]
+
+        for lote in lotes:
+
+            datos = resumen_por_lote[lote.pk]
+
+            cliente = clientes.get(
+                datos["cliente_id_unico"]
+            )
+
+            if not cliente:
+                continue
+
+            etiqueta = (
+                f"{cliente} | "
+                f"{lote.nombre} | "
+                f"{lote.huerta} | "
+                f"{datos['total_cajones']:,} cajones disponibles"
+            )
+
+            opciones.append(
+                (str(lote.pk), etiqueta)
+            )
+
+        # El queryset conserva la validación de ModelChoiceField.
+        self.fields["lote_huerta"].queryset = (
+            lotes.filter(
+                pk__in=[
+                    int(valor)
+                    for valor, etiqueta in opciones
+                    if valor
+                ]
+            )
+        )
+
+        # El widget muestra las etiquetas construidas arriba.
+        self.fields["lote_huerta"].choices = opciones
+
+        # --------------------------------------------------
+        # 5. DETERMINAR EL LOTE SELECCIONADO
+        # --------------------------------------------------
+
+        lote_id = None
+
+        if self.is_bound:
+
+            lote_id = self.data.get(
+                self.add_prefix("lote_huerta")
+            )
+
+        elif self.instance.pk:
+
+            lote_id = self.instance.lote_huerta_id
+
+        try:
+            lote_id = int(lote_id) if lote_id else None
+
+        except (TypeError, ValueError):
+            lote_id = None
+
+        # --------------------------------------------------
+        # 6. INICIALIZAR VARIEDADES
+        # --------------------------------------------------
+
+        variedades = Variedad.objects.none()
+
+        # --------------------------------------------------
+        # 7. FILTRAR VARIEDADES DEL LOTE SELECCIONADO
+        # --------------------------------------------------
+
+        if lote_id:
+
+            datos = resumen_por_lote.get(lote_id)
+
+            if datos:
+
+                variedades_ids = (
+                    ExistenciaFruta.objects
+                    .filter(
+                        lote_huerta_id=lote_id,
+                        cliente_id=datos["cliente_id_unico"],
+                        cantidad_cajones__gt=0,
+                    )
+                    .values_list(
+                        "variedad_id",
+                        flat=True,
+                    )
+                    .distinct()
+                )
+
+                variedades = Variedad.objects.filter(
+                    pk__in=variedades_ids,
+                    activo=True,
+                )
+
+        self.fields["variedad"].queryset = variedades
+
+    # ======================================================
+    # VALIDACIÓN FINAL
+    # ======================================================
+
+    def clean(self):
+
+        cleaned_data = super().clean()
+
+        lote = cleaned_data.get("lote_huerta")
+        variedad = cleaned_data.get("variedad")
+
+        if not lote:
+            return cleaned_data
+
+        ExistenciaFruta = apps.get_model(
+            "inventarioFruta",
+            "ExistenciaFruta",
+        )
+
+        # --------------------------------------------------
+        # 1. VERIFICAR EXISTENCIAS ACTUALES
+        # --------------------------------------------------
+
+        resumen = list(
+            ExistenciaFruta.objects
+            .filter(
+                lote_huerta_id=lote.pk,
+                cantidad_cajones__gt=0,
+            )
+            .values("cliente_id")
+            .annotate(
+                total_cajones=Sum("cantidad_cajones"),
+            )
+        )
+
+        if not resumen:
+
+            self.add_error(
+                "lote_huerta",
+                "El lote agrícola ya no tiene fruta disponible.",
+            )
+
+            return cleaned_data
+
+        # --------------------------------------------------
+        # 2. VALIDAR PROPIETARIO ÚNICO
+        # --------------------------------------------------
+
+        if len(resumen) > 1:
+
+            self.add_error(
+                "lote_huerta",
+                "El lote agrícola tiene existencias de varios "
+                "clientes. No es posible determinar un propietario único.",
+            )
+
+            return cleaned_data
+
+        # --------------------------------------------------
+        # 3. VALIDAR VARIEDAD DISPONIBLE
+        # --------------------------------------------------
+
+        if variedad:
+
+            existe_variedad = (
+                ExistenciaFruta.objects
+                .filter(
+                    lote_huerta_id=lote.pk,
+                    cliente_id=resumen[0]["cliente_id"],
+                    variedad_id=variedad.pk,
+                    cantidad_cajones__gt=0,
+                )
+                .exists()
+            )
+
+            if not existe_variedad:
+
+                self.add_error(
+                    "variedad",
+                    "La variedad seleccionada ya no tiene "
+                    "existencias disponibles para este lote.",
                 )
 
         return cleaned_data

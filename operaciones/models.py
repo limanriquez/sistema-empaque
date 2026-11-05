@@ -1,10 +1,12 @@
 from decimal import Decimal
+from django.apps import apps
 
 from django.core.exceptions import ValidationError
 from django.db import models, transaction, IntegrityError, connection
 from django.db.models import Q, F
 from django.utils import timezone
 from catalogos.models import Calidad, Tamano, EstacionTrabajo
+
 
 # Producto que se empaca, por ejemplo una caja de cierta presentación.
 # Guarda el costo total de empacar una unidad y el precio que se cobra
@@ -143,9 +145,49 @@ class ComponenteEmpaque(models.Model):
 # Representa el expediente general de una jornada de trabajo
 # dentro de la empacadora.
 #
-# Controla la apertura y cierre de la operación. La
-# información específica de personal, estaciones, lotes
-# y producción se administra mediante modelos relacionados.
+# RESPONSABILIDADES:
+# - Registrar las jornadas de trabajo.
+# - Controlar el inicio y cierre de cada jornada.
+# - Identificar a los responsables del inicio y cierre.
+# - Impedir que existan dos operaciones activas simultáneamente.
+# - Mantener la trazabilidad histórica de cada jornada.
+#
+# CICLO DE VIDA:
+#
+# 1. PENDIENTE:
+#    La operación ya fue registrada, pero todavía no inicia.
+#    abierta = False
+#    iniciada = False
+#
+# 2. ACTIVA:
+#    La operación inició correctamente y puede producir.
+#    abierta = True
+#    iniciada = True
+#
+# 3. CERRADA:
+#    La operación terminó y no puede reabrirse.
+#    abierta = False
+#    iniciada = True
+#
+# REGLAS DE NEGOCIO:
+# - Pueden existir varias operaciones pendientes.
+# - Solo puede existir una operación activa globalmente.
+# - Una operación pendiente puede configurarse antes de iniciar.
+# - Para iniciar se requiere un LoteEmpaque abierto.
+# - Para iniciar debe existir al menos un empleado asignado
+#   a una estación de trabajo.
+# - Al iniciar se crea la relación OperacionLoteEmpaque.
+# - La activación y creación de dicha relación son atómicas.
+# - Una operación cerrada no puede reabrirse.
+# - No se permite eliminar físicamente el registro.
+#
+# RELACIONES:
+# - EmpleadosPuestoOperacion administra empleados y estaciones.
+# - OperacionLoteEmpaque relaciona la jornada con el lote.
+#
+# IMPORTANTE:
+# La operación diaria puede registrarse sin iniciar producción.
+# La activación ocurre exclusivamente mediante el método iniciar().
 # ==========================================================
 
 class OperacionDiaria(models.Model):
@@ -160,17 +202,31 @@ class OperacionDiaria(models.Model):
         verbose_name="Fecha operativa",
     )
 
+    # ------------------------------------------------------
+    # Estado de la operación
+    # ------------------------------------------------------
+
     abierta = models.BooleanField(
         default=False,
         editable=False,
         verbose_name="Abierta",
     )
 
+    iniciada = models.BooleanField(
+        default=False,
+        editable=False,
+        verbose_name="Iniciada",
+    )
+
+    # ------------------------------------------------------
+    # Información de inicio y cierre
+    # ------------------------------------------------------
+
     hora_apertura = models.DateTimeField(
         null=True,
         blank=True,
         editable=False,
-        verbose_name="Hora de apertura",
+        verbose_name="Hora de inicio",
     )
 
     hora_cierre = models.DateTimeField(
@@ -187,7 +243,7 @@ class OperacionDiaria(models.Model):
         null=True,
         blank=True,
         editable=False,
-        verbose_name="Abierto por",
+        verbose_name="Iniciada por",
     )
 
     cerrado_por = models.ForeignKey(
@@ -197,7 +253,7 @@ class OperacionDiaria(models.Model):
         null=True,
         blank=True,
         editable=False,
-        verbose_name="Cerrado por",
+        verbose_name="Cerrada por",
     )
 
     observaciones = models.TextField(
@@ -207,105 +263,218 @@ class OperacionDiaria(models.Model):
     )
 
     class Meta:
+
         db_table = "operacion_diaria"
+
         verbose_name = "Operación diaria"
+
         verbose_name_plural = "Operaciones diarias"
+
         ordering = ["-fecha", "-id"]
 
         constraints = [
 
-            # Solo puede existir una operación abierta a la vez.
+            # Solo puede existir una operación activa.
             models.UniqueConstraint(
                 fields=["abierta"],
                 condition=Q(abierta=True),
                 name="una_sola_operacion_abierta",
             ),
 
-            # Una operación abierta debe tener hora de apertura
-            # y no debe tener hora de cierre.
+            # Garantiza la coherencia de los tres estados.
             models.CheckConstraint(
                 check=(
-                    Q(
-                        abierta=True,
-                        hora_apertura__isnull=False,
-                        hora_cierre__isnull=True,
-                    )
-                    |
+                    # Pendiente de iniciar.
                     Q(
                         abierta=False,
+                        iniciada=False,
                         hora_apertura__isnull=True,
                         hora_cierre__isnull=True,
+                        abierto_por__isnull=True,
+                        cerrado_por__isnull=True,
                     )
+
                     |
+
+                    # Operación activa.
+                    Q(
+                        abierta=True,
+                        iniciada=True,
+                        hora_apertura__isnull=False,
+                        hora_cierre__isnull=True,
+                        abierto_por__isnull=False,
+                        cerrado_por__isnull=True,
+                    )
+
+                    |
+
+                    # Operación cerrada.
                     Q(
                         abierta=False,
+                        iniciada=True,
                         hora_apertura__isnull=False,
                         hora_cierre__isnull=False,
+                        abierto_por__isnull=False,
+                        cerrado_por__isnull=False,
                     )
                 ),
                 name="operacion_estado_horas_coherentes",
             ),
 
-            # El cierre no puede ser anterior a la apertura.
+            # El cierre no puede ser anterior al inicio.
             models.CheckConstraint(
                 check=(
                     Q(hora_cierre__isnull=True)
-                    | Q(hora_cierre__gte=F("hora_apertura"))
+                    |
+                    (
+                        Q(hora_apertura__isnull=False)
+                        & Q(hora_cierre__gte=F("hora_apertura"))
+                    )
                 ),
                 name="cierre_posterior_a_apertura",
             ),
         ]
 
     def __str__(self):
-        return f"Operación {self.fecha} (#{self.id})"
+
+        if self.abierta and self.iniciada:
+            estado = "Activa"
+
+        elif self.iniciada and not self.abierta:
+            estado = "Cerrada"
+
+        else:
+            estado = "Pendiente"
+
+        return f"Operación {self.fecha} - {estado} (#{self.id})"
 
     # ------------------------------------------------------
-    # Estado
+    # Propiedades de estado
     # ------------------------------------------------------
 
     @property
+    def pendiente(self):
+        return not self.abierta and not self.iniciada
+
+    @property
     def cerrada(self):
-        return self.hora_cierre is not None
+        return self.iniciada and not self.abierta
+
+    @property
+    def activa(self):
+        return self.abierta and self.iniciada
 
     # ------------------------------------------------------
-    # Apertura de operación
+    # Inicio de operación
     # ------------------------------------------------------
 
     @transaction.atomic
-    def abrir(self, persona):
+    def iniciar(self, persona, lote_empaque):
 
-        # Recuperar el estado actual y bloquear el registro.
+        # Recuperar y bloquear el registro para evitar
+        # modificaciones concurrentes.
         operacion = (
             OperacionDiaria.objects
             .select_for_update()
             .get(pk=self.pk)
         )
 
-        if operacion.abierta:
-            raise ValidationError("La operación ya está abierta.")
-
-        if operacion.hora_cierre is not None:
+        # La operación debe estar pendiente.
+        if not operacion.pendiente:
             raise ValidationError(
-                "La operación ya fue cerrada y no puede reabrirse."
+                "La operación no está pendiente de iniciar "
+                "o ya fue iniciada anteriormente."
             )
 
+        # Verificar que no exista otra operación activa.
+        if OperacionDiaria.objects.filter(
+            abierta=True
+        ).exclude(pk=operacion.pk).exists():
+
+            raise ValidationError(
+                "Ya existe otra operación diaria activa."
+            )
+
+        # Bloquear y recuperar el lote de empaque.
+        try:
+            lote = (
+                LoteEmpaque.objects
+                .select_for_update()
+                .get(pk=lote_empaque.pk)
+            )
+        except LoteEmpaque.DoesNotExist:
+            raise ValidationError(
+                "El lote de empaque seleccionado no existe."
+            )
+
+        # El lote debe permanecer abierto.
+        if not lote.abierto:
+            raise ValidationError(
+                "El lote de empaque seleccionado está cerrado."
+            )
+
+        # Verificar que haya empleados asignados a estaciones.
+        tiene_personal = (
+            EmpleadosPuestoOperacion.objects
+            .filter(
+                operacion_diaria=operacion,
+                estacion_trabajo__isnull=False,
+            )
+            .exists()
+        )
+
+        if not tiene_personal:
+            raise ValidationError(
+                "No se puede iniciar la operación. "
+                "Debe existir al menos un empleado asignado "
+                "a una estación de trabajo."
+            )
+
+        # No debe existir previamente la relación.
+        if OperacionLoteEmpaque.objects.filter(
+            operacion_diaria=operacion
+        ).exists():
+
+            raise ValidationError(
+                "La operación ya tiene una relación con un "
+                "lote de empaque."
+            )
+
+        # Registrar el inicio.
         operacion.abierta = True
+        operacion.iniciada = True
         operacion.hora_apertura = timezone.now()
         operacion.abierto_por = persona
 
+        # El savepoint permite capturar la restricción de
+        # operación única sin dejar inutilizable la transacción.
         try:
             with transaction.atomic():
+
                 operacion.save(
                     update_fields=[
                         "abierta",
+                        "iniciada",
                         "hora_apertura",
                         "abierto_por",
                     ]
                 )
+
         except IntegrityError:
             raise ValidationError(
-                "Ya existe otra operación abierta."
+                "No se puede iniciar la operación porque "
+                "ya existe otra operación diaria activa."
             )
+
+        # Crear la relación con el lote de empaque.
+        # Su clean() verificará que ambos estén abiertos.
+        relacion = OperacionLoteEmpaque(
+            operacion_diaria=operacion,
+            lote_empaque=lote,
+        )
+
+        relacion.full_clean()
+        relacion.save()
 
         # Actualizar la instancia original.
         self.refresh_from_db()
@@ -317,21 +486,25 @@ class OperacionDiaria(models.Model):
     @transaction.atomic
     def cerrar(self, persona):
 
-        # Recuperar el estado actual y bloquear el registro.
+        # Recuperar y bloquear el registro.
         operacion = (
             OperacionDiaria.objects
             .select_for_update()
             .get(pk=self.pk)
         )
 
-        if not operacion.abierta:
-            raise ValidationError("La operación no está abierta.")
+        # Solo se puede cerrar una operación activa.
+        if not operacion.abierta or not operacion.iniciada:
+            raise ValidationError(
+                "La operación no está activa."
+            )
 
         if operacion.hora_apertura is None:
             raise ValidationError(
-                "La operación no tiene registrada su apertura."
+                "La operación no tiene registrada su hora de inicio."
             )
 
+        # Cerrar la operación.
         operacion.abierta = False
         operacion.hora_cierre = timezone.now()
         operacion.cerrado_por = persona
@@ -346,8 +519,6 @@ class OperacionDiaria(models.Model):
 
         # Actualizar la instancia original.
         self.refresh_from_db()
-    
-
 
 # ==========================================================
 # MODELO: LOTE DE EMPAQUE
@@ -358,6 +529,8 @@ class OperacionDiaria(models.Model):
 # RESPONSABILIDADES:
 # - Identificar el lote de huerta que se está procesando.
 # - Identificar la variedad que se empacará.
+# - Registrar el máximo de cajones disponibles al abrir
+#   la corrida de producción.
 # - Controlar la apertura y cierre de la corrida.
 # - Registrar fechas y responsables de apertura y cierre.
 # - Mantener la continuidad de una corrida entre diferentes
@@ -372,6 +545,10 @@ class OperacionDiaria(models.Model):
 #   ni su variedad una vez iniciado.
 # - Solo puede existir un lote de empaque abierto globalmente.
 # - Un lote cerrado no puede reabrirse.
+# - El máximo de cajones se calcula al abrir la corrida,
+#   utilizando las existencias de la variedad seleccionada.
+# - El máximo queda como fotografía histórica y no cambia
+#   automáticamente por movimientos posteriores del inventario.
 # - Cerrar una operación diaria no implica cerrar el
 #   lote de empaque.
 #
@@ -379,11 +556,11 @@ class OperacionDiaria(models.Model):
 # - LoteHuerta: identifica el origen de la fruta.
 # - Variedad: identifica la variedad que se empacará.
 # - Persona: identifica quién abre y quién cierra la corrida.
-# - OperacionLoteEmpaque: relacionará la corrida con las
+# - OperacionLoteEmpaque: relaciona la corrida con las
 #   jornadas de trabajo correspondientes.
 #
-# El modelo no administra inventario, cantidades de fruta
-# recibida ni producción por caja.
+# El modelo no administra directamente las existencias
+# generales del inventario ni los movimientos de fruta.
 # ==========================================================
 
 class LoteEmpaque(models.Model):
@@ -417,6 +594,16 @@ class LoteEmpaque(models.Model):
         on_delete=models.PROTECT,
         related_name="lotes_empaque",
         verbose_name="Variedad",
+    )
+
+    # ------------------------------------------------------
+    # EXISTENCIA MÁXIMA AUTORIZADA PARA LA CORRIDA
+    # ------------------------------------------------------
+
+    maximo_cajones = models.PositiveIntegerField(
+        default=0,
+        editable=False,
+        verbose_name="Máximo de cajones disponibles",
     )
 
     # ------------------------------------------------------
@@ -530,6 +717,10 @@ class LoteEmpaque(models.Model):
             ),
         ]
 
+    # ======================================================
+    # REPRESENTACIÓN
+    # ======================================================
+
     def __str__(self):
 
         return (
@@ -565,6 +756,7 @@ class LoteEmpaque(models.Model):
                 "lote_huerta_id",
                 "variedad_id",
                 "fecha_apertura",
+                "maximo_cajones",
             )
             .first()
         )
@@ -588,6 +780,12 @@ class LoteEmpaque(models.Model):
                     "una vez iniciado el lote de empaque."
                 )
 
+            if original.maximo_cajones != self.maximo_cajones:
+                errores["maximo_cajones"] = (
+                    "No se puede modificar el máximo de cajones "
+                    "una vez iniciado el lote de empaque."
+                )
+
             if errores:
                 raise ValidationError(errores)
 
@@ -603,7 +801,10 @@ class LoteEmpaque(models.Model):
                 "La apertura requiere MySQL."
             )
 
-        # Bloqueo global para impedir aperturas simultáneas.
+        # --------------------------------------------------
+        # 1. BLOQUEO GLOBAL PARA EVITAR APERTURAS SIMULTÁNEAS
+        # --------------------------------------------------
+
         with connection.cursor() as cursor:
 
             cursor.execute(
@@ -620,6 +821,10 @@ class LoteEmpaque(models.Model):
             )
 
         try:
+
+            # --------------------------------------------------
+            # 2. BLOQUEAR Y RECUPERAR EL LOTE DE EMPAQUE
+            # --------------------------------------------------
 
             lote = (
                 LoteEmpaque.objects
@@ -644,12 +849,83 @@ class LoteEmpaque(models.Model):
                     "Debe cerrarse antes de abrir uno nuevo."
                 )
 
+            # --------------------------------------------------
+            # 3. CONSULTAR EXISTENCIAS DEL LOTE AGRÍCOLA
+            # --------------------------------------------------
+
+            ExistenciaFruta = apps.get_model(
+                "inventarioFruta",
+                "ExistenciaFruta",
+            )
+
+            # Se bloquean las existencias positivas del lote
+            # para consultar su propietario y cantidades.
+            existencias = list(
+                ExistenciaFruta.objects
+                .select_for_update()
+                .filter(
+                    lote_huerta_id=lote.lote_huerta_id,
+                    cantidad_cajones__gt=0,
+                )
+                .values_list(
+                    "cliente_id",
+                    "variedad_id",
+                    "cantidad_cajones",
+                )
+            )
+
+            if not existencias:
+                raise ValidationError(
+                    "El lote agrícola ya no tiene fruta "
+                    "disponible en inventario."
+                )
+
+            # --------------------------------------------------
+            # 4. VALIDAR PROPIETARIO ÚNICO DEL LOTE
+            # --------------------------------------------------
+
+            clientes = {
+                cliente_id
+                for cliente_id, variedad_id, cantidad
+                in existencias
+            }
+
+            if len(clientes) != 1:
+                raise ValidationError(
+                    "El lote agrícola tiene existencias de varios "
+                    "clientes. No es posible determinar un "
+                    "propietario único."
+                )
+
+            # --------------------------------------------------
+            # 5. CALCULAR EXISTENCIA DE LA VARIEDAD SELECCIONADA
+            # --------------------------------------------------
+
+            maximo_cajones = sum(
+                cantidad
+                for cliente_id, variedad_id, cantidad
+                in existencias
+                if variedad_id == lote.variedad_id
+            )
+
+            if maximo_cajones <= 0:
+                raise ValidationError(
+                    "La variedad seleccionada ya no tiene "
+                    "cajones disponibles en inventario."
+                )
+
+            # --------------------------------------------------
+            # 6. REGISTRAR APERTURA Y MÁXIMO AUTORIZADO
+            # --------------------------------------------------
+
+            lote.maximo_cajones = maximo_cajones
             lote.abierto = True
             lote.fecha_apertura = timezone.now()
             lote.abierto_por = persona
 
             lote.save(
                 update_fields=[
+                    "maximo_cajones",
                     "abierto",
                     "fecha_apertura",
                     "abierto_por",
@@ -660,6 +936,7 @@ class LoteEmpaque(models.Model):
 
         finally:
 
+            # Liberar bloqueo MySQL.
             with connection.cursor() as cursor:
 
                 cursor.execute(
@@ -1477,3 +1754,180 @@ class DesgloseOperacion(models.Model):
 
         if errores:
             raise ValidationError(errores)
+
+
+
+# ==========================================================
+# MODELO: EMPLEADOS PUESTO OPERACIÓN
+#
+# Registra qué empleado participa en una operación diaria
+# y en qué estación de trabajo desempeña sus actividades.
+#
+# RESPONSABILIDADES:
+# - Asociar un empleado con una operación diaria.
+# - Asignar una estación de trabajo al empleado.
+# - Permitir liberar una estación sin eliminar la asignación.
+# - Permitir cambiar la estación actualizando el mismo registro.
+#
+# REGLAS DE NEGOCIO:
+# - Cada empleado puede tener una sola asignación por
+#   operación diaria.
+# - Cada estación puede estar asignada a un solo empleado
+#   dentro de una operación diaria.
+# - La estación puede ser NULL cuando el empleado no tiene
+#   una estación asignada temporalmente.
+# - Una estación liberada puede asignarse a otro empleado.
+# - Cambiar de estación actualiza el registro existente.
+# - No se conserva historial de cambios de estación.
+# - No se permiten nuevas asignaciones en operaciones
+#   diarias cerradas.
+# - La asignación pertenece a una sola operación diaria.
+#
+# RELACIONES:
+# - OperacionDiaria: jornada de trabajo.
+# - Empleado: trabajador participante.
+# - EstacionTrabajo: lugar físico donde desempeña
+#   sus actividades.
+#
+# Este modelo no administra asistencia, horarios laborales
+# ni incidencias del empleado.
+# ==========================================================
+
+class EmpleadosPuestoOperacion(models.Model):
+
+    # ------------------------------------------------------
+    # IDENTIFICADOR
+    # ------------------------------------------------------
+
+    id = models.BigAutoField(
+        primary_key=True,
+        verbose_name="ID",
+    )
+
+    # ------------------------------------------------------
+    # OPERACIÓN DIARIA
+    # ------------------------------------------------------
+
+    operacion_diaria = models.ForeignKey(
+        "operaciones.OperacionDiaria",
+        on_delete=models.PROTECT,
+        related_name="empleados_puestos",
+        verbose_name="Operación diaria",
+    )
+
+    # ------------------------------------------------------
+    # EMPLEADO
+    # ------------------------------------------------------
+
+    empleado = models.ForeignKey(
+        "personas.Empleado",
+        on_delete=models.PROTECT,
+        related_name="asignaciones_operacion",
+        verbose_name="Empleado",
+    )
+
+    # ------------------------------------------------------
+    # ESTACIÓN DE TRABAJO
+    # ------------------------------------------------------
+
+    estacion_trabajo = models.ForeignKey(
+        "catalogos.EstacionTrabajo",
+        on_delete=models.PROTECT,
+        related_name="asignaciones_operacion",
+        null=True,
+        blank=True,
+        verbose_name="Estación de trabajo",
+    )
+
+    # ------------------------------------------------------
+    # FECHA DE ASIGNACIÓN
+    # ------------------------------------------------------
+
+    fecha_asignacion = models.DateTimeField(
+        auto_now_add=True,
+        editable=False,
+        verbose_name="Fecha y hora de asignación",
+    )
+
+    # ------------------------------------------------------
+    # CONFIGURACIÓN DEL MODELO
+    # ------------------------------------------------------
+
+    class Meta:
+
+        db_table = "operaciones_empleados_puesto_operacion"
+
+        verbose_name = "Asignación de empleado a operación"
+        verbose_name_plural = "Asignaciones de empleados a operaciones"
+
+        ordering = [
+            "operacion_diaria",
+            "estacion_trabajo",
+            "empleado",
+        ]
+
+        constraints = [
+
+            # Un empleado solamente puede tener un registro
+            # dentro de la misma operación diaria.
+            models.UniqueConstraint(
+                fields=[
+                    "operacion_diaria",
+                    "empleado",
+                ],
+                name="uq_empleado_operacion_diaria",
+            ),
+
+            # Una estación solamente puede pertenecer a un
+            # empleado dentro de la misma operación diaria.
+            # Las asignaciones sin estación no participan
+            # en esta restricción.
+            models.UniqueConstraint(
+                fields=[
+                    "operacion_diaria",
+                    "estacion_trabajo",
+                ],
+                condition=Q(estacion_trabajo__isnull=False),
+                name="uq_estacion_operacion_diaria",
+            ),
+        ]
+
+        indexes = [
+            models.Index(
+                fields=["operacion_diaria", "estacion_trabajo"],
+                name="idx_emp_puesto_operacion",
+            ),
+        ]
+
+    def __str__(self):
+
+        estacion = (
+            str(self.estacion_trabajo)
+            if self.estacion_trabajo_id
+            else "Sin estación asignada"
+        )
+
+        return (
+            f"{self.empleado} - {estacion} - "
+            f"{self.operacion_diaria}"
+        )
+
+    # ======================================================
+    # VALIDACIONES
+    # ======================================================
+
+    def clean(self):
+
+        super().clean()
+
+        if self.operacion_diaria_id:
+
+            operacion = self.operacion_diaria
+
+            if not operacion.abierta:
+                raise ValidationError({
+                    "operacion_diaria": (
+                        "No se pueden asignar empleados "
+                        "a una operación diaria cerrada."
+                    )
+                })
