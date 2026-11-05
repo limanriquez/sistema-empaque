@@ -3,6 +3,8 @@ from django.db.models import Count
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
+from .models import OperacionDiaria
+from .forms import OperacionDiariaForm
 
 from .forms import (
     ComponenteEmpaqueForm,
@@ -39,10 +41,14 @@ class ComponenteEmpaqueInline(admin.TabularInline):
         return "-"
 
 
-# Administra los productos que se empacan, con su costo, su precio de
-# cobro y su BOM. La lista muestra solo los productos; al abrir uno se
-# ven y editan los materiales que descuenta por cada unidad empacada.
+# Administra los productos que se empacan, con su costo, precio de
+# cobro, tamaño y su BOM. La lista muestra solo los productos;
+# al abrir uno se ven y editan los materiales que descuenta por cada
+# unidad empacada.
+# La calidad se captura directamente en el registro de cada caja,
+# no pertenece al catálogo de productos.
 # No habilita la eliminación: un producto fuera de uso se desactiva.
+
 @admin.register(ProductoEmpaque)
 class ProductoEmpaqueAdmin(admin.ModelAdmin):
 
@@ -52,6 +58,7 @@ class ProductoEmpaqueAdmin(admin.ModelAdmin):
         "id",
         "codigo",
         "nombre",
+        "tamano",
         "mostrar_costo",
         "mostrar_precio",
         "mostrar_margen",
@@ -60,14 +67,26 @@ class ProductoEmpaqueAdmin(admin.ModelAdmin):
     )
 
     list_display_links = ("id", "nombre")
-    list_filter = ("activo",)
-    search_fields = ("codigo", "nombre", "descripcion")
+
+    list_filter = (
+        "activo",
+        "tamano",
+    )
+
+    search_fields = (
+        "codigo",
+        "nombre",
+        "descripcion",
+        "tamano__nombre",
+    )
+
     inlines = [ComponenteEmpaqueInline]
 
     fields = (
         "codigo",
         "nombre",
         "descripcion",
+        "tamano",
         "costo_empaque",
         "precio_cobro",
         "margen",
@@ -78,7 +97,9 @@ class ProductoEmpaqueAdmin(admin.ModelAdmin):
 
     # Cuenta los materiales del BOM sin una consulta por fila.
     def get_queryset(self, request):
-        return super().get_queryset(request).annotate(
+        return super().get_queryset(request).select_related(
+            "tamano",
+        ).annotate(
             _num_materiales=Count("componentes")
         )
 
@@ -112,16 +133,7 @@ class ProductoEmpaqueAdmin(admin.ModelAdmin):
         return False
 
 
-
-
-from django.contrib import admin, messages
-from django.db import transaction
-from django.core.exceptions import ValidationError
-
-from .models import OperacionDiaria
-from .forms import OperacionDiariaForm
-
-
+        
 # ==========================================================
 # ADMIN: OPERACIÓN DIARIA
 #

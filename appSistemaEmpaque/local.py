@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'operaciones',
     'fruticultura',
     'inventarioFruta',
+    'catalogoConfiguracion',
 ]
 
 MIDDLEWARE = [

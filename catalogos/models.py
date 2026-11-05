@@ -164,3 +164,95 @@ class EstacionTrabajo(models.Model):
         return self.nombre
 
 
+# ==========================================================
+# MODELO: CALIDAD
+#
+# Catálogo de calidades utilizadas en los productos de empaque.
+# Permite clasificar los productos según su calidad comercial.
+#
+# Una calidad puede estar relacionada con múltiples productos
+# de empaque.
+#
+# Las calidades utilizadas históricamente no deben eliminarse.
+# Su disponibilidad se controla mediante el campo activo.
+# ==========================================================
+
+class Calidad(models.Model):
+
+    id = models.BigAutoField(
+        primary_key=True,
+        verbose_name="ID",
+    )
+
+    nombre = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name="Nombre",
+    )
+
+    descripcion = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="Descripción",
+    )
+
+    activo = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+
+    class Meta:
+        db_table = "catalogos_calidad"
+        verbose_name = "Calidad"
+        verbose_name_plural = "Calidades"
+        ordering = ["nombre"]
+
+    def __str__(self):
+        return self.nombre
+
+
+# ==========================================================
+# MODELO: TAMAÑO
+#
+# Catálogo de tamaños o calibres utilizados en los productos
+# de empaque.
+#
+# Un tamaño puede estar relacionado con múltiples productos
+# de empaque.
+#
+# Los tamaños utilizados históricamente no deben eliminarse.
+# Su disponibilidad se controla mediante el campo activo.
+# ==========================================================
+
+class Tamano(models.Model):
+
+    id = models.BigAutoField(
+        primary_key=True,
+        verbose_name="ID",
+    )
+
+    nombre = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name="Nombre",
+    )
+
+    descripcion = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="Descripción",
+    )
+
+    activo = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+
+    class Meta:
+        db_table = "catalogos_tamano"
+        verbose_name = "Tamaño"
+        verbose_name_plural = "Tamaños"
+        ordering = ["nombre"]
+
+    def __str__(self):
+        return self.nombre

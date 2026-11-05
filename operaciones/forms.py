@@ -7,8 +7,10 @@ from django.core.exceptions import ValidationError
 
 # Formulario para registrar y modificar productos de empaque.
 # Limpia espacios, normaliza el código a mayúsculas y evita duplicados
-# sin distinguir mayúsculas. El costo y el precio no pueden ser
-# negativos. Que el precio sea mayor al costo lo exige el modelo.
+# sin distinguir mayúsculas.
+# Permite seleccionar el tamaño desde su catálogo.
+# El costo y el precio no pueden ser negativos. Que el precio sea
+# mayor al costo lo exige el modelo.
 class ProductoEmpaqueForm(forms.ModelForm):
 
     class Meta:
@@ -17,6 +19,7 @@ class ProductoEmpaqueForm(forms.ModelForm):
             "codigo",
             "nombre",
             "descripcion",
+            "tamano",
             "costo_empaque",
             "precio_cobro",
             "activo",
@@ -72,7 +75,6 @@ class ProductoEmpaqueForm(forms.ModelForm):
             raise forms.ValidationError("El precio no puede ser negativo.")
 
         return precio
-
 
 # Formulario de cada material del BOM, usado en la tabla dentro del
 # producto. Solo ofrece materiales activos; al editar conserva el que

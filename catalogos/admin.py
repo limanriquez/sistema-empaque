@@ -3,7 +3,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 
 from .forms import UnidadMedidaForm, EstacionTrabajoForm
-from .models import ConceptoExtra, GoHome, Puesto, UnidadMedida, EstacionTrabajo
+from .models import ConceptoExtra, GoHome, Puesto, UnidadMedida, EstacionTrabajo, Tamano, Calidad
 
 
 @admin.register(GoHome)
@@ -213,3 +213,99 @@ class EstacionTrabajoAdmin(admin.ModelAdmin):
         return False
 
 
+# ==========================================================
+# ADMINISTRACIÓN: CALIDAD
+#
+# Permite administrar las calidades comerciales utilizadas
+# en los productos de empaque.
+#
+# Los registros no pueden eliminarse físicamente para
+# conservar la integridad histórica.
+# ==========================================================
+
+@admin.register(Calidad)
+class CalidadAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "id",
+        "nombre",
+        "activo",
+    )
+
+    list_display_links = (
+        "id",
+        "nombre",
+    )
+
+    search_fields = (
+        "nombre",
+        "descripcion",
+    )
+
+    list_filter = (
+        "activo",
+    )
+
+    ordering = (
+        "nombre",
+    )
+
+    list_per_page = 25
+
+    fields = (
+        "nombre",
+        "descripcion",
+        "activo",
+    )
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+# ==========================================================
+# ADMINISTRACIÓN: TAMAÑO
+#
+# Permite administrar los tamaños o calibres utilizados
+# en los productos de empaque.
+#
+# Los registros no pueden eliminarse físicamente para
+# conservar la integridad histórica.
+# ==========================================================
+
+@admin.register(Tamano)
+class TamanoAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "id",
+        "nombre",
+        "activo",
+    )
+
+    list_display_links = (
+        "id",
+        "nombre",
+    )
+
+    search_fields = (
+        "nombre",
+        "descripcion",
+    )
+
+    list_filter = (
+        "activo",
+    )
+
+    ordering = (
+        "nombre",
+    )
+
+    list_per_page = 25
+
+    fields = (
+        "nombre",
+        "descripcion",
+        "activo",
+    )
+
+    def has_delete_permission(self, request, obj=None):
+        return False
