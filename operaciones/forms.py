@@ -1,7 +1,7 @@
 from django import forms
-from django.db.models import Q
+from django.db.models import Q, Subquery
 from inventarios.models import Material
-from .models import ComponenteEmpaque, ProductoEmpaque, OperacionDiaria, LoteEmpaque
+from .models import ComponenteEmpaque, ProductoEmpaque, OperacionDiaria, LoteEmpaque, Tarima
 from django.core.exceptions import ValidationError
 
 from django.apps import apps
@@ -529,5 +529,320 @@ class LoteEmpaqueForm(forms.ModelForm):
                     "La variedad seleccionada ya no tiene "
                     "existencias disponibles para este lote.",
                 )
+
+        return cleaned_data
+
+# ==========================================================
+# FORMULARIO: OPERACIÓN DIARIA
+#
+# RESPONSABILIDADES:
+# - Registrar una nueva jornada de trabajo.
+# - Permitir modificar la fecha y las observaciones.
+# - Mantener los campos de control operativo administrados
+#   exclusivamente por los métodos del modelo.
+#
+# IMPORTANTE:
+# Guardar este formulario NO inicia la operación.
+# La activación se realiza desde la acción del listado.
+# ==========================================================
+
+class OperacionDiariaForm(forms.ModelForm):
+
+    class Meta:
+
+        model = OperacionDiaria
+
+        fields = [
+            "fecha",
+            "observaciones",
+        ]
+
+        widgets = {
+            "fecha": forms.DateInput(
+                attrs={"type": "date"},
+                format="%Y-%m-%d",
+            ),
+            "observaciones": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "placeholder": "Observaciones de la jornada...",
+                }
+            ),
+        }
+
+
+# ==========================================================
+# OBTENER MODELOS RELACIONADOS DESDE TARIMA
+# ==========================================================
+
+CodigoTarima = (
+    Tarima._meta
+    .get_field("codigo_tarima")
+    .remote_field.model
+)
+
+OperacionLoteEmpaque = (
+    Tarima._meta
+    .get_field("operacion_lote_empaque")
+    .remote_field.model
+)
+
+OperacionDiaria = (
+    OperacionLoteEmpaque._meta
+    .get_field("operacion_diaria")
+    .remote_field.model
+)
+
+
+# ==========================================================
+# FORMULARIO ADMINISTRATIVO DE TARIMA
+# ==========================================================
+
+class TarimaAdminForm(forms.ModelForm):
+
+    # Código automático, sin desplegable.
+    codigo_tarima_display = forms.CharField(
+        label="Código de tarima",
+        required=False,
+        disabled=True,
+    )
+
+    codigo_tarima_id = forms.IntegerField(
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
+    # Operación y lote informativos.
+    # No se permite selección manual.
+    operacion_diaria_display = forms.CharField(
+        label="Operación diaria / Lote de empaque",
+        required=False,
+        disabled=True,
+    )
+
+    class Meta:
+        model = Tarima
+
+        fields = (
+            "tamano",
+            "seccion_almacen",
+            "capacidad_maxima",
+        )
+
+    # ======================================================
+    # INICIALIZACIÓN
+    # ======================================================
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        # --------------------------------------------------
+        # OBTENER EL SIGUIENTE CÓDIGO DISPONIBLE
+        # --------------------------------------------------
+
+        if self.instance.pk:
+
+            codigo = self.instance.codigo_tarima
+
+        else:
+
+            codigo = (
+                CodigoTarima.objects
+                .filter(usado=False)
+                .only(
+                    "id",
+                    "consecutivo",
+                    "codigo_tarima",
+                )
+                .order_by("id")
+                .first()
+            )
+
+        self.codigo_tarima_disponible = codigo
+
+        if codigo:
+
+            self.fields["codigo_tarima_display"].initial = (
+                f"{codigo.consecutivo:02d} - "
+                f"{codigo.codigo_tarima}"
+            )
+
+            self.fields["codigo_tarima_id"].initial = codigo.pk
+
+        else:
+
+            self.fields["codigo_tarima_display"].initial = (
+                "No hay códigos disponibles"
+            )
+
+        # --------------------------------------------------
+        # LOCALIZAR AUTOMÁTICAMENTE OPERACIÓN Y LOTE
+        # --------------------------------------------------
+
+        self.relaciones_disponibles = []
+
+        if self.instance.pk:
+
+            relacion = (
+                self.instance.operacion_lote_empaque
+            )
+
+            self.fields["operacion_diaria_display"].initial = (
+                f"{relacion.operacion_diaria} - "
+                f"{relacion.lote_empaque}"
+            )
+
+        else:
+
+            # Recuperar máximo dos registros para comprobar
+            # que exista una sola relación activa.
+            self.relaciones_disponibles = list(
+                OperacionLoteEmpaque.objects
+                .filter(
+                    operacion_diaria__abierta=True,
+                    lote_empaque__abierto=True,
+                )
+                .select_related(
+                    "operacion_diaria",
+                    "lote_empaque",
+                )[:2]
+            )
+
+            if len(self.relaciones_disponibles) == 1:
+
+                relacion = self.relaciones_disponibles[0]
+
+                self.fields[
+                    "operacion_diaria_display"
+                ].initial = (
+                    f"{relacion.operacion_diaria} - "
+                    f"{relacion.lote_empaque}"
+                )
+
+            elif not self.relaciones_disponibles:
+
+                self.fields[
+                    "operacion_diaria_display"
+                ].initial = "No hay operación y lote abiertos"
+
+            else:
+
+                self.fields[
+                    "operacion_diaria_display"
+                ].initial = "Existen varias relaciones abiertas"
+
+        # --------------------------------------------------
+        # OCULTAR ACCIONES DE CAMPOS RELACIONADOS
+        # --------------------------------------------------
+
+        for nombre in (
+            "tamano",
+            "seccion_almacen",
+        ):
+
+            campo = self.fields.get(nombre)
+
+            if campo is None:
+                continue
+
+            widget = campo.widget
+
+            for atributo in (
+                "can_add_related",
+                "can_change_related",
+                "can_delete_related",
+                "can_view_related",
+            ):
+
+                if hasattr(widget, atributo):
+                    setattr(widget, atributo, False)
+
+    # ======================================================
+    # VALIDACIONES
+    # ======================================================
+
+    def clean(self):
+
+        cleaned_data = super().clean()
+
+        # --------------------------------------------------
+        # VALIDAR CÓDIGO
+        # --------------------------------------------------
+
+        if not self.instance.pk:
+
+            codigo = self.codigo_tarima_disponible
+
+            codigo_id_enviado = (
+                cleaned_data.get("codigo_tarima_id")
+            )
+
+            if not codigo:
+
+                self.add_error(
+                    "codigo_tarima_display",
+                    "No existen códigos de tarima disponibles.",
+                )
+
+            elif codigo_id_enviado != codigo.pk:
+
+                self.add_error(
+                    "codigo_tarima_display",
+                    "El código disponible cambió o fue utilizado. "
+                    "Actualice el formulario.",
+                )
+
+            else:
+
+                cleaned_data["codigo_tarima_obj"] = codigo
+
+                self.instance.codigo_tarima = codigo
+
+        else:
+
+            cleaned_data["codigo_tarima_obj"] = (
+                self.instance.codigo_tarima
+            )
+
+        # --------------------------------------------------
+        # EDICIÓN: CONSERVAR RELACIÓN ORIGINAL
+        # --------------------------------------------------
+
+        if self.instance.pk:
+            return cleaned_data
+
+        # --------------------------------------------------
+        # VALIDAR QUE EXISTA UNA SOLA OPERACIÓN Y LOTE
+        # --------------------------------------------------
+
+        if not self.relaciones_disponibles:
+
+            self.add_error(
+                "operacion_diaria_display",
+                "No existe una operación diaria con LoteEmpaque abierto.",
+            )
+
+            return cleaned_data
+
+        if len(self.relaciones_disponibles) > 1:
+
+            self.add_error(
+                "operacion_diaria_display",
+                "Existe más de una relación de operación y lote abierta. "
+                "No es posible determinar automáticamente cuál utilizar.",
+            )
+
+            return cleaned_data
+
+        relacion = self.relaciones_disponibles[0]
+
+        # --------------------------------------------------
+        # ASIGNAR OPERACIÓN Y LOTE
+        # --------------------------------------------------
+
+        cleaned_data["operacion_lote_empaque"] = relacion
+
+        self.instance.operacion_lote_empaque = relacion
 
         return cleaned_data

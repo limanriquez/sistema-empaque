@@ -17,14 +17,32 @@ from django.apps import apps
 from django.db.models import Sum
 from django.urls import reverse
 
+from django.contrib import admin, messages
+from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
+from django.core.exceptions import ValidationError
+from django.template.response import TemplateResponse
+
+from personas.models import Empleado
+from django.db.models import Q
+from django.db.models import Count
 
 from .forms import (
     ComponenteEmpaqueForm,
     ComponenteEmpaqueFormSet,
     ProductoEmpaqueForm,
     OperacionDiariaForm,
+    TarimaAdminForm
 )
-from .models import ComponenteEmpaque, ProductoEmpaque, OperacionDiaria
+from .models import (
+    ComponenteEmpaque,
+    ProductoEmpaque,
+    OperacionDiaria,
+    LoteEmpaque,
+    EmpleadosPuestoOperacion,
+    OperacionLoteEmpaque,
+    Tarima,
+)
+
 
 # Tabla de materiales dentro del producto: se elige el material, se
 # captura la cantidad por unidad empacada y se ve su unidad. El
@@ -145,35 +163,59 @@ class ProductoEmpaqueAdmin(admin.ModelAdmin):
         return False
 
 
-        
 # ==========================================================
-# ADMIN: OPERACIÓN DIARIA
+# ADMINISTRADOR: OPERACIÓN DIARIA
 #
-# Si no existe una operación abierta, permite crear una
-# nueva y la abre automáticamente.
+# RESPONSABILIDADES:
+# - Registrar operaciones diarias pendientes.
+# - Consultar el estado de las jornadas.
+# - Iniciar una operación diaria.
+# - Cerrar una operación diaria.
+# - Confirmar la continuidad del LoteEmpaque abierto.
+# - Advertir sobre tarimas que permanecen abiertas.
 #
-# Si existe una operación abierta, permite editarla y
-# al guardar registra su cierre.
-#
-# Las operaciones cerradas permanecen como historial.
+# REGLAS:
+# - Una operación se registra inicialmente como pendiente.
+# - El inicio se ejecuta exclusivamente mediante iniciar().
+# - El cierre se ejecuta exclusivamente mediante cerrar().
+# - No se permite eliminar operaciones.
+# - El cierre diario no cierra automáticamente el lote.
+# - Las tarimas abiertas no impiden cerrar la jornada.
 # ==========================================================
 
 @admin.register(OperacionDiaria)
 class OperacionDiariaAdmin(admin.ModelAdmin):
+    # ------------------------------------------------------
+    # FORMULARIO
+    # ------------------------------------------------------
 
     form = OperacionDiariaForm
+
+    # ------------------------------------------------------
+    # LISTADO
+    # ------------------------------------------------------
 
     list_display = (
         "id",
         "fecha",
-        "estado",
+        "estado_operacion",
         "hora_apertura",
         "hora_cierre",
+        "abierto_por",
+        "cerrado_por",
     )
 
     list_filter = (
         "abierta",
+        "iniciada",
         "fecha",
+    )
+
+    search_fields = (
+        "id",
+        "observaciones",
+        "abierto_por__nombres",
+        "cerrado_por__nombres",
     )
 
     ordering = (
@@ -181,131 +223,479 @@ class OperacionDiariaAdmin(admin.ModelAdmin):
         "-id",
     )
 
+    # ------------------------------------------------------
+    # ACCIONES
+    # ------------------------------------------------------
+
+    actions = (
+        "iniciar_operacion",
+        "cerrar_operacion",
+    )
+
+    # ------------------------------------------------------
+    # CAMPOS DE SOLO LECTURA
+    # ------------------------------------------------------
+
     readonly_fields = (
-        "fecha",
         "abierta",
+        "iniciada",
         "hora_apertura",
         "hora_cierre",
         "abierto_por",
         "cerrado_por",
     )
 
-    fields = (
-        "fecha",
-        "observaciones",
-        "abierta",
-        "hora_apertura",
-        "abierto_por",
-        "hora_cierre",
-        "cerrado_por",
+    # ------------------------------------------------------
+    # ORGANIZACIÓN DEL FORMULARIO
+    # ------------------------------------------------------
+
+    fieldsets = (
+        (
+            "Información de la jornada",
+            {
+                "fields": (
+                    "fecha",
+                    "observaciones",
+                )
+            },
+        ),
+        (
+            "Control de operación",
+            {
+                "fields": (
+                    "abierta",
+                    "iniciada",
+                    "hora_apertura",
+                    "hora_cierre",
+                    "abierto_por",
+                    "cerrado_por",
+                )
+            },
+        ),
     )
 
-    # ------------------------------------------------------
-    # Estado
-    # ------------------------------------------------------
+    # ======================================================
+    # CONSULTAS
+    # ======================================================
 
-    @admin.display(description="Estado")
-    def estado(self, obj):
-        return "ABIERTA" if obj.abierta else "CERRADA"
+    def get_queryset(self, request):
 
-    # ------------------------------------------------------
-    # Integración con el usuario autenticado
-    # ------------------------------------------------------
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "abierto_por",
+                "cerrado_por",
+            )
+        )
 
-    def get_form(self, request, obj=None, **kwargs):
+    # ======================================================
+    # ESTADO DE LA OPERACIÓN
+    # ======================================================
 
-        FormClass = super().get_form(request, obj, **kwargs)
+    @admin.display(
+        description="Estado",
+        ordering="iniciada",
+    )
+    def estado_operacion(self, obj):
 
-        class FormConRequest(FormClass):
+        if obj.pendiente:
+            return "Pendiente"
 
-            def __init__(self, *args, **form_kwargs):
-                form_kwargs["request"] = request
-                super().__init__(*args, **form_kwargs)
+        if obj.activa:
+            return "Activa"
 
-        return FormConRequest
+        if obj.cerrada:
+            return "Cerrada"
 
-    # ------------------------------------------------------
-    # Control de creación
-    # ------------------------------------------------------
+        return "Estado desconocido"
+
+    # ======================================================
+    # IDENTIFICACIÓN DE LA PERSONA AUTENTICADA
+    # ======================================================
+
+    def obtener_persona(self, request):
+
+        try:
+            empleado = request.user.perfil_empleado
+
+        except Empleado.DoesNotExist:
+            raise ValidationError(
+                "El usuario autenticado no tiene un empleado asociado."
+            )
+
+        if not empleado.activo:
+            raise ValidationError(
+                "El empleado asociado al usuario está inactivo."
+            )
+
+        return empleado.persona
+
+    # ======================================================
+    # MENSAJES DE VALIDACIÓN
+    # ======================================================
+
+    def mostrar_error(self, request, error):
+
+        if isinstance(error, ValidationError):
+            for mensaje in error.messages:
+                self.message_user(
+                    request,
+                    mensaje,
+                    level=messages.ERROR,
+                )
+        else:
+            self.message_user(
+                request,
+                str(error),
+                level=messages.ERROR,
+            )
+
+    # ======================================================
+    # VALIDAR SELECCIÓN INDIVIDUAL
+    # ======================================================
+
+    def obtener_operacion_seleccionada(self, request, queryset):
+
+        if queryset.count() != 1:
+
+            self.message_user(
+                request,
+                "Debe seleccionar una sola operación diaria.",
+                level=messages.ERROR,
+            )
+
+            return None
+
+        return queryset.first()
+
+       # ======================================================
+    # ACCIÓN: INICIAR OPERACIÓN
+    # ======================================================
+
+    @admin.action(
+        description="Iniciar operación seleccionada",
+    )
+    def iniciar_operacion(self, request, queryset):
+
+        # --------------------------------------------------
+        # VALIDAR SELECCIÓN INDIVIDUAL
+        # --------------------------------------------------
+
+        operacion = self.obtener_operacion_seleccionada(
+            request,
+            queryset,
+        )
+
+        if operacion is None:
+            return None
+
+        # --------------------------------------------------
+        # VALIDAR ESTADO DE LA OPERACIÓN
+        # --------------------------------------------------
+
+        if not operacion.pendiente:
+
+            self.message_user(
+                request,
+                "Solamente se pueden iniciar operaciones pendientes.",
+                level=messages.ERROR,
+            )
+
+            return None
+
+        # --------------------------------------------------
+        # BUSCAR EL LOTE DE EMPAQUE ABIERTO
+        # --------------------------------------------------
+
+        lote = (
+            LoteEmpaque.objects
+            .filter(abierto=True)
+            .first()
+        )
+
+        if lote is None:
+
+            self.message_user(
+                request,
+                "No existe un lote de empaque abierto. "
+                "Debe abrir un lote antes de iniciar la operación.",
+                level=messages.ERROR,
+            )
+
+            return None
+
+        # --------------------------------------------------
+        # CONFIRMAR E INICIAR OPERACIÓN
+        # --------------------------------------------------
+
+        if request.POST.get("confirmar_inicio") == "1":
+
+            try:
+
+                # Obtener la persona asociada al usuario autenticado.
+                persona = self.obtener_persona(request)
+
+                # El modelo se encarga de:
+                # - Preparar las estaciones de trabajo.
+                # - Recuperar las asignaciones anteriores.
+                # - Evitar registros duplicados.
+                # - Validar empleados activos.
+                # - Iniciar la operación si existe personal.
+                iniciado = operacion.iniciar(
+                    persona=persona,
+                    lote_empaque=lote,
+                )
+
+                # --------------------------------------------------
+                # CONTAR ESTACIONES REGISTRADAS
+                # --------------------------------------------------
+
+                asignaciones = (
+                    EmpleadosPuestoOperacion.objects
+                    .filter(
+                        operacion_diaria=operacion,
+                        estacion_trabajo__isnull=False,
+                    )
+                )
+
+                total_estaciones = asignaciones.count()
+
+                # --------------------------------------------------
+                # CONTAR ESTACIONES VACANTES
+                # --------------------------------------------------
+
+                estaciones_vacantes = (
+                    asignaciones
+                    .filter(
+                        Q(empleado__isnull=True)
+                        | Q(empleado__activo=False)
+                        | Q(empleado__persona__activo=False)
+                    )
+                    .count()
+                )
+
+                # --------------------------------------------------
+                # RESULTADO: OPERACIÓN INICIADA
+                # --------------------------------------------------
+
+                if iniciado:
+
+                    self.message_user(
+                        request,
+                        (
+                            f"Operación diaria #{operacion.pk} "
+                            f"iniciada correctamente con el lote {lote}."
+                        ),
+                        level=messages.SUCCESS,
+                    )
+
+                    # Advertir sobre estaciones sin empleado.
+                    if estaciones_vacantes:
+
+                        self.message_user(
+                            request,
+                            (
+                                f"Advertencia: existen "
+                                f"{estaciones_vacantes} de "
+                                f"{total_estaciones} estaciones "
+                                "sin empleado asignado."
+                            ),
+                            level=messages.WARNING,
+                        )
+
+                # --------------------------------------------------
+                # RESULTADO: ESTACIONES PREPARADAS
+                # PERO OPERACIÓN TODAVÍA PENDIENTE
+                # --------------------------------------------------
+
+                else:
+
+                    self.message_user(
+                        request,
+                        (
+                            f"Se prepararon {total_estaciones} "
+                            "estaciones de trabajo. La operación "
+                            "permanece pendiente porque no existen "
+                            "empleados activos asignados. "
+                            "Realice las asignaciones desde "
+                            "Empleados por puesto de operación "
+                            "y vuelva a iniciar."
+                        ),
+                        level=messages.WARNING,
+                    )
+
+            except (
+                ValidationError,
+                Empleado.DoesNotExist,
+            ) as error:
+
+                self.mostrar_error(
+                    request,
+                    error,
+                )
+
+            return None
+
+        # --------------------------------------------------
+        # MOSTRAR CONFIRMACIÓN ANTES DE INICIAR
+        # --------------------------------------------------
+
+        context = {
+            **self.admin_site.each_context(request),
+            "opts": self.model._meta,
+            "title": "Confirmar inicio de operación diaria",
+            "operacion": operacion,
+            "lote": lote,
+            "action_name": "iniciar_operacion",
+            "selected_ids": [operacion.pk],
+            "action_checkbox_name": ACTION_CHECKBOX_NAME,
+            "media": self.media,
+        }
+
+        return TemplateResponse(
+            request,
+            "operaciones/operaciondiaria/confirmar_inicio.html",
+            context,
+        )
+
+    # ======================================================
+    # ACCIÓN: CERRAR OPERACIÓN
+    # ======================================================
+
+    @admin.action(
+        description="Cerrar operación seleccionada",
+    )
+    def cerrar_operacion(self, request, queryset):
+
+        operacion = self.obtener_operacion_seleccionada(
+            request,
+            queryset,
+        )
+
+        if operacion is None:
+            return None
+
+        if not operacion.activa:
+
+            self.message_user(
+                request,
+                "Solamente se pueden cerrar operaciones activas.",
+                level=messages.ERROR,
+            )
+
+            return None
+
+        # Obtener el lote relacionado con la jornada.
+        relacion = (
+            OperacionLoteEmpaque.objects
+            .filter(operacion_diaria=operacion)
+            .select_related("lote_empaque")
+            .first()
+        )
+
+        # Contar tarimas abiertas de esta operación.
+        tarimas_abiertas = Tarima.objects.filter(
+            operacion_lote_empaque__operacion_diaria=operacion,
+            abierta=True,
+        ).count()
+
+        # Si se confirmó el cierre, ejecutar el método del modelo.
+        if request.POST.get("confirmar_cierre") == "1":
+
+            try:
+
+                persona = self.obtener_persona(request)
+
+                operacion.cerrar(persona)
+
+                if request.POST.get("recordar_cierre_lote") == "si":
+
+                    self.message_user(
+                        request,
+                        (
+                            "Operación diaria cerrada correctamente. "
+                            "Recuerde cerrar manualmente el LoteEmpaque "
+                            "desde su propia administración."
+                        ),
+                        level=messages.WARNING,
+                    )
+
+                else:
+
+                    self.message_user(
+                        request,
+                        (
+                            "Operación diaria cerrada correctamente. "
+                            "El LoteEmpaque permanece abierto."
+                        ),
+                        level=messages.SUCCESS,
+                    )
+
+                if tarimas_abiertas:
+
+                    self.message_user(
+                        request,
+                        (
+                            f"Advertencia: existen {tarimas_abiertas} "
+                            "tarimas abiertas. Permanecen abiertas "
+                            "para continuar su proceso."
+                        ),
+                        level=messages.WARNING,
+                    )
+
+            except ValidationError as error:
+
+                self.mostrar_error(request, error)
+
+            return None
+
+        # Mostrar confirmación antes de cerrar.
+        context = {
+            **self.admin_site.each_context(request),
+            "opts": self.model._meta,
+            "title": "Confirmar cierre de operación diaria",
+            "operacion": operacion,
+            "relacion": relacion,
+            "tarimas_abiertas": tarimas_abiertas,
+            "action_name": "cerrar_operacion",
+            "selected_ids": [operacion.pk],
+            "action_checkbox_name": ACTION_CHECKBOX_NAME,
+            "media": self.media,
+        }
+
+        return TemplateResponse(
+            request,
+            "operaciones/operaciondiaria/confirmar_cierre.html",
+            context,
+        )
+
+    # ======================================================
+    # SEGURIDAD
+    # ======================================================
+
+    def has_delete_permission(self, request, obj=None):
+
+        # Las operaciones diarias forman parte de la trazabilidad
+        # histórica. No se permite su eliminación física.
+        return False
+    
+    # ======================================================
+    # CONTROL DE CREACIÓN
+    # ======================================================
 
     def has_add_permission(self, request):
 
+        # Solo puede existir una operación diaria vigente:
+        # pendiente o activa.
+        operacion_vigente = OperacionDiaria.objects.filter(
+            Q(iniciada=False) | Q(abierta=True)
+        ).exists()
+
         return (
             super().has_add_permission(request)
-            and not OperacionDiaria.objects.filter(
-                abierta=True
-            ).exists()
+            and not operacion_vigente
         )
-
-    # ------------------------------------------------------
-    # Control de modificación
-    # ------------------------------------------------------
-
-    def get_readonly_fields(self, request, obj=None):
-
-        if obj is not None and not obj.abierta:
-            return self.fields
-
-        return self.readonly_fields
-
-    # ------------------------------------------------------
-    # Guardar operación
-    # ------------------------------------------------------
-
-    @transaction.atomic
-    def save_model(self, request, obj, form, change):
-
-        # El formulario ya validó que el empleado exista
-        # y que se encuentre activo.
-        empleado = request.user.perfil_empleado
-        persona = empleado.persona
-
-        if not change:
-
-            # Crear y abrir una operación nueva.
-            super().save_model(request, obj, form, change)
-
-            obj.abrir(persona)
-
-            self.message_user(
-                request,
-                "Operación creada y abierta correctamente.",
-                messages.SUCCESS,
-            )
-
-        else:
-
-            # Recuperar y bloquear el registro actual.
-            operacion = (
-                OperacionDiaria.objects
-                .select_for_update()
-                .get(pk=obj.pk)
-            )
-
-            if not operacion.abierta:
-                raise ValidationError(
-                    "La operación ya está cerrada."
-                )
-
-            # Guardar observaciones.
-            super().save_model(request, obj, form, change)
-
-            # Cerrar la operación.
-            obj.cerrar(persona)
-
-            self.message_user(
-                request,
-                "Operación cerrada correctamente.",
-                messages.SUCCESS,
-            )
-
-    # ------------------------------------------------------
-    # No permitir eliminar
-    # ------------------------------------------------------
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
 
 
 
@@ -835,4 +1225,860 @@ class LoteEmpaqueAdmin(admin.ModelAdmin):
     # ------------------------------------------------------
 
     def has_delete_permission(self, request, obj=None):
+        return False
+
+
+
+
+
+# ==========================================================
+# ADMINISTRADOR: EMPLEADOS POR PUESTO DE OPERACIÓN
+#
+# Administra la distribución del personal en las estaciones
+# de trabajo de una operación diaria.
+#
+# FUNCIONALIDAD:
+# - Consultar una operación diaria mediante un selector.
+# - Mostrar únicamente sus estaciones registradas.
+# - Consultar resumen de estaciones y empleados asignados.
+# - Asignar empleados activos y disponibles.
+# - Reasignar empleados mediante edición del registro.
+# - Liberar empleados sin eliminar registros.
+# - Consultar operaciones cerradas sin modificarlas.
+#
+# REGLAS:
+# - No permite crear ni eliminar asignaciones manualmente.
+# - Las estaciones se generan desde OperacionDiaria.iniciar().
+# - Un empleado no puede ocupar dos estaciones dentro
+#   de la misma operación.
+# - Los empleados asignados a otras estaciones no aparecen
+#   como opciones disponibles.
+# - Las operaciones cerradas son de solo lectura.
+# ==========================================================
+
+@admin.register(EmpleadosPuestoOperacion)
+class EmpleadosPuestoOperacionAdmin(admin.ModelAdmin):
+
+    # ------------------------------------------------------
+    # CONFIGURACIÓN DEL LISTADO
+    # ------------------------------------------------------
+
+    change_list_template = (
+        "operaciones/empleadospuestooperacion/change_list.html"
+    )
+
+    list_display = (
+        "id",
+        "operacion_diaria",
+        "estacion_trabajo",
+        "empleado",
+        "estado_asignacion",
+    )
+
+    list_display_links = ("id",)
+
+    # El empleado se puede cambiar directamente en la tabla.
+    # Dejar el combo vacío significa liberar la estación.
+    list_editable = (
+        "empleado",
+    )
+
+    ordering = (
+        "estacion_trabajo__nombre",
+        "id",
+    )
+
+    list_per_page = 100
+
+    actions = (
+        "quitar_empleados",
+    )
+
+    # ======================================================
+    # PERMITIR FILTRO PERSONALIZADO DE OPERACIÓN
+    # ======================================================
+
+    def lookup_allowed(self, lookup, value, request):
+
+        if lookup == "operacion_diaria__id__exact":
+            return True
+
+        return super().lookup_allowed(
+            lookup,
+            value,
+            request,
+        )
+
+    # ======================================================
+    # CONSULTAR SOLAMENTE LA OPERACIÓN SELECCIONADA
+    # ======================================================
+
+    def get_queryset(self, request):
+
+        queryset = super().get_queryset(request)
+
+        operacion_id = request.GET.get(
+            "operacion_diaria__id__exact"
+        )
+
+        # No cargar asignaciones mientras no se seleccione
+        # una operación diaria.
+        if not operacion_id:
+            return queryset.none()
+
+        try:
+
+            operacion_id = int(operacion_id)
+
+        except (TypeError, ValueError):
+
+            return queryset.none()
+
+        return (
+            queryset
+            .filter(
+                operacion_diaria_id=operacion_id
+            )
+            .select_related(
+                "operacion_diaria",
+                "estacion_trabajo",
+                "empleado",
+                "empleado__persona",
+            )
+        )
+
+    # ======================================================
+    # FORMULARIO EDITABLE DE CADA FILA
+    # ======================================================
+    
+
+    def get_changelist_form(self, request, **kwargs):
+
+        FormClass = super().get_changelist_form(
+            request,
+            **kwargs,
+        )
+
+        class FormAsignacion(FormClass):
+
+            def __init__(self, *args, **form_kwargs):
+
+                super().__init__(
+                    *args,
+                    **form_kwargs,
+                )
+
+                if "empleado" not in self.fields:
+                    return
+
+                asignacion = self.instance
+
+                if not asignacion.pk:
+                    return
+
+                # --------------------------------------------------
+                # EMPLEADOS OCUPADOS EN OTRAS ESTACIONES
+                # --------------------------------------------------
+
+                empleados_ocupados = (
+                    EmpleadosPuestoOperacion.objects
+                    .filter(
+                        operacion_diaria_id=(
+                            asignacion.operacion_diaria_id
+                        ),
+                        empleado__isnull=False,
+                    )
+                    .exclude(
+                        pk=asignacion.pk
+                    )
+                    .values_list(
+                        "empleado_id",
+                        flat=True,
+                    )
+                )
+
+                # --------------------------------------------------
+                # EMPLEADOS ACTIVOS Y DISPONIBLES
+                # --------------------------------------------------
+
+                empleados_disponibles = (
+                    Empleado.objects
+                    .filter(
+                        Q(
+                            activo=True,
+                            persona__activo=True,
+                        )
+                        | Q(
+                            pk=asignacion.empleado_id,
+                        )
+                    )
+                    .exclude(
+                        pk__in=empleados_ocupados
+                    )
+                    .distinct()
+                    .order_by("id")
+                )
+
+                campo = self.fields["empleado"]
+
+                campo.queryset = empleados_disponibles
+
+                campo.empty_label = (
+                    "— Sin empleado asignado —"
+                )
+
+                # --------------------------------------------------
+                # OCULTAR ACCESOS DEL CAMPO RELACIONADO
+                # No afecta el selector ni su guardado.
+                # --------------------------------------------------
+
+                widget = campo.widget
+
+                widget.can_add_related = False
+                widget.can_change_related = False
+                widget.can_delete_related = False
+                widget.can_view_related = False
+
+                # --------------------------------------------------
+                # OPERACIONES CERRADAS: SOLO LECTURA
+                # --------------------------------------------------
+
+                if asignacion.operacion_diaria.cerrada:
+
+                    campo.disabled = True
+
+        return FormAsignacion
+
+    # ======================================================
+    # CONTEXTO Y RESUMEN DE OPERACIÓN DIARIA
+    # ======================================================
+
+    def changelist_view(self, request, extra_context=None):
+
+        extra_context = extra_context or {}
+
+        # --------------------------------------------------
+        # CONSULTAR OPERACIONES DIARIAS
+        # --------------------------------------------------
+
+        operaciones = (
+            OperacionDiaria.objects
+            .all()
+            .order_by("-fecha", "-id")
+        )
+
+        # --------------------------------------------------
+        # RECUPERAR OPERACIÓN SELECCIONADA
+        # --------------------------------------------------
+
+        operacion_id = request.GET.get(
+            "operacion_diaria__id__exact",
+            "",
+        )
+
+        operacion_seleccionada = None
+
+        if operacion_id:
+
+            try:
+
+                operacion_seleccionada = (
+                    OperacionDiaria.objects
+                    .filter(
+                        pk=int(operacion_id)
+                    )
+                    .first()
+                )
+
+            except (TypeError, ValueError):
+
+                operacion_seleccionada = None
+
+        # --------------------------------------------------
+        # INICIALIZAR CONTADORES
+        # --------------------------------------------------
+
+        total_estaciones = 0
+        empleados_asignados = 0
+        estaciones_vacantes = 0
+
+        # --------------------------------------------------
+        # CALCULAR RESUMEN DE LA OPERACIÓN
+        # --------------------------------------------------
+
+        if operacion_seleccionada:
+
+            resumen = (
+                EmpleadosPuestoOperacion.objects
+                .filter(
+                    operacion_diaria=operacion_seleccionada,
+                    estacion_trabajo__isnull=False,
+                )
+                .aggregate(
+                    total_estaciones=Count(
+                        "estacion_trabajo_id",
+                        distinct=True,
+                    ),
+                    empleados_asignados=Count(
+                        "empleado_id",
+                        distinct=True,
+                    ),
+                )
+            )
+
+            total_estaciones = (
+                resumen["total_estaciones"] or 0
+            )
+
+            empleados_asignados = (
+                resumen["empleados_asignados"] or 0
+            )
+
+            estaciones_vacantes = (
+                total_estaciones - empleados_asignados
+            )
+
+        # --------------------------------------------------
+        # PREPARAR CONTEXTO PARA LA PLANTILLA
+        # --------------------------------------------------
+
+        extra_context.update({
+
+            "operaciones_disponibles": operaciones,
+
+            "operacion_seleccionada": operacion_seleccionada,
+
+            "operacion_seleccionada_id": (
+                str(operacion_seleccionada.pk)
+                if operacion_seleccionada
+                else ""
+            ),
+
+            "total_estaciones": total_estaciones,
+
+            "empleados_asignados": empleados_asignados,
+
+            "estaciones_vacantes": estaciones_vacantes,
+
+        })
+
+        # --------------------------------------------------
+        # PROCESAR CONSULTA O GUARDADO
+        # --------------------------------------------------
+
+        if request.method == "POST":
+
+            # El guardado de las asignaciones debe ejecutarse
+            # dentro de una sola transacción.
+            with transaction.atomic():
+
+                response = super().changelist_view(
+                    request,
+                    extra_context=extra_context,
+                )
+
+        else:
+
+            response = super().changelist_view(
+                request,
+                extra_context=extra_context,
+            )
+
+        # Garantizar que las variables personalizadas
+        # estén disponibles en la plantilla.
+        if hasattr(response, "context_data"):
+
+            response.context_data.update(
+                extra_context
+            )
+
+        return response
+
+    # ======================================================
+    # ESTADO DE LA ASIGNACIÓN
+    # ======================================================
+
+    @admin.display(
+        description="Estado",
+    )
+    def estado_asignacion(self, obj):
+
+        if not obj.empleado_id:
+            return "Vacante"
+
+        if (
+            not obj.empleado.activo
+            or not obj.empleado.persona.activo
+        ):
+            return "Empleado inactivo"
+
+        return "Asignado"
+
+    # ======================================================
+    # ACCIÓN: QUITAR EMPLEADOS
+    # ======================================================
+
+    @admin.action(
+        description="Quitar empleados de las estaciones seleccionadas",
+    )
+    def quitar_empleados(self, request, queryset):
+
+        operacion_id = request.GET.get(
+            "operacion_diaria__id__exact"
+        )
+
+        if not operacion_id:
+
+            self.message_user(
+                request,
+                "Primero debe seleccionar una operación diaria.",
+                level=messages.ERROR,
+            )
+
+            return
+
+        try:
+
+            with transaction.atomic():
+
+                # Bloquear la operación antes de modificar
+                # cualquiera de sus asignaciones.
+                operacion = (
+                    OperacionDiaria.objects
+                    .select_for_update()
+                    .get(
+                        pk=int(operacion_id)
+                    )
+                )
+
+                if operacion.cerrada:
+
+                    self.message_user(
+                        request,
+                        "No se pueden modificar asignaciones "
+                        "de una operación diaria cerrada.",
+                        level=messages.ERROR,
+                    )
+
+                    return
+
+                # Bloquear los registros seleccionados.
+                asignaciones = (
+                    queryset
+                    .select_for_update()
+                    .filter(
+                        operacion_diaria=operacion,
+                        empleado__isnull=False,
+                    )
+                )
+
+                # Obtener los identificadores de los registros.
+                ids_asignaciones = list(
+                    asignaciones.values_list(
+                        "pk",
+                        flat=True,
+                    )
+                )
+
+                cantidad = len(ids_asignaciones)
+
+                # Liberar las estaciones sin eliminar registros.
+                if cantidad:
+
+                    EmpleadosPuestoOperacion.objects.filter(
+                        pk__in=ids_asignaciones,
+                    ).update(
+                        empleado=None
+                    )
+
+            if cantidad:
+
+                self.message_user(
+                    request,
+                    (
+                        f"Se liberaron {cantidad} estación(es). "
+                        "Los registros permanecen asociados "
+                        "a la operación diaria."
+                    ),
+                    level=messages.SUCCESS,
+                )
+
+            else:
+
+                self.message_user(
+                    request,
+                    "Las estaciones seleccionadas ya estaban vacantes.",
+                    level=messages.WARNING,
+                )
+
+        except (
+            ValueError,
+            OperacionDiaria.DoesNotExist,
+        ):
+
+            self.message_user(
+                request,
+                "La operación diaria seleccionada no es válida.",
+                level=messages.ERROR,
+            )
+
+    # ======================================================
+    # PERMISOS
+    # ======================================================
+
+    def has_add_permission(self, request):
+
+        # Las asignaciones se generan automáticamente
+        # al preparar las estaciones de la operación.
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+
+        # Nunca se eliminan registros de estaciones.
+        return False
+
+@admin.register(Tarima)
+class TarimaAdmin(admin.ModelAdmin):
+
+    form = TarimaAdminForm
+
+    # ------------------------------------------------------
+    # LISTADO
+    # ------------------------------------------------------
+
+    list_display = (
+        "id",
+        "codigo_tarima",
+        "operacion_diaria",
+        "capacidad_maxima",
+        "tamano",
+        "total_cajas_admin",
+        "espacios_disponibles_admin",
+        "estado_tarima",
+        "seccion_almacen",
+        "fecha_creacion",
+    )
+
+    list_display_links = ("id",)
+
+    list_filter = (
+        "abierta",
+        "seccion_almacen",
+    )
+
+    ordering = (
+        "-fecha_creacion",
+        "-id",
+    )
+
+    list_per_page = 50
+
+    # Acciones disponibles en el combo de Django Admin.
+    actions = (
+        "cerrar_tarimas",
+    )
+
+    actions_on_top = True
+    actions_on_bottom = True
+
+    # ======================================================
+    # CAMPOS DEL FORMULARIO
+    # ======================================================
+
+    def get_fields(self, request, obj=None):
+
+        if obj is None:
+
+            return (
+                "codigo_tarima_display",
+                "codigo_tarima_id",
+                "operacion_diaria_display",
+                "capacidad_maxima",
+                "tamano",
+                "seccion_almacen",
+            )
+
+        return (
+            "codigo_tarima_display",
+            "operacion_diaria_display",
+            "tamano",
+            "seccion_almacen",
+            "fecha_creacion",
+            "capacidad_maxima",
+            "abierta",
+            "fecha_cierre",
+            "abierta_por",
+            "cerrada_por",
+            "total_cajas_admin",
+            "espacios_disponibles_admin",
+        )
+
+    # ======================================================
+    # CAMPOS DE SOLO LECTURA
+    # ======================================================
+
+    def get_readonly_fields(self, request, obj=None):
+
+        if obj is None:
+            return ()
+
+        return (
+            "codigo_tarima_display",
+            "operacion_diaria_display",
+            "fecha_creacion",
+            "capacidad_maxima",
+            "abierta",
+            "fecha_cierre",
+            "abierta_por",
+            "cerrada_por",
+            "total_cajas_admin",
+            "espacios_disponibles_admin",
+        )
+
+    # ======================================================
+    # CONSULTA OPTIMIZADA
+    # ======================================================
+
+    def get_queryset(self, request):
+
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "codigo_tarima",
+                "operacion_lote_empaque",
+                "operacion_lote_empaque__operacion_diaria",
+                "operacion_lote_empaque__lote_empaque",
+                "tamano",
+                "seccion_almacen",
+                "abierta_por",
+                "cerrada_por",
+            )
+        )
+
+    # ======================================================
+    # OPERACIÓN DIARIA
+    # ======================================================
+
+    @admin.display(
+        description="Operación diaria",
+        ordering=(
+            "operacion_lote_empaque__operacion_diaria__fecha"
+        ),
+    )
+    def operacion_diaria(self, obj):
+
+        return obj.operacion_lote_empaque.operacion_diaria
+
+    # ======================================================
+    # TOTAL DE CAJAS
+    # ======================================================
+
+    @admin.display(description="Cajas registradas")
+    def total_cajas_admin(self, obj):
+
+        return obj.total_cajas
+
+    # ======================================================
+    # ESPACIOS DISPONIBLES
+    # ======================================================
+
+    @admin.display(description="Espacios disponibles")
+    def espacios_disponibles_admin(self, obj):
+
+        return obj.espacios_disponibles
+
+    # ======================================================
+    # ESTADO
+    # ======================================================
+
+    @admin.display(description="Estado")
+    def estado_tarima(self, obj):
+
+        if obj.abierta:
+
+            return format_html(
+                '<span style="'
+                'background:#dcfce7;'
+                'color:#166534;'
+                'padding:4px 10px;'
+                'border-radius:20px;'
+                'font-weight:600;'
+                '">Abierta</span>'
+            )
+
+        return format_html(
+            '<span style="'
+            'background:#fee2e2;'
+            'color:#991b1b;'
+            'padding:4px 10px;'
+            'border-radius:20px;'
+            'font-weight:600;'
+            '">Cerrada</span>'
+        )
+
+    # ======================================================
+    # RESPONSABLE
+    # ======================================================
+
+    def obtener_persona(self, request):
+
+        return request.user.perfil_empleado.persona
+
+    # ======================================================
+    # GUARDAR TARIMA
+    # ======================================================
+
+    def save_model(self, request, obj, form, change):
+
+        if change:
+
+            super().save_model(
+                request,
+                obj,
+                form,
+                change,
+            )
+
+            return
+
+        persona = self.obtener_persona(request)
+
+        with transaction.atomic():
+
+            # Crear mediante el método de negocio del modelo.
+            # Este método consume el código y crea la tarima.
+
+            tarima = Tarima.crear(
+                codigo_tarima=(
+                    form.cleaned_data["codigo_tarima_obj"]
+                ),
+                operacion_lote_empaque=(
+                    form.cleaned_data["operacion_lote_empaque"]
+                ),
+                persona=persona,
+                capacidad_maxima=(
+                    form.cleaned_data["capacidad_maxima"]
+                ),
+            )
+
+            # Información complementaria.
+
+            tarima.tamano = form.cleaned_data.get("tamano")
+
+            tarima.seccion_almacen = (
+                form.cleaned_data.get("seccion_almacen")
+            )
+
+            tarima.full_clean()
+
+            tarima.save(
+                update_fields=[
+                    "tamano",
+                    "seccion_almacen",
+                ]
+            )
+
+            # Actualizar instancia de Django Admin.
+
+            obj.pk = tarima.pk
+            obj._state.adding = False
+            obj._state.db = tarima._state.db
+            obj.refresh_from_db()
+
+    # ======================================================
+    # ACCIÓN: CERRAR TARIMAS SELECCIONADAS
+    # ======================================================
+
+    @admin.action(
+        description="Cerrar tarimas seleccionadas"
+    )
+    def cerrar_tarimas(self, request, queryset):
+
+        persona = self.obtener_persona(request)
+
+        # Recuperar identificadores seleccionados.
+        ids_tarimas = list(
+            queryset.values_list(
+                "pk",
+                flat=True,
+            )
+        )
+
+        cerradas = 0
+        ya_cerradas = 0
+
+        # Una transacción para toda la operación de cierre.
+        with transaction.atomic():
+
+            # Bloquear las tarimas seleccionadas.
+            tarimas = (
+                Tarima.objects
+                .select_for_update()
+                .filter(
+                    pk__in=ids_tarimas
+                )
+                .order_by("pk")
+            )
+
+            for tarima in tarimas:
+
+                # No modificar tarimas que ya estén cerradas.
+                if not tarima.abierta:
+
+                    ya_cerradas += 1
+                    continue
+
+                # Utilizar el método del modelo.
+                # Registra automáticamente:
+                # - abierta = False
+                # - fecha_cierre = timezone.now()
+                # - cerrada_por = persona
+
+                tarima.cerrar(persona)
+
+                cerradas += 1
+
+        # --------------------------------------------------
+        # NOTIFICACIONES
+        # --------------------------------------------------
+
+        if cerradas:
+
+            self.message_user(
+                request,
+                (
+                    f"Se cerraron correctamente {cerradas} "
+                    f"tarima(s). La fecha, hora y responsable "
+                    f"quedaron registrados automáticamente."
+                ),
+                level=messages.SUCCESS,
+            )
+
+        if ya_cerradas:
+
+            self.message_user(
+                request,
+                (
+                    f"{ya_cerradas} tarima(s) ya estaban cerradas "
+                    f"y no fueron modificadas."
+                ),
+                level=messages.WARNING,
+            )
+
+        if not cerradas and not ya_cerradas:
+
+            self.message_user(
+                request,
+                "No se encontraron tarimas para cerrar.",
+                level=messages.WARNING,
+            )
+
+    # ======================================================
+    # PERMISOS
+    # ======================================================
+
+    def has_delete_permission(self, request, obj=None):
+
+        # No se permite eliminar tarimas.
         return False

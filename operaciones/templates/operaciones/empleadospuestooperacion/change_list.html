@@ -1,0 +1,173 @@
+
+{% extends "admin/change_list.html" %}
+
+{% block search %}
+
+<div class="module" style="padding: 15px; margin-bottom: 15px;">
+
+    <!-- SELECTOR DE OPERACIÓN DIARIA -->
+
+    <form
+        method="get"
+        action="{% url 'admin:operaciones_empleadospuestooperacion_changelist' %}"
+    >
+
+        <label for="id_operacion">
+            <strong>Operación diaria:</strong>
+        </label>
+
+        <select
+            name="operacion_diaria__id__exact"
+            id="id_operacion"
+            required
+            style="min-width: 350px; margin-left: 10px;"
+        >
+
+            <option value="">
+                Seleccione una operación diaria
+            </option>
+
+            {% for operacion in operaciones_disponibles %}
+
+                <option
+                    value="{{ operacion.pk }}"
+                    {% if operacion_seleccionada_id == operacion.pk|stringformat:"s" %}
+                        selected
+                    {% endif %}
+                >
+                    {{ operacion }}
+                </option>
+
+            {% endfor %}
+
+        </select>
+
+        <button
+            type="submit"
+            class="button"
+            style="margin-left: 10px;"
+        >
+            Consultar
+        </button>
+
+    </form>
+
+    <!-- INFORMACIÓN DE LA OPERACIÓN -->
+
+    {% if operacion_seleccionada %}
+
+        <p style="margin-top: 15px; margin-bottom: 0;">
+
+            <strong>Operación seleccionada:</strong>
+            {{ operacion_seleccionada }}
+
+            {% if operacion_seleccionada.cerrada %}
+
+                <span style="color: #888; margin-left: 10px;">
+                    Consulta histórica. No se permiten modificaciones.
+                </span>
+
+            {% elif operacion_seleccionada.activa %}
+
+                <span style="color: green; margin-left: 10px;">
+                    Operación activa. Asignaciones editables.
+                </span>
+
+            {% else %}
+
+                <span style="color: #b7791f; margin-left: 10px;">
+                    Operación pendiente. Asignaciones editables.
+                </span>
+
+            {% endif %}
+
+        </p>
+
+        <!-- RESUMEN DE ESTACIONES Y PERSONAL -->
+
+        <div style="
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            padding: 15px;
+            background: #f5f7fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        ">
+
+            <div>
+                <div style="font-size: 24px; font-weight: bold;">
+                    {{ total_estaciones }}
+                </div>
+                <div>Estaciones de trabajo</div>
+            </div>
+
+            <div>
+                <div style="
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #198754;
+                ">
+                    {{ empleados_asignados }}
+                </div>
+                <div>Empleados asignados</div>
+            </div>
+
+            <div>
+                <div style="
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #b7791f;
+                ">
+                    {{ estaciones_vacantes }}
+                </div>
+                <div>Estaciones sin empleado</div>
+            </div>
+
+        </div>
+
+    {% else %}
+
+        <p style="margin-top: 15px; margin-bottom: 0;">
+            Seleccione una operación diaria para consultar
+            sus estaciones y asignaciones de personal.
+        </p>
+
+    {% endif %}
+
+</div>
+
+{{ block.super }}
+
+{% endblock %}
+
+
+<!-- BOTÓN DE GUARDADO ARRIBA DE LA TABLA -->
+
+{% block result_list %}
+
+    {% if operacion_seleccionada and not operacion_seleccionada.cerrada and cl.result_count %}
+
+        <div style="
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+        ">
+
+            <input
+                type="submit"
+                name="_save"
+                class="default"
+                value="Guardar asignaciones"
+                style="padding: 8px 20px;"
+            >
+
+        </div>
+
+    {% endif %}
+
+    {{ block.super }}
+
+{% endblock %}

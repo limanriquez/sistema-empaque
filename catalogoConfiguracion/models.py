@@ -52,7 +52,6 @@ class CodigoCaja(models.Model):
     def __str__(self):
         return self.codigo
 
-
 # ==========================================================
 # MODELO: CÓDIGO DE TARIMA
 # ==========================================================
@@ -85,9 +84,12 @@ class CodigoTarima(models.Model):
     )
 
     class Meta:
+
         db_table = "catalogo_configuracion_codigo_tarima"
+
         verbose_name = "Código de tarima"
         verbose_name_plural = "Códigos de tarima"
+
         ordering = ["id"]
 
         constraints = [
@@ -100,5 +102,20 @@ class CodigoTarima(models.Model):
             ),
         ]
 
+        # --------------------------------------------------
+        # ÍNDICES
+        # --------------------------------------------------
+
+        indexes = [
+            models.Index(
+                fields=["usado", "id"],
+                name="idx_codtar_usado_id",
+            ),
+        ]
+
     def __str__(self):
-        return f"{self.consecutivo:02d} - {self.codigo_tarima}"
+
+        return (
+            f"{self.consecutivo:02d} - "
+            f"{self.codigo_tarima}"
+        )

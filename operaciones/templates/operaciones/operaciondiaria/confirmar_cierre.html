@@ -1,0 +1,577 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <style>
+        /* Confirmación de cierre: estilos locales, sin dependencias externas. */
+        .operacion-cierre {
+            --oc-primary: #2563eb;
+            --oc-primary-dark: #1d4ed8;
+            --oc-ink: #172033;
+            --oc-muted: #64748b;
+            --oc-line: #e2e8f0;
+            --oc-surface: #ffffff;
+            --oc-soft: #f8fafc;
+            --oc-warning: #b45309;
+            max-width: 980px;
+            margin: 28px auto 42px;
+            padding: 0 18px;
+            color: var(--oc-ink);
+        }
+
+        .operacion-cierre * {
+            box-sizing: border-box;
+        }
+
+        .oc-card {
+            overflow: hidden;
+            background: var(--oc-surface);
+            border: 1px solid var(--oc-line);
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, .08);
+        }
+
+        .oc-header {
+            position: relative;
+            padding: 30px 34px 28px;
+            color: #fff;
+            background: linear-gradient(
+                120deg,
+                #172554 0%,
+                #1e40af 58%,
+                #2563eb 100%
+            );
+        }
+
+        .oc-header::after {
+            position: absolute;
+            right: -55px;
+            bottom: -115px;
+            width: 270px;
+            height: 270px;
+            content: "";
+            border: 1px solid rgba(255,255,255,.14);
+            border-radius: 50%;
+            box-shadow:
+                0 0 0 28px rgba(255,255,255,.045),
+                0 0 0 58px rgba(255,255,255,.035);
+            pointer-events: none;
+        }
+
+        .oc-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            color: #bfdbfe;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.25px;
+            text-transform: uppercase;
+        }
+
+        .oc-eyebrow-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #93c5fd;
+            box-shadow: 0 0 0 4px rgba(147,197,253,.17);
+        }
+
+        .oc-header h1 {
+            position: relative;
+            z-index: 1;
+            margin: 0 0 8px;
+            color: #fff;
+            font-size: clamp(23px, 3vw, 30px);
+            font-weight: 750;
+            letter-spacing: -.5px;
+            line-height: 1.2;
+        }
+
+        .oc-header p {
+            position: relative;
+            z-index: 1;
+            max-width: 620px;
+            margin: 0;
+            color: #dbeafe;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .oc-body {
+            padding: 30px 34px 32px;
+        }
+
+        .oc-section-heading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 17px;
+            color: var(--oc-ink);
+            font-size: 16px;
+            font-weight: 750;
+        }
+
+        .oc-section-icon {
+            display: inline-grid;
+            width: 30px;
+            height: 30px;
+            flex: 0 0 30px;
+            place-items: center;
+            color: var(--oc-primary);
+            background: #eff6ff;
+            border-radius: 9px;
+            font-size: 15px;
+        }
+
+        .oc-data-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 13px;
+            margin-bottom: 23px;
+        }
+
+        .oc-data-item {
+            min-width: 0;
+            padding: 17px 19px;
+            background: var(--oc-soft);
+            border: 1px solid var(--oc-line);
+            border-radius: 12px;
+        }
+
+        .oc-data-item-full {
+            grid-column: 1 / -1;
+        }
+
+        .oc-data-label {
+            display: block;
+            margin-bottom: 7px;
+            color: var(--oc-muted);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .9px;
+            text-transform: uppercase;
+        }
+
+        .oc-data-value {
+            display: block;
+            overflow-wrap: anywhere;
+            color: var(--oc-ink);
+            font-size: 17px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .oc-operation-number {
+            color: var(--oc-primary-dark);
+        }
+
+        .oc-lot-item {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .oc-lot-item .oc-data-label {
+            color: #15803d;
+        }
+
+        .oc-warning {
+            display: grid;
+            grid-template-columns: 42px minmax(0, 1fr);
+            gap: 14px;
+            margin: 22px 0;
+            padding: 19px 21px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-left: 4px solid #f59e0b;
+            border-radius: 12px;
+        }
+
+        .oc-warning-icon {
+            display: grid;
+            width: 40px;
+            height: 40px;
+            place-items: center;
+            color: #92400e;
+            background: #fef3c7;
+            border-radius: 11px;
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .oc-warning h3 {
+            margin: 1px 0 5px;
+            color: #92400e;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .oc-warning-count {
+            display: inline-block;
+            margin: 2px 0 5px;
+            color: #92400e;
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        .oc-warning p {
+            margin: 0;
+            color: #78350f;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .oc-consequences {
+            margin-top: 25px;
+            padding: 20px 22px;
+            background: #f8fafc;
+            border: 1px solid var(--oc-line);
+            border-radius: 12px;
+        }
+
+        .oc-consequences h3 {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin: 0 0 14px;
+            color: var(--oc-ink);
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .oc-consequences ul {
+            display: grid;
+            gap: 10px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .oc-consequences li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            color: #475569;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .oc-check {
+            display: inline-grid;
+            width: 19px;
+            height: 19px;
+            flex: 0 0 19px;
+            margin-top: 1px;
+            place-items: center;
+            color: #15803d;
+            background: #dcfce7;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .oc-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 11px;
+            margin-top: 27px;
+            padding-top: 22px;
+            border-top: 1px solid var(--oc-line);
+        }
+
+        .oc-button {
+            display: inline-flex;
+            min-height: 44px;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 0 20px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 750;
+            line-height: 1;
+            text-decoration: none !important;
+            cursor: pointer;
+            transition:
+                background .18s ease,
+                border-color .18s ease,
+                box-shadow .18s ease,
+                transform .18s ease;
+        }
+
+        .oc-button:focus-visible {
+            outline: 3px solid rgba(37,99,235,.25);
+            outline-offset: 2px;
+        }
+
+        .oc-button-secondary {
+            color: #334155 !important;
+            background: #fff;
+            border-color: #cbd5e1;
+        }
+
+        .oc-button-secondary:hover {
+            color: #0f172a !important;
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+
+        .oc-button-primary {
+            color: #fff !important;
+            background: #b42318;
+            border-color: #b42318;
+            box-shadow: 0 4px 10px rgba(180,35,24,.18);
+        }
+
+        .oc-button-primary:hover {
+            color: #fff !important;
+            background: #912018;
+            border-color: #912018;
+            box-shadow: 0 6px 14px rgba(180,35,24,.22);
+            transform: translateY(-1px);
+        }
+
+        .oc-footer {
+            padding: 13px 24px;
+            color: #94a3b8;
+            background: #fbfdff;
+            border-top: 1px solid #edf2f7;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        @media (max-width: 640px) {
+            .operacion-cierre {
+                margin: 14px auto 28px;
+                padding: 0 10px;
+            }
+
+            .oc-header {
+                padding: 25px 22px;
+            }
+
+            .oc-body {
+                padding: 23px 20px 24px;
+            }
+
+            .oc-data-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .oc-data-item-full {
+                grid-column: auto;
+            }
+
+            .oc-warning {
+                grid-template-columns: 34px minmax(0, 1fr);
+                padding: 16px;
+            }
+
+            .oc-warning-icon {
+                width: 34px;
+                height: 34px;
+            }
+
+            .oc-actions {
+                flex-direction: column-reverse;
+                align-items: stretch;
+            }
+
+            .oc-button {
+                width: 100%;
+                min-height: 46px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .oc-button {
+                transition: none;
+            }
+
+            .oc-button-primary:hover {
+                transform: none;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="operacion-cierre">
+
+    <section class="oc-card" aria-labelledby="oc-title">
+
+        <!-- ENCABEZADO -->
+        <header class="oc-header">
+            <div class="oc-eyebrow">
+                <span class="oc-eyebrow-dot"></span>
+                Control de operaciones
+            </div>
+
+            <h1 id="oc-title">Cerrar operación diaria</h1>
+
+            <p>
+                Verifique la información de la jornada antes de confirmar el cierre.
+            </p>
+        </header>
+
+        <div class="oc-body">
+
+            <!-- INFORMACIÓN DE LA JORNADA -->
+            <h2 class="oc-section-heading">
+                <span class="oc-section-icon" aria-hidden="true">▦</span>
+                Información de la jornada
+            </h2>
+
+            <div class="oc-data-grid">
+
+                <div class="oc-data-item">
+                    <span class="oc-data-label">Operación diaria</span>
+                    <span class="oc-data-value oc-operation-number">
+                        #{{ operacion.pk }}
+                    </span>
+                </div>
+
+                <div class="oc-data-item">
+                    <span class="oc-data-label">Fecha operativa</span>
+                    <span class="oc-data-value">
+                        {{ operacion.fecha|date:"d/m/Y" }}
+                    </span>
+                </div>
+
+                {% if relacion %}
+                    <div class="oc-data-item oc-data-item-full oc-lot-item">
+                        <span class="oc-data-label">
+                            Lote de empaque relacionado
+                        </span>
+                        <span class="oc-data-value">
+                            {{ relacion.lote_empaque }}
+                        </span>
+                    </div>
+                {% endif %}
+
+            </div>
+
+            <!-- ADVERTENCIA DE TARIMAS ABIERTAS -->
+            {% if tarimas_abiertas %}
+                <aside
+                    class="oc-warning"
+                    role="status"
+                    aria-label="Tarimas abiertas"
+                >
+                    <div class="oc-warning-icon" aria-hidden="true">!</div>
+
+                    <div>
+                        <h3>Hay tarimas pendientes de cierre</h3>
+
+                        <div class="oc-warning-count">
+                            {{ tarimas_abiertas }}
+                        </div>
+
+                        <p>
+                            Existen tarimas que permanecen abiertas.
+                            Conservarán su estado actual y podrán continuar
+                            su proceso posteriormente. Esta situación no
+                            impide cerrar la operación diaria.
+                        </p>
+                    </div>
+                </aside>
+            {% endif %}
+
+            <!-- CONSECUENCIAS DEL CIERRE -->
+            <section
+                class="oc-consequences"
+                aria-labelledby="oc-consequences-title"
+            >
+                <h3 id="oc-consequences-title">
+                    <span class="oc-section-icon" aria-hidden="true">✓</span>
+                    Al confirmar el cierre
+                </h3>
+
+                <ul>
+                    <li>
+                        <span class="oc-check" aria-hidden="true">✓</span>
+                        <span>
+                            La operación diaria quedará cerrada y se
+                            registrarán la fecha, la hora y la persona
+                            responsable.
+                        </span>
+                    </li>
+
+                    <li>
+                        <span class="oc-check" aria-hidden="true">✓</span>
+                        <span>
+                            El LoteEmpaque conservará su estado actual;
+                            no se cerrará automáticamente.
+                        </span>
+                    </li>
+
+                    <li>
+                        <span class="oc-check" aria-hidden="true">✓</span>
+                        <span>
+                            Las tarimas abiertas conservarán su estado
+                            y su información.
+                        </span>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- FORMULARIO DE CONFIRMACIÓN -->
+            <form method="post">
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    name="action"
+                    value="{{ action_name }}"
+                >
+
+                {% for object_id in selected_ids %}
+                    <input
+                        type="hidden"
+                        name="{{ action_checkbox_name }}"
+                        value="{{ object_id }}"
+                    >
+                {% endfor %}
+
+                <input
+                    type="hidden"
+                    name="confirmar_cierre"
+                    value="1"
+                >
+
+                <!-- BOTONES -->
+                <div class="oc-actions">
+
+                    <a
+                        href="{% url 'admin:operaciones_operaciondiaria_changelist' %}"
+                        class="oc-button oc-button-secondary"
+                    >
+                        Cancelar
+                    </a>
+
+                    <button
+                        type="submit"
+                        class="oc-button oc-button-primary"
+                    >
+                        <span aria-hidden="true">■</span>
+                        Confirmar cierre de operación
+                    </button>
+
+                </div>
+            </form>
+
+        </div>
+
+        <!-- PIE -->
+        <footer class="oc-footer">
+            Sistema de empaque · Control de operaciones diarias
+        </footer>
+
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,642 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrastyle %}
+    {{ block.super }}
+
+    <style>
+        /* ==================================================
+           CONFIRMACIÓN DE INICIO DE OPERACIÓN
+           Diseño visual compatible con AdminLTE 4.
+           Estilos independientes dentro de esta plantilla.
+           ================================================== */
+
+        .operacion-inicio {
+            --oi-primary: #2563eb;
+            --oi-primary-dark: #1d4ed8;
+            --oi-ink: #172033;
+            --oi-muted: #64748b;
+            --oi-line: #e2e8f0;
+            --oi-surface: #ffffff;
+            --oi-soft: #f8fafc;
+            --oi-success: #15803d;
+
+            max-width: 980px;
+            margin: 28px auto 42px;
+            padding: 0 18px;
+            color: var(--oi-ink);
+        }
+
+        .operacion-inicio * {
+            box-sizing: border-box;
+        }
+
+        .oi-card {
+            overflow: hidden;
+            background: var(--oi-surface);
+            border: 1px solid var(--oi-line);
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, .08);
+        }
+
+        /* ENCABEZADO */
+
+        .oi-header {
+            position: relative;
+            padding: 30px 34px 28px;
+            color: #fff;
+            background: linear-gradient(
+                120deg,
+                #172554 0%,
+                #1e40af 58%,
+                #2563eb 100%
+            );
+        }
+
+        .oi-header::after {
+            position: absolute;
+            right: -55px;
+            bottom: -115px;
+            width: 270px;
+            height: 270px;
+            content: "";
+            border: 1px solid rgba(255,255,255,.14);
+            border-radius: 50%;
+            box-shadow:
+                0 0 0 28px rgba(255,255,255,.045),
+                0 0 0 58px rgba(255,255,255,.035);
+            pointer-events: none;
+        }
+
+        .oi-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            color: #bfdbfe;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.25px;
+            text-transform: uppercase;
+        }
+
+        .oi-eyebrow-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #93c5fd;
+            box-shadow: 0 0 0 4px rgba(147,197,253,.17);
+        }
+
+        .oi-header h1 {
+            position: relative;
+            z-index: 1;
+            margin: 0 0 8px;
+            color: #fff;
+            font-size: clamp(23px, 3vw, 30px);
+            font-weight: 750;
+            letter-spacing: -.5px;
+            line-height: 1.2;
+        }
+
+        .oi-header p {
+            position: relative;
+            z-index: 1;
+            max-width: 620px;
+            margin: 0;
+            color: #dbeafe;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* CUERPO */
+
+        .oi-body {
+            padding: 30px 34px 32px;
+        }
+
+        .oi-section-heading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 17px;
+            color: var(--oi-ink);
+            font-size: 16px;
+            font-weight: 750;
+        }
+
+        .oi-section-icon {
+            display: inline-grid;
+            width: 30px;
+            height: 30px;
+            flex: 0 0 30px;
+            place-items: center;
+            color: var(--oi-primary);
+            background: #eff6ff;
+            border-radius: 9px;
+            font-size: 15px;
+        }
+
+        /* INFORMACIÓN DE LA OPERACIÓN */
+
+        .oi-data-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 13px;
+            margin-bottom: 23px;
+        }
+
+        .oi-data-item {
+            min-width: 0;
+            padding: 17px 19px;
+            background: var(--oi-soft);
+            border: 1px solid var(--oi-line);
+            border-radius: 12px;
+        }
+
+        .oi-data-item-full {
+            grid-column: 1 / -1;
+        }
+
+        .oi-data-label {
+            display: block;
+            margin-bottom: 7px;
+            color: var(--oi-muted);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .9px;
+            text-transform: uppercase;
+        }
+
+        .oi-data-value {
+            display: block;
+            overflow-wrap: anywhere;
+            color: var(--oi-ink);
+            font-size: 17px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .oi-operation-number {
+            color: var(--oi-primary-dark);
+        }
+
+        .oi-lot-item {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .oi-lot-item .oi-data-label {
+            color: #15803d;
+        }
+
+        .oi-lot-item .oi-data-value {
+            color: #166534;
+        }
+
+        /* PREPARACIÓN DE LA OPERACIÓN */
+
+        .oi-process {
+            margin: 22px 0;
+            padding: 20px 22px;
+            background: #f8fafc;
+            border: 1px solid var(--oi-line);
+            border-radius: 12px;
+        }
+
+        .oi-process-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 15px;
+            color: var(--oi-ink);
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .oi-process-title-icon {
+            display: inline-grid;
+            width: 30px;
+            height: 30px;
+            flex: 0 0 30px;
+            place-items: center;
+            color: var(--oi-primary);
+            background: #dbeafe;
+            border-radius: 9px;
+            font-size: 16px;
+        }
+
+        .oi-process-list {
+            display: grid;
+            gap: 12px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .oi-process-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            color: #475569;
+            font-size: 13px;
+            line-height: 1.65;
+        }
+
+        .oi-process-check {
+            display: inline-grid;
+            width: 19px;
+            height: 19px;
+            flex: 0 0 19px;
+            margin-top: 1px;
+            place-items: center;
+            color: #1d4ed8;
+            background: #dbeafe;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        /* ADVERTENCIA DEL LOTE */
+
+        .oi-lot-warning {
+            display: grid;
+            grid-template-columns: 42px minmax(0, 1fr);
+            gap: 14px;
+            margin: 22px 0;
+            padding: 19px 21px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-left: 4px solid #f59e0b;
+            border-radius: 12px;
+        }
+
+        .oi-warning-icon {
+            display: grid;
+            width: 40px;
+            height: 40px;
+            place-items: center;
+            color: #92400e;
+            background: #fef3c7;
+            border-radius: 11px;
+            font-size: 19px;
+            font-weight: 800;
+        }
+
+        .oi-warning-content strong {
+            display: block;
+            margin: 1px 0 5px;
+            color: #92400e;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .oi-warning-content p {
+            margin: 0;
+            color: #78350f;
+            font-size: 13px;
+            line-height: 1.65;
+        }
+
+        /* BOTONES */
+
+        .oi-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 11px;
+            margin-top: 27px;
+            padding-top: 22px;
+            border-top: 1px solid var(--oi-line);
+        }
+
+        .oi-button {
+            display: inline-flex;
+            min-height: 44px;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 0 20px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 750;
+            line-height: 1;
+            text-decoration: none !important;
+            cursor: pointer;
+            transition:
+                background .18s ease,
+                border-color .18s ease,
+                box-shadow .18s ease,
+                transform .18s ease;
+        }
+
+        .oi-button:focus-visible {
+            outline: 3px solid rgba(37,99,235,.25);
+            outline-offset: 2px;
+        }
+
+        .oi-button-secondary {
+            color: #334155 !important;
+            background: #fff;
+            border-color: #cbd5e1;
+        }
+
+        .oi-button-secondary:hover {
+            color: #0f172a !important;
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+
+        .oi-button-primary {
+            color: #fff !important;
+            background: #15803d;
+            border-color: #15803d;
+            box-shadow: 0 4px 10px rgba(21,128,61,.18);
+        }
+
+        .oi-button-primary:hover {
+            color: #fff !important;
+            background: #166534;
+            border-color: #166534;
+            box-shadow: 0 6px 14px rgba(21,128,61,.22);
+            transform: translateY(-1px);
+        }
+
+        /* PIE */
+
+        .oi-footer {
+            padding: 13px 24px;
+            color: #94a3b8;
+            background: #fbfdff;
+            border-top: 1px solid #edf2f7;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        /* RESPONSIVE */
+
+        @media (max-width: 640px) {
+            .operacion-inicio {
+                margin: 14px auto 28px;
+                padding: 0 10px;
+            }
+
+            .oi-header {
+                padding: 25px 22px;
+            }
+
+            .oi-body {
+                padding: 23px 20px 24px;
+            }
+
+            .oi-data-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .oi-data-item-full {
+                grid-column: auto;
+            }
+
+            .oi-lot-warning {
+                grid-template-columns: 34px minmax(0, 1fr);
+                padding: 16px;
+            }
+
+            .oi-warning-icon {
+                width: 34px;
+                height: 34px;
+            }
+
+            .oi-actions {
+                flex-direction: column-reverse;
+                align-items: stretch;
+            }
+
+            .oi-button {
+                width: 100%;
+                min-height: 46px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .oi-button {
+                transition: none;
+            }
+
+            .oi-button-primary:hover {
+                transform: none;
+            }
+        }
+    </style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="operacion-inicio">
+
+    <section class="oi-card" aria-labelledby="oi-title">
+
+        <!-- ENCABEZADO -->
+        <header class="oi-header">
+
+            <div class="oi-eyebrow">
+                <span class="oi-eyebrow-dot"></span>
+                Control de operaciones
+            </div>
+
+            <h1 id="oi-title">Iniciar operación diaria</h1>
+
+            <p>
+                Confirme la apertura de la jornada y la preparación
+                de las estaciones de trabajo.
+            </p>
+
+        </header>
+
+
+        <div class="oi-body">
+
+            <!-- INFORMACIÓN DE LA JORNADA -->
+            <h2 class="oi-section-heading">
+                <span class="oi-section-icon" aria-hidden="true">▦</span>
+                Información de la jornada
+            </h2>
+
+
+            <div class="oi-data-grid">
+
+                <div class="oi-data-item">
+
+                    <span class="oi-data-label">
+                        Operación diaria
+                    </span>
+
+                    <span class="oi-data-value oi-operation-number">
+                        #{{ operacion.pk }}
+                    </span>
+
+                </div>
+
+
+                <div class="oi-data-item">
+
+                    <span class="oi-data-label">
+                        Fecha operativa
+                    </span>
+
+                    <span class="oi-data-value">
+                        {{ operacion.fecha|date:"d/m/Y" }}
+                    </span>
+
+                </div>
+
+
+                <div class="oi-data-item oi-data-item-full oi-lot-item">
+
+                    <span class="oi-data-label">
+                        Lote de empaque que se utilizará
+                    </span>
+
+                    <span class="oi-data-value">
+                        {{ lote }}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- INFORMACIÓN DEL PROCESO -->
+            <section class="oi-process">
+
+                <h3 class="oi-process-title">
+                    <span class="oi-process-title-icon" aria-hidden="true">
+                        ⚙
+                    </span>
+                    Preparación de la operación
+                </h3>
+
+                <ul class="oi-process-list">
+
+                    <li>
+                        <span class="oi-process-check" aria-hidden="true">✓</span>
+                        <span>
+                            Al confirmar, el sistema consultará las
+                            estaciones de trabajo activas y preparará
+                            sus registros para esta jornada.
+                        </span>
+                    </li>
+
+                    <li>
+                        <span class="oi-process-check" aria-hidden="true">✓</span>
+                        <span>
+                            Si existe una operación anterior cerrada
+                            con asignaciones, recuperará automáticamente
+                            los empleados que continúen activos.
+                        </span>
+                    </li>
+
+                    <li>
+                        <span class="oi-process-check" aria-hidden="true">✓</span>
+                        <span>
+                            Las estaciones sin empleado asignado
+                            permanecerán disponibles para su captura
+                            desde la administración de empleados por puesto.
+                        </span>
+                    </li>
+
+                </ul>
+
+            </section>
+
+
+            <!-- ADVERTENCIA DEL LOTE -->
+            <aside class="oi-lot-warning">
+
+                <div class="oi-warning-icon" aria-hidden="true">
+                    !
+                </div>
+
+                <div class="oi-warning-content">
+
+                    <strong>
+                        Importante: continuidad del LoteEmpaque
+                    </strong>
+
+                    <p>
+                        Se utilizará el lote de empaque abierto para
+                        esta jornada. El lote no se cerrará al terminar
+                        la operación diaria; su cierre se realiza
+                        independientemente desde su propia administración.
+                    </p>
+
+                </div>
+
+            </aside>
+
+
+            <!-- FORMULARIO DE CONFIRMACIÓN -->
+            <form method="post">
+
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    name="action"
+                    value="{{ action_name }}"
+                >
+
+                {% for object_id in selected_ids %}
+
+                    <input
+                        type="hidden"
+                        name="{{ action_checkbox_name }}"
+                        value="{{ object_id }}"
+                    >
+
+                {% endfor %}
+
+                <input
+                    type="hidden"
+                    name="confirmar_inicio"
+                    value="1"
+                >
+
+
+                <!-- BOTONES -->
+                <div class="oi-actions">
+
+                    <a
+                        href="{% url 'admin:operaciones_operaciondiaria_changelist' %}"
+                        class="oi-button oi-button-secondary"
+                    >
+                        Cancelar
+                    </a>
+
+                    <button
+                        type="submit"
+                        class="oi-button oi-button-primary"
+                    >
+                        <span aria-hidden="true">✓</span>
+                        Confirmar y preparar operación
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+
+        <!-- PIE -->
+        <footer class="oi-footer">
+            Sistema de empaque · Control de operaciones diarias
+        </footer>
+
+    </section>
+
+</div>
+
+{% endblock %}
