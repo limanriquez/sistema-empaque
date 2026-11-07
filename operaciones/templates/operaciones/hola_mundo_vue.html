@@ -1,0 +1,35 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head_title %}
+    Hola Mundo Vue
+{% endblock head_title %}
+
+{% block personal_styles %}
+<link rel="stylesheet"
+      href="{% static 'operaciones/css/hola_mundo_vue.css' %}">
+{% endblock personal_styles %}
+
+{% block contenido %}
+
+<div style="padding-left: 40px; padding-right: 40px;">
+
+    <div class="content dx-viewport">
+
+        <!-- Aplicación Vue -->
+        <div id="app"></div>
+
+    </div>
+
+</div>
+
+{% endblock contenido %}
+
+{% block scripts_js %}
+
+<script type="module"
+        src="{% static 'operaciones/js/hola_mundo_vue.js' %}">
+</script>
+
+{% endblock scripts_js %}

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head_title %}
+    Captura de cajas Vue
+{% endblock head_title %}
+
+{% block personal_styles %}
+<link rel="stylesheet"
+      href="{% static 'operaciones/css/captura_caja_vue.css' %}">
+{% endblock personal_styles %}
+
+{% block contenido %}
+
+<div style="padding-left: 40px; padding-right: 40px;">
+
+    <div class="content dx-viewport">
+
+        <div
+            id="app"
+            data-operacion-diaria-id="{{ operacion_diaria.id|default:'' }}"
+            data-lote-empaque-id="{{ lote_empaque.id|default:'' }}"
+            data-variedad-id="{{ variedad.id|default:'' }}"
+        ></div>
+
+    </div>
+
+</div>
+
+{% endblock contenido %}
+
+{% block scripts_js %}
+<script type="module"
+        src="{% static 'operaciones/js/captura_caja_vue.js' %}">
+</script>
+{% endblock scripts_js %}

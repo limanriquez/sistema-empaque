@@ -1,0 +1,226 @@
+
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load general_tags %}
+
+{% block ng_app %}
+<html class="no-js" lang="es" ng-app="operaciones.operacion">
+{% endblock ng_app %}
+
+{% block head_title %} {{ title }} {% endblock head_title %}
+
+{% block personal_styles %}
+{% endblock personal_styles %}
+
+{% block contenido %}
+<style>
+    .sin-padding {
+        padding: 0px !important;
+        text-align: center;
+    }
+
+    .tarjeta-codigo-caja {
+        background: linear-gradient(135deg, #263746, #40596d);
+        color: #ffffff;
+        border-radius: 12px;
+        padding: 18px 25px;
+        min-height: 105px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+        margin-bottom: 15px;
+    }
+
+    .tarjeta-codigo-caja .titulo {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        opacity: 0.8;
+        margin-bottom: 5px;
+    }
+
+    .tarjeta-codigo-caja .codigo {
+        font-size: 34px;
+        font-weight: bold;
+        letter-spacing: 7px;
+        line-height: 1.2;
+    }
+
+    .tarjeta-codigo-caja .descripcion {
+        font-size: 11px;
+        opacity: 0.7;
+        margin-top: 5px;
+    }
+
+    .campo-captura-caja {
+        border: 1px solid #d6dce2;
+        border-radius: 8px;
+        padding: 15px;
+        background-color: #f8fafc;
+    }
+</style>
+
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/alertify.min.css' %}" />
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/themes/default.min.css' %}" />
+
+<div ng-controller='CapturaCaja as vm'
+     ng-init="vm.inicializar(
+        '{{ operacion_diaria.id|default:'' }}',
+        '{{ lote_empaque.id|default:'' }}',
+        '{{ variedad.id|default:'' }}'
+     )"
+     style="padding-left: 40px; padding-right: 40px;">
+
+    {% initial_loader %}
+
+    <div class="content dx-viewport" {% initial_loader_hide %}>
+
+        <div dx-load-panel="vm.loadPanels.basicOptions"></div>
+
+        <!-- CÓDIGO DE CAJA GENERADO -->
+        <div class="row" style="margin-top: 15px;">
+            <div class="col-md-12">
+                <div class="tarjeta-codigo-caja">
+                    <div class="titulo">Código de identificación de caja</div>
+                    <div class="codigo">----</div>
+                    <div class="descripcion">Código único asignado al guardar la caja</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INFORMACIÓN DE LA CAJA -->
+        <div class="row">
+            <div class="col-md-9 col-xs-9">
+                <div class="dx-fieldset-header" style="margin-bottom: 5px;">
+                    Información de la caja
+                </div>
+            </div>
+        </div>
+
+        <div class="rowdgr"
+             style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+
+            <!-- FILA 1: CAPTURA Y ESTACIÓN -->
+            <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <span>Código de captura:</span>
+                    <div dx-text-box="vm.textBox.TxtCodigoCapturaOptions"></div>
+                </div>
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <span>Estación de trabajo:</span>
+                    <div dx-text-box="vm.textBox.TxtEstacionOptions"></div>
+                </div>
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <span>Empleado:</span>
+                    <div dx-text-box="vm.textBox.TxtEmpleadoOptions"></div>
+                </div>
+
+            </div>
+
+            <!-- FILA 2: PRODUCTO -->
+            <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <span>Clave de producto:</span>
+                    <div dx-text-box="vm.textBox.TxtClaveProductoOptions"></div>
+                </div>
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <span>Producto de empaque:</span>
+                    <div dx-text-box="vm.textBox.TxtProductoEmpaqueOptions"></div>
+                </div>
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <span>Precio de caja:</span>
+                    <div dx-text-box="vm.textBox.TxtPrecioCajaOptions"></div>
+                </div>
+
+            </div>
+
+            <!-- FILA 3: CARACTERÍSTICAS DEL PRODUCTO -->
+            <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <span>Calidad:</span>
+                    <div dx-text-box="vm.textBox.TxtCalidadOptions"></div>
+                </div>
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <span>Tamaño:</span>
+                    <div dx-text-box="vm.textBox.TxtTamanoOptions"></div>
+                </div>
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <span>Variedad:</span>
+                    <div dx-text-box="vm.textBox.TxtVariedadOptions"></div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- SELECCIÓN DE TARIMA -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="dx-fieldset-header" style="margin-bottom: 5px;">
+                    Selección de tarima
+                </div>
+            </div>
+        </div>
+
+        <div class="rowdgr"
+             style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+
+            <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <span>Tarima seleccionada:</span>
+                    <div dx-select-box="vm.selectBox.CmbTarimaOptions"></div>
+                </div>
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                </div>
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ACCIONES -->
+        <div class="rowdgr"
+             style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+
+            <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                </div>
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                </div>
+
+                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                    <div dx-button="vm.button.BtnLimpiarOptions"></div>
+                    <div dx-button="vm.button.BtnGuardarCajaOptions"></div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+{% endblock contenido %}
+
+{% block scripts_js %}
+<script type="text/javascript" src="{% static 'javascripts/inventarios.config.js' %}"></script>
+<script type="text/javascript" src="{% static 'operaciones/js/operacion.module.js' %}"></script>
+<script type="text/javascript" src="{% static 'operaciones/js/controllers/capturaCaja.controller.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OverlayScrollbars/2.1.0/js/OverlayScrollbars.min.js"></script>
+{% endblock scripts_js %}

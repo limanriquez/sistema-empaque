@@ -4,7 +4,11 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 #router.register('puesto',PuestoViewSet)
-
+router.register(
+    'calidades',
+    CalidadViewSet,
+    basename='calidad'
+)
 
 
 app_name = 'catalogos'
