@@ -34,20 +34,6 @@ var e=Object.defineProperty,t=Object.getOwnPropertyDescriptor,n=Object.getOwnPro
             <!-- CODIGO Y ACCIONES -->
             <div class="captura-toolbar">
 
-                <div class="codigo-identificacion">
-                    <div class="codigo-textos">
-                        <div class="codigo-titulo">
-                            Código de identificación de caja
-                        </div>
-
-                        <div class="codigo-valor">----</div>
-
-                        <div class="codigo-descripcion">
-                            Código único asignado al guardar la caja
-                        </div>
-                    </div>
-                </div>
-
                 <div class="acciones">
 
                     <DxButton
