@@ -70,7 +70,10 @@ export default defineConfig(({ mode }) => {
                 input: archivoEntrada,
 
                 output: {
+                    // JavaScript con nombre fijo.
                     entryFileNames: `js/${modulo}.js`,
+
+                    // Chunks con nombre fijo.
                     chunkFileNames: 'js/[name].js',
 
                     assetFileNames: (assetInfo) => {

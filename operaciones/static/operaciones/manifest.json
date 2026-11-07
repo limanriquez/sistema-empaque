@@ -1,0 +1,28 @@
+{
+  "apps/operaciones/modules/captura_caja_vue/captura_caja_vue.html": {
+    "file": "js/captura_caja_vue-HmBtMFLN.js",
+    "name": "captura_caja_vue",
+    "src": "apps/operaciones/modules/captura_caja_vue/captura_caja_vue.html",
+    "isEntry": true,
+    "css": [
+      "css/captura_caja_vue-V-qtJKWx.css"
+    ],
+    "assets": [
+      "fonts/dxicons-Dxbhak7I.woff2",
+      "fonts/dxicons-cbyon-Qq.woff",
+      "fonts/dxicons-85JT7BT4.ttf"
+    ]
+  },
+  "node_modules/devextreme/dist/css/icons/dxicons.ttf": {
+    "file": "fonts/dxicons-85JT7BT4.ttf",
+    "src": "node_modules/devextreme/dist/css/icons/dxicons.ttf"
+  },
+  "node_modules/devextreme/dist/css/icons/dxicons.woff": {
+    "file": "fonts/dxicons-cbyon-Qq.woff",
+    "src": "node_modules/devextreme/dist/css/icons/dxicons.woff"
+  },
+  "node_modules/devextreme/dist/css/icons/dxicons.woff2": {
+    "file": "fonts/dxicons-Dxbhak7I.woff2",
+    "src": "node_modules/devextreme/dist/css/icons/dxicons.woff2"
+  }
+}
