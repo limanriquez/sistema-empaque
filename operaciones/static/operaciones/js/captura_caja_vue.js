@@ -33,9 +33,7 @@ var e=Object.defineProperty,t=Object.getOwnPropertyDescriptor,n=Object.getOwnPro
 
             <!-- CODIGO Y ACCIONES -->
             <div class="captura-toolbar">
-
                 <div class="acciones">
-
                     <DxButton
                         text="Limpiar"
                         icon="clear"

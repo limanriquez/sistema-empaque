@@ -149,9 +149,7 @@ const App = {
 
             <!-- CODIGO Y ACCIONES -->
             <div class="captura-toolbar">
-
                 <div class="acciones">
-
                     <DxButton
                         text="Limpiar"
                         icon="clear"
