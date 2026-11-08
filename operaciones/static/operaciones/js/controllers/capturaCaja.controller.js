@@ -1,4 +1,3 @@
-
 (function () {
     'use strict';
 
@@ -6,9 +5,9 @@
         .module('operaciones.operacion.controllers')
         .controller('CapturaCaja', CapturaCajaController);
 
-    CapturaCajaController.$inject = ['$scope'];
+    CapturaCajaController.$inject = ['$http', '$q'];
 
-    function CapturaCajaController($scope) {
+    function CapturaCajaController($http, $q) {
 
         var vm = this;
 
@@ -20,9 +19,27 @@
         vm.loteEmpaqueId = null;
         vm.variedadId = null;
 
+        vm.txtCodigoCaptura = '';
+        vm.txtCodigoUnico = '';
+
+        vm.txtEstacion = '';
+        vm.txtEmpleado = '';
+
+        vm.txtClaveProducto = '';
+        vm.txtProductoEmpaque = '';
+        vm.txtPrecioCaja = '';
+
+        vm.txtCalidad = '';
+        vm.txtTamano = '';
+        vm.txtVariedad = '';
+
+        vm.cmbTarima = null;
+
+        vm.isLoadPanelVisible = false;
+
         // --------------------------------------------------
         // INICIALIZACIÓN
-        // Recibe los tres parámetros enviados desde ng-init
+        // Recibe los parámetros enviados desde ng-init
         // --------------------------------------------------
 
         vm.inicializar = function (operacionId, loteId, variedadId) {
@@ -31,35 +48,256 @@
             vm.loteEmpaqueId = loteId;
             vm.variedadId = variedadId;
 
-            $scope.txtCodigoCaptura = '';
+            vm.txtCodigoCaptura = '';
 
-            $scope.txtEstacion = '';
-            $scope.txtEmpleado = '';
+            vm.txtEstacion = '';
+            vm.txtEmpleado = '';
 
-            $scope.txtClaveProducto = '';
-            $scope.txtProductoEmpaque = '';
-            $scope.txtPrecioCaja = '';
+            vm.txtClaveProducto = '';
+            vm.txtProductoEmpaque = '';
+            vm.txtPrecioCaja = '';
 
-            $scope.txtCalidad = '';
-            $scope.txtTamano = '';
-            $scope.txtVariedad = '';
+            vm.txtCalidad = '';
+            vm.txtTamano = '';
+            vm.txtVariedad = '';
 
-            $scope.cmbTarima = null;
+            vm.cmbTarima = null;
+
+            vm.isLoadPanelVisible = false;
 
         };
+
+        // --------------------------------------------------
+        // CONSULTAR CÓDIGO DE CAPTURA
+        // --------------------------------------------------
+
+        function consultarCodigoCaptura() {
+
+            var codigo = (vm.txtCodigoCaptura || '')
+                .replace(/\s/g, '')
+                .toUpperCase();
+
+            // Evitar consultas cuando el campo está vacío
+            if (!codigo) {
+                return;
+            }
+
+            // Validar estructura del código: 01CS110
+            if (!/^\d{2}[A-Z0-9]{2}\d{3}$/.test(codigo)) {
+
+                alert('El código debe tener el formato 01CS110.');
+
+                limpiarResultados();
+                return;
+            }
+
+            // ----------------------------------------------
+            // 1. FRAGMENTAR CÓDIGO
+            // ----------------------------------------------
+
+            var idEstacion = parseInt(codigo.substring(0, 2), 10);
+
+            var codigoProducto = codigo.substring(2, 4);
+
+            var nombreTamano = codigo.substring(4, 7);
+
+            // ----------------------------------------------
+            // 2. OBTENER OPERACIÓN DIARIA
+            // ----------------------------------------------
+
+            var operacionDiariaId = vm.operacionDiariaId;
+
+            if (!operacionDiariaId) {
+
+                alert('No se ha identificado la operación diaria.');
+
+                limpiarResultados();
+                return;
+            }
+
+            // ----------------------------------------------
+            // 3. LIMPIAR RESULTADOS ANTERIORES
+            // ----------------------------------------------
+
+            limpiarResultados();
+
+            vm.isLoadPanelVisible = true;
+
+            // ----------------------------------------------
+            // 4. EJECUTAR LAS TRES CONSULTAS EN PARALELO
+            // ----------------------------------------------
+
+            $q.all([
+
+                // Consulta 1: empleado asignado a estación
+                $http.get('/obtener_empleado_estacion/', {
+                    params: {
+                        operacion_diaria_id: operacionDiariaId,
+                        estacion_trabajo_id: idEstacion
+                    }
+                }),
+
+                // Consulta 2: producto de empaque
+                $http.get('/obtener_producto_empaque/', {
+                    params: {
+                        codigo: codigoProducto
+                    }
+                }),
+
+                // Consulta 3: tamaño
+                $http.get('/obtener_tamano/', {
+                    params: {
+                        nombre: nombreTamano
+                    }
+                })
+
+            ]).then(function (responses) {
+
+                // ------------------------------------------
+                // 5. RECUPERAR RESPUESTAS
+                // ------------------------------------------
+
+                var empleado = responses[0].data;
+
+                var producto = responses[1].data.producto;
+
+                var tamano = responses[2].data.tamano;
+
+                // ------------------------------------------
+                // GUARDAR IDENTIFICADORES
+                // ------------------------------------------
+
+                vm.idEstacion = empleado.estacion_trabajo_id;
+                vm.empleadoId = empleado.empleado_id;
+                vm.productoId = producto.id;
+                vm.tamanoId = tamano.id;
+
+                // ------------------------------------------
+                // MOSTRAR INFORMACIÓN EN LOS CONTROLES
+                // ------------------------------------------
+
+                vm.txtEstacion = vm.idEstacion;
+                vm.txtEmpleado = vm.empleadoId;
+
+                vm.txtClaveProducto = producto.codigo;
+                vm.txtProductoEmpaque = producto.nombre;
+
+                // Costo del producto de empaque
+                vm.txtPrecioCaja = producto.costo_empaque;
+
+                // Calidad asociada al producto
+                vm.calidadId = producto.calidad_id;
+                vm.txtCalidad = producto.calidad__nombre;
+
+                // Tamaño consultado del catálogo
+                vm.txtTamano = tamano.nombre;
+
+                // Variedad recibida desde Django mediante ng-init
+                vm.txtVariedad = vm.variedadId;
+                // ------------------------------------------
+                // 8. MOSTRAR RESULTADOS EN ALERT
+                // ------------------------------------------
+
+                alert(
+                    'CONSULTAS EXITOSAS\n\n' +
+
+                    'ID Estación: ' + vm.idEstacion + '\n' +
+
+                    'ID Empleado: ' + vm.empleadoId + '\n' +
+
+                    'ID Producto: ' + vm.productoId + '\n' +
+
+                    'ID Tamaño: ' + vm.tamanoId
+                );
+
+            }).catch(function (error) {
+
+                // ------------------------------------------
+                // 9. MANEJO DE ERRORES
+                // ------------------------------------------
+
+                var mensaje = 'Error al consultar los datos.';
+
+                if (error.data && error.data.mensaje) {
+                    mensaje = error.data.mensaje;
+                }
+
+                alert(mensaje);
+
+                console.error('Error en consultas de captura:', error);
+
+                limpiarResultados();
+
+            }).finally(function () {
+
+                // ------------------------------------------
+                // 10. OCULTAR INDICADOR DE CARGA
+                // ------------------------------------------
+
+                vm.isLoadPanelVisible = false;
+
+            });
+
+        }
+
+        // --------------------------------------------------
+        // LIMPIAR RESULTADOS DE LAS CONSULTAS
+        // --------------------------------------------------
+
+        function limpiarResultados() {
+
+            vm.idEstacion = null;
+            vm.empleadoId = null;
+            vm.productoId = null;
+            vm.tamanoId = null;
+
+            vm.txtEstacion = '';
+            vm.txtEmpleado = '';
+
+            vm.txtClaveProducto = '';
+            vm.txtProductoEmpaque = '';
+            vm.txtPrecioCaja = '';
+
+            vm.txtCalidad = '';
+            vm.txtTamano = '';
+
+        }
+
+        // --------------------------------------------------
+        // LIMPIAR TODA LA CAPTURA
+        // --------------------------------------------------
+
+        function limpiarCampos() {
+
+            vm.txtCodigoCaptura = '';
+            vm.txtCodigoUnico = '';
+
+            limpiarResultados();
+
+            vm.txtVariedad = '';
+
+            vm.cmbTarima = null;
+
+        }
 
         // --------------------------------------------------
         // LOAD PANEL
         // --------------------------------------------------
 
         vm.loadPanels = {
+
             basicOptions: {
                 shading: true,
                 showIndicator: true,
                 showPane: true,
                 visible: false,
-                message: 'Procesando...'
+                message: 'Procesando...',
+
+                bindingOptions: {
+                    visible: 'vm.isLoadPanelVisible'
+                }
             }
+
         };
 
         // --------------------------------------------------
@@ -84,7 +322,7 @@
                 icon: 'fas fa-save',
                 type: 'success',
                 width: 135,
-                text: 'Guardar caja',
+                text: 'Guardar',
                 disabled: false
             }
 
@@ -97,20 +335,21 @@
         vm.textBox = {
 
             // ----------------------------------------------
-            // Código de captura: estación + producto
-            // Ejemplo: 01S114
+            // CÓDIGO DE CAPTURA
+            // Ejemplo: 01CS110
             // ----------------------------------------------
 
             TxtCodigoCapturaOptions: {
+
                 disabled: false,
                 readOnly: false,
                 showClearButton: true,
-                maxLength: 8,
-                placeholder: 'Ejemplo: 01S114',
+                maxLength: 7,
+                placeholder: 'Ejemplo: 01CS110',
                 valueChangeEvent: 'input',
 
                 bindingOptions: {
-                    value: 'txtCodigoCaptura'
+                    value: 'vm.txtCodigoCaptura'
                 },
 
                 onValueChanged: function (e) {
@@ -118,128 +357,165 @@
                     var codigo = (e.value || '')
                         .replace(/\s/g, '')
                         .toUpperCase()
-                        .substring(0, 8);
-
-                    $scope.txtCodigoCaptura = codigo;
+                        .substring(0, 7);
 
                     if (e.value !== codigo) {
                         e.component.option('value', codigo);
                     }
 
+                },
+
+                onFocusOut: function (e) {
+
+                    consultarCodigoCaptura();
+
                 }
+
             },
 
             // ----------------------------------------------
-            // Estación de trabajo
+            // CÓDIGO ÚNICO
+            // ----------------------------------------------
+
+            TxtCodigoUnicoOptions: {
+
+                disabled: false,
+                readOnly: false,
+                showClearButton: false,
+
+                bindingOptions: {
+                    value: 'vm.txtCodigoUnico'
+                }
+
+            },
+
+            // ----------------------------------------------
+            // ESTACIÓN DE TRABAJO
             // ----------------------------------------------
 
             TxtEstacionOptions: {
+
                 disabled: false,
                 readOnly: true,
                 showClearButton: false,
 
                 bindingOptions: {
-                    value: 'txtEstacion'
+                    value: 'vm.txtEstacion'
                 }
+
             },
 
             // ----------------------------------------------
-            // Empleado
+            // EMPLEADO
             // ----------------------------------------------
 
             TxtEmpleadoOptions: {
+
                 disabled: false,
                 readOnly: true,
                 showClearButton: false,
 
                 bindingOptions: {
-                    value: 'txtEmpleado'
+                    value: 'vm.txtEmpleado'
                 }
+
             },
 
             // ----------------------------------------------
-            // Clave del producto
+            // CLAVE DEL PRODUCTO
             // ----------------------------------------------
 
             TxtClaveProductoOptions: {
+
                 disabled: false,
                 readOnly: true,
                 showClearButton: false,
 
                 bindingOptions: {
-                    value: 'txtClaveProducto'
+                    value: 'vm.txtClaveProducto'
                 }
+
             },
 
             // ----------------------------------------------
-            // Nombre del producto de empaque
+            // NOMBRE DEL PRODUCTO DE EMPAQUE
             // ----------------------------------------------
 
             TxtProductoEmpaqueOptions: {
+
                 disabled: false,
                 readOnly: true,
                 showClearButton: false,
 
                 bindingOptions: {
-                    value: 'txtProductoEmpaque'
+                    value: 'vm.txtProductoEmpaque'
                 }
+
             },
 
             // ----------------------------------------------
-            // Precio de caja
+            // PRECIO DE CAJA
             // ----------------------------------------------
 
             TxtPrecioCajaOptions: {
+
                 disabled: false,
                 readOnly: true,
                 showClearButton: false,
                 format: '$ #,##0.00',
 
                 bindingOptions: {
-                    value: 'txtPrecioCaja'
+                    value: 'vm.txtPrecioCaja'
                 }
+
             },
 
             // ----------------------------------------------
-            // Calidad
+            // CALIDAD
             // ----------------------------------------------
 
             TxtCalidadOptions: {
+
                 disabled: false,
                 readOnly: true,
                 showClearButton: false,
 
                 bindingOptions: {
-                    value: 'txtCalidad'
+                    value: 'vm.txtCalidad'
                 }
+
             },
 
             // ----------------------------------------------
-            // Tamaño
+            // TAMAÑO
             // ----------------------------------------------
 
             TxtTamanoOptions: {
+
                 disabled: false,
                 readOnly: true,
                 showClearButton: false,
 
                 bindingOptions: {
-                    value: 'txtTamano'
+                    value: 'vm.txtTamano'
                 }
+
             },
 
             // ----------------------------------------------
-            // Variedad
+            // VARIEDAD
             // ----------------------------------------------
 
             TxtVariedadOptions: {
+
                 disabled: false,
                 readOnly: true,
                 showClearButton: false,
 
                 bindingOptions: {
-                    value: 'txtVariedad'
+                    value: 'vm.txtVariedad'
                 }
+
             }
 
         };
@@ -251,10 +527,11 @@
         vm.selectBox = {
 
             // ----------------------------------------------
-            // Tarimas disponibles
+            // TARIMAS DISPONIBLES
             // ----------------------------------------------
 
             CmbTarimaOptions: {
+
                 dataSource: [],
                 displayExpr: 'codigo_tarima',
                 valueExpr: 'id',
@@ -265,34 +542,20 @@
                 disabled: true,
 
                 bindingOptions: {
-                    value: 'cmbTarima'
+                    value: 'vm.cmbTarima'
                 }
+
             }
 
         };
 
         // --------------------------------------------------
-        // LIMPIAR CAPTURA
+        // EXPONER FUNCIONES AL HTML
         // --------------------------------------------------
 
-        function limpiarCampos() {
+        vm.consultarCodigoCaptura = consultarCodigoCaptura;
 
-            $scope.txtCodigoCaptura = '';
-
-            $scope.txtEstacion = '';
-            $scope.txtEmpleado = '';
-
-            $scope.txtClaveProducto = '';
-            $scope.txtProductoEmpaque = '';
-            $scope.txtPrecioCaja = '';
-
-            $scope.txtCalidad = '';
-            $scope.txtTamano = '';
-            $scope.txtVariedad = '';
-
-            $scope.cmbTarima = null;
-
-        }
+        vm.limpiarCampos = limpiarCampos;
 
     }
 

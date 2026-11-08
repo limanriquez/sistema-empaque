@@ -78,18 +78,7 @@
     <div class="content dx-viewport" {% initial_loader_hide %}>
 
         <div dx-load-panel="vm.loadPanels.basicOptions"></div>
-
-        <!-- CÓDIGO DE CAJA GENERADO -->
-        <div class="row" style="margin-top: 15px;">
-            <div class="col-md-12">
-                <div class="tarjeta-codigo-caja">
-                    <div class="titulo">Código de identificación de caja</div>
-                    <div class="codigo">----</div>
-                    <div class="descripcion">Código único asignado al guardar la caja</div>
-                </div>
-            </div>
-        </div>
-
+        
         <!-- INFORMACIÓN DE LA CAJA -->
         <div class="row">
             <div class="col-md-9 col-xs-9">
@@ -110,7 +99,12 @@
                     <div dx-text-box="vm.textBox.TxtCodigoCapturaOptions"></div>
                 </div>
 
-                <div class="col-md-4 form-group" style="margin-bottom: 0px;">
+                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
+                    <span>Codigo único:</span>
+                    <div dx-text-box="vm.textBox.TxtCodigoUnicoOptions"></div>
+                </div>
+
+                <div class="col-md-2 form-group" style="margin-bottom: 0px;">
                     <span>Estación de trabajo:</span>
                     <div dx-text-box="vm.textBox.TxtEstacionOptions"></div>
                 </div>
@@ -166,7 +160,7 @@
 
         <!-- SELECCIÓN DE TARIMA -->
         <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-12" style="margin-top: 5px;">
                 <div class="dx-fieldset-header" style="margin-bottom: 5px;">
                     Selección de tarima
                 </div>
@@ -174,7 +168,7 @@
         </div>
 
         <div class="rowdgr"
-             style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+             style="margin-top: 5px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
 
             <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
 

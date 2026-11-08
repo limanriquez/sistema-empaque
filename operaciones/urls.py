@@ -3,7 +3,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from operaciones.views import (
-    reporte_top_cinco,
+    captura_caja,
     obtener_empleado_estacion,
     obtener_producto_empaque,
     obtener_tarimas_abiertas,
@@ -11,6 +11,7 @@ from operaciones.views import (
     hola_mundo_api,
     hola_mundo_post_api,
     captura_caja_vue,
+    obtener_tamano,
 )
 
 router = DefaultRouter()
@@ -19,9 +20,9 @@ app_name = 'operaciones'
 
 urlpatterns = [
     path(
-        'reporte_top_cinco/',
-        reporte_top_cinco,
-        name='reporte_top_cinco',
+        'captura_caja/',
+        captura_caja,
+        name='captura_caja',
     ),
     path(
         'obtener_empleado_estacion/',
@@ -37,6 +38,11 @@ urlpatterns = [
         'obtener_tarimas_abiertas/',
         obtener_tarimas_abiertas,
         name='obtener_tarimas_abiertas',
+    ),
+    path(
+        'obtener_tamano/',
+        obtener_tamano,
+        name='obtener_tamano',
     ),
     path(
         'hola-mundo-vue/',

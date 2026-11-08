@@ -22,9 +22,8 @@ class ProductoEmpaqueForm(forms.ModelForm):
             "codigo",
             "nombre",
             "descripcion",
-            "tamano",
+            "calidad",
             "costo_empaque",
-            "precio_cobro",
             "activo",
         )
 
@@ -71,13 +70,6 @@ class ProductoEmpaqueForm(forms.ModelForm):
 
         return costo
 
-    def clean_precio_cobro(self):
-        precio = self.cleaned_data["precio_cobro"]
-
-        if precio < 0:
-            raise forms.ValidationError("El precio no puede ser negativo.")
-
-        return precio
 
 # Formulario de cada material del BOM, usado en la tabla dentro del
 # producto. Solo ofrece materiales activos; al editar conserva el que

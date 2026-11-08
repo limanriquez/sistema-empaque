@@ -22,11 +22,11 @@ class ProductoEmpaque(models.Model):
         blank=True,
         null=True,
     )
-    tamano = models.ForeignKey(
-        "catalogos.Tamano",
+    calidad = models.ForeignKey(
+        "catalogos.Calidad",
         on_delete=models.PROTECT,
         related_name="productos_empaque",
-        verbose_name="Tamaño",
+        verbose_name="Calidad",
     )
     nombre = models.CharField(max_length=100, unique=True)
     descripcion = models.TextField(blank=True)
@@ -35,12 +35,6 @@ class ProductoEmpaque(models.Model):
         decimal_places=4,
         default=0,
         help_text="Costo total de empacar una unidad.",
-    )
-    precio_cobro = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=0,
-        help_text="Precio que se cobra al cliente por cada unidad empacada.",
     )
     activo = models.BooleanField(default=True)
 
@@ -54,27 +48,11 @@ class ProductoEmpaque(models.Model):
                 condition=models.Q(costo_empaque__gte=0),
                 name="ck_producto_costo_no_negativo",
             ),
-            models.CheckConstraint(
-                condition=models.Q(precio_cobro__gte=0),
-                name="ck_producto_precio_no_negativo",
-            ),
-            # El precio de cobro debe superar el costo de empacar.
-            models.CheckConstraint(
-                condition=models.Q(precio_cobro__gt=models.F("costo_empaque")),
-                name="ck_producto_precio_mayor_costo",
-                violation_error_message=(
-                    "El precio de cobro debe ser mayor al costo de empaque."
-                ),
-            ),
         ]
 
     def __str__(self):
         return self.nombre
 
-    # Ganancia por unidad empacada: lo que se cobra menos lo que cuesta.
-    @property
-    def margen_unitario(self):
-        return self.precio_cobro - self.costo_empaque
 
 
 # BOM de un producto de empaque: cada fila es un material y la

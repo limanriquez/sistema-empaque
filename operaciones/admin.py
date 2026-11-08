@@ -71,13 +71,16 @@ class ComponenteEmpaqueInline(admin.TabularInline):
         return "-"
 
 
-# Administra los productos que se empacan, con su costo, precio de
-# cobro, tamaño y su BOM. La lista muestra solo los productos;
-# al abrir uno se ven y editan los materiales que descuenta por cada
-# unidad empacada.
-# La calidad se captura directamente en el registro de cada caja,
-# no pertenece al catálogo de productos.
-# No habilita la eliminación: un producto fuera de uso se desactiva.
+
+# Administra los productos que se empacan, con su costo y su BOM.
+# La calidad se asocia directamente al producto de empaque.
+# Cada producto tiene componentes que indican los materiales
+# que se descuentan por cada unidad empacada.
+#
+# La lista muestra los productos y, al abrir uno, se pueden
+# consultar y editar los materiales de su BOM.
+#
+# No se habilita la eliminación: un producto fuera de uso se desactiva.
 
 @admin.register(ProductoEmpaque)
 class ProductoEmpaqueAdmin(admin.ModelAdmin):
@@ -88,10 +91,8 @@ class ProductoEmpaqueAdmin(admin.ModelAdmin):
         "id",
         "codigo",
         "nombre",
-        "tamano",
+        "calidad",
         "mostrar_costo",
-        "mostrar_precio",
-        "mostrar_margen",
         "num_materiales",
         "activo",
     )
@@ -100,14 +101,14 @@ class ProductoEmpaqueAdmin(admin.ModelAdmin):
 
     list_filter = (
         "activo",
-        "tamano",
+        "calidad",
     )
 
     search_fields = (
         "codigo",
         "nombre",
         "descripcion",
-        "tamano__nombre",
+        "calidad__nombre",
     )
 
     inlines = [ComponenteEmpaqueInline]
@@ -116,50 +117,46 @@ class ProductoEmpaqueAdmin(admin.ModelAdmin):
         "codigo",
         "nombre",
         "descripcion",
-        "tamano",
+        "calidad",
         "costo_empaque",
-        "precio_cobro",
-        "margen",
         "activo",
     )
 
-    readonly_fields = ("margen",)
-
-    # Cuenta los materiales del BOM sin una consulta por fila.
+    # Carga la relación calidad y cuenta los materiales del BOM
+    # sin generar una consulta adicional por cada producto.
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related(
-            "tamano",
-        ).annotate(
-            _num_materiales=Count("componentes")
+
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("calidad")
+            .annotate(
+                _num_materiales=Count("componentes")
+            )
         )
 
-    @admin.display(description="Costo", ordering="costo_empaque")
+    @admin.display(
+        description="Costo",
+        ordering="costo_empaque",
+    )
     def mostrar_costo(self, obj):
+
         return f"$ {obj.costo_empaque:,.2f}"
 
-    @admin.display(description="Precio de cobro", ordering="precio_cobro")
-    def mostrar_precio(self, obj):
-        return f"$ {obj.precio_cobro:,.2f}"
-
-    @admin.display(description="Margen")
-    def mostrar_margen(self, obj):
-        return f"$ {obj.margen_unitario:,.2f}"
-
-    # Cantidad de materiales del BOM; 0 indica un producto sin configurar.
-    @admin.display(description="Materiales en el BOM", ordering="_num_materiales")
+    # Cantidad de materiales del BOM.
+    # Cero indica que el producto todavía no tiene materiales configurados.
+    @admin.display(
+        description="Materiales en el BOM",
+        ordering="_num_materiales",
+    )
     def num_materiales(self, obj):
+
         return obj._num_materiales
 
-    # Ganancia por unidad, solo para consulta dentro del formulario.
-    @admin.display(description="Margen por unidad")
-    def margen(self, obj):
-        if obj.pk:
-            return f"$ {obj.margen_unitario:,.2f}"
-
-        return "-"
-
     # Impide eliminar productos desde Django Admin.
+    # Los productos fuera de uso deben desactivarse.
     def has_delete_permission(self, request, obj=None):
+
         return False
 
 
@@ -1849,7 +1846,7 @@ class TarimaAdmin(admin.ModelAdmin):
                 "operacion_lote_empaque",
                 "operacion_lote_empaque__operacion_diaria",
                 "operacion_lote_empaque__lote_empaque",
-                "tamano",
+                "calidad",
                 "seccion_almacen",
                 "abierta_por",
                 "cerrada_por",

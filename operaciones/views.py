@@ -14,7 +14,7 @@ from django.utils.timezone import localtime
 from pytz import timezone as pytz_timezone  # opcional si quieres zona específica
 from django.template.loader import render_to_string
 
-from .models import OperacionDiaria, ProductoEmpaque
+from .models import OperacionDiaria, ProductoEmpaque, EmpleadosPuestoOperacion
 # Django REST Framework
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -30,12 +30,12 @@ import json
 
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
+from catalogos.models import Calidad, Tamano
 
 
 
 @login_required()
-def reporte_top_cinco(request):
-
+def captura_caja(request):
     operacion_diaria = (
         OperacionDiaria.objects
         .filter(
@@ -140,8 +140,8 @@ def obtener_empleado_estacion(request):
 # Busca un producto de empaque mediante su código.
 # Únicamente considera productos activos.
 #
-# Devuelve los datos del producto y el identificador
-# del tamaño asociado para utilizarlos en la captura.
+# Devuelve los datos del producto para utilizarlos
+# en el proceso de captura.
 # ==========================================================
 
 @login_required
@@ -158,7 +158,7 @@ def obtener_producto_empaque(request):
 
     producto = (
         ProductoEmpaque.objects
-        .select_related('tamano')
+        .select_related('calidad')
         .filter(
             codigo=codigo,
             activo=True
@@ -167,10 +167,9 @@ def obtener_producto_empaque(request):
             'id',
             'codigo',
             'nombre',
-            'tamano_id',
-            'tamano__nombre',
             'costo_empaque',
-            'precio_cobro',
+            'calidad_id',
+            'calidad__nombre',
         )
         .first()
     )
@@ -270,6 +269,38 @@ def obtener_tarimas_abiertas(request):
     })
 
 
+@login_required
+@require_GET
+def obtener_tamano(request):
+
+    nombre = request.GET.get('nombre', '').strip()
+
+    if not nombre:
+        return JsonResponse({
+            'success': False,
+            'mensaje': 'Debe proporcionar el nombre del tamaño.'
+        }, status=400)
+
+    tamano = (
+        Tamano.objects
+        .filter(
+            nombre=nombre,
+            activo=True
+        )
+        .values('id', 'nombre')
+        .first()
+    )
+
+    if not tamano:
+        return JsonResponse({
+            'success': False,
+            'mensaje': 'No se encontró un tamaño activo con ese nombre.'
+        }, status=404)
+
+    return JsonResponse({
+        'success': True,
+        'tamano': tamano
+    })
 
 
 	###################
