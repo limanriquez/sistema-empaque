@@ -61,4 +61,6 @@ urlpatterns = [
     ),
 
     path("", include("operaciones.urls", namespace="operaciones")),
+    path("negocio/", include("negocio.urls", namespace="negocio")),
+    
 ]

@@ -9,6 +9,11 @@ router.register(
     CalidadViewSet,
     basename='calidad'
 )
+router.register(
+    'tamanos',
+    TamanoViewSet,
+    basename='tamano'
+)
 
 
 app_name = 'catalogos'

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Calidad
+from .models import Calidad, Tamano
 
 
 class CalidadSerializer(serializers.ModelSerializer):
@@ -12,3 +12,14 @@ class CalidadSerializer(serializers.ModelSerializer):
             'descripcion',
             'activo',
         ]
+    
+class TamanoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+            model = Tamano
+            fields = [
+                'id',
+                'nombre',
+                'descripcion',
+                'activo',
+            ]

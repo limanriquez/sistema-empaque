@@ -1507,6 +1507,16 @@ class Tarima(models.Model):
         blank=True,
         verbose_name="Sección de almacén",
     )
+    # Operación comercial a la que fue asignada la tarima.
+    # Si se libera o cancela la asignación, queda sin relación.
+    operacion_comercial = models.ForeignKey(
+        "negocio.OperacionComercial",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tarimas",
+        verbose_name="Operación comercial"
+    )
 
     # ------------------------------------------------------
     # CONFIGURACIÓN DEL MODELO
