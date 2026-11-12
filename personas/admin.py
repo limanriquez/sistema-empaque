@@ -440,6 +440,7 @@ class EmpleadoExtraInline(admin.TabularInline):
     # tienen asignado un concepto que después se desactivó.
 
 
+
 # ==========================================================
 # ADMIN: EMPLEADOS
 # ==========================================================
@@ -458,6 +459,7 @@ class EmpleadoAdmin(admin.ModelAdmin):
         "nss",
         "mostrar_sueldo_diario",
         "fecha_ingreso",
+        "tipo_remuneracion",
         "activo",
     )
 
@@ -476,7 +478,7 @@ class EmpleadoAdmin(admin.ModelAdmin):
         "usuario__username",
     )
 
-    list_filter = ("activo", "puesto")
+    list_filter = ("activo", "puesto", "tipo_remuneracion")
     ordering = ("persona__id",)
     inlines = (EmpleadoExtraInline,)
 
@@ -487,6 +489,7 @@ class EmpleadoAdmin(admin.ModelAdmin):
         "puesto",
         "sueldo_diario",
         "fecha_ingreso",
+        "tipo_remuneracion",
         "activo",
     )
 
@@ -543,6 +546,11 @@ class EmpleadoAdmin(admin.ModelAdmin):
     @admin.display(description="Sueldo diario", ordering="sueldo_diario")
     def mostrar_sueldo_diario(self, obj):
         return f"${obj.sueldo_diario:,.2f}"
+
+    # Muestra la descripción del tipo de remuneración.
+    @admin.display(description="Tipo de remuneración")
+    def tipo_remuneracion(self, obj):
+        return obj.get_tipo_remuneracion_display()
 
 
 class ClienteHuertaInline(admin.TabularInline):

@@ -2,8 +2,8 @@ from django.contrib import admin
 from django.shortcuts import redirect
 from django.urls import reverse
 
-from .forms import UnidadMedidaForm, EstacionTrabajoForm
-from .models import ConceptoExtra, GoHome, Puesto, UnidadMedida, EstacionTrabajo, Tamano, Calidad
+from .forms import UnidadMedidaForm, EstacionTrabajoForm, ConceptoNominaForm
+from .models import ConceptoExtra, GoHome, Puesto, UnidadMedida, EstacionTrabajo, Tamano, Calidad, ConceptoNomina
 
 
 @admin.register(GoHome)
@@ -305,6 +305,41 @@ class TamanoAdmin(admin.ModelAdmin):
         "nombre",
         "descripcion",
         "activo",
+    )
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+# ==========================================================
+# ADMIN: CONCEPTO DE NÓMINA
+#
+# Administración del catálogo de conceptos de nómina.
+# No permite eliminar registros para conservar su historial.
+# ==========================================================
+@admin.register(ConceptoNomina)
+class ConceptoNominaAdmin(admin.ModelAdmin):
+
+    form = ConceptoNominaForm
+
+    list_display = (
+        "id",
+        "descripcion",
+        "tipo",
+        "activo",
+    )
+
+    list_filter = (
+        "tipo",
+        "activo",
+    )
+
+    search_fields = (
+        "descripcion",
+    )
+
+    ordering = (
+        "descripcion",
     )
 
     def has_delete_permission(self, request, obj=None):

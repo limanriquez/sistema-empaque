@@ -256,3 +256,41 @@ class Tamano(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+# ==========================================================
+# MODELO: CONCEPTO DE NÓMINA
+#
+# Catálogo de conceptos que pueden aplicarse en una nómina,
+# clasificados como extras o deducciones.
+#
+# Cada concepto puede utilizarse en múltiples registros
+# de nómina de diferentes empleados.
+#
+# Los conceptos utilizados históricamente no deben eliminarse.
+# Su disponibilidad se controla mediante el campo activo.
+# ==========================================================
+class ConceptoNomina(models.Model):
+
+    class Tipo(models.IntegerChoices):
+        PERCEPCION = 1, "Percepción"
+        DEDUCCION = 2, "Deducción"
+
+    descripcion = models.CharField(
+        max_length=150,
+        unique=True
+    )
+
+    tipo = models.PositiveSmallIntegerField(
+        choices=Tipo.choices
+    )
+
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "concepto_nomina"
+        verbose_name = "Concepto de nómina"
+        verbose_name_plural = "Conceptos de nómina"
+
+    def __str__(self):
+        return f"{self.descripcion} - {self.get_tipo_display()}"

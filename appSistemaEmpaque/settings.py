@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'inventarioFruta',
     'catalogoConfiguracion',
     'negocio',
+    'nomina',
 ]
 
 MIDDLEWARE = [

@@ -201,10 +201,16 @@ class Telefono(models.Model):
         return self.numero
 
 
+
 # Registra la información laboral de una persona física.
-# Relaciona a la persona con su puesto, NSS, sueldo diario,
-# fecha de ingreso y estado laboral, sin duplicar sus datos personales.
+# Relaciona a la persona con su puesto, NSS, tipo de remuneración,
+# sueldo diario, fecha de ingreso y estado laboral, sin duplicar
+# sus datos personales.
 class Empleado(models.Model):
+
+    class TipoRemuneracion(models.IntegerChoices):
+        FIJO = 1, "Sueldo fijo"
+        DESTAJO = 2, "Pago por destajo"
 
     persona = models.OneToOneField(
         "personas.Persona",
@@ -235,6 +241,12 @@ class Empleado(models.Model):
         on_delete=models.PROTECT,
         related_name="empleados",
         verbose_name="Puesto",
+    )
+
+    tipo_remuneracion = models.PositiveSmallIntegerField(
+        choices=TipoRemuneracion.choices,
+        default=TipoRemuneracion.FIJO,
+        verbose_name="Tipo de remuneración",
     )
 
     sueldo_diario = models.DecimalField(

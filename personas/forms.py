@@ -188,7 +188,6 @@ class PersonaMoralAdminForm(forms.ModelForm):
 
         return cleaned_data
 
-
 # Formulario para registrar y modificar empleados.
 # Limita la selección a personas físicas y valida los datos laborales.
 class EmpleadoForm(forms.ModelForm):
@@ -202,6 +201,7 @@ class EmpleadoForm(forms.ModelForm):
             "puesto",
             "sueldo_diario",
             "fecha_ingreso",
+            "tipo_remuneracion",
             "activo",
         )
         # No se definen widgets: el admin usa los suyos por defecto.

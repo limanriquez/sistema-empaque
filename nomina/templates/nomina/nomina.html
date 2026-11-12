@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% load general_tags %}
+
+{% block ng_app %}
+<html class="no-js" lang="es" ng-app="nominas.nomina">
+{% endblock ng_app %}
+
+{% block head_title %}{{ title }}{% endblock head_title %}
+
+{% block personal_styles %}
+{% endblock personal_styles %}
+
+{% block contenido %}
+
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/alertify.min.css' %}" />
+<link rel="stylesheet" href="{% static 'bower_components/alertify-js/build/css/themes/default.min.css' %}" />
+
+<div ng-controller="Nomina as vm" ng-init="vm.inicializar()" style="padding-left: 40px; padding-right: 40px;">
+    {% initial_loader %}
+
+    <div class="content dx-viewport" {% initial_loader_hide %}>
+
+        <!-- INFORMACIÓN DE NÓMINA -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="dx-fieldset-header" style="margin-bottom: 5px;">
+                    Generación de nómina
+                </div>
+            </div>
+        </div>
+
+        <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+
+            <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+
+                <div class="col-md-12">
+                    <p>
+                        Seleccione el rango de fechas para generar la nómina.
+                        El sistema localizará las operaciones diarias correspondientes
+                        e integrará automáticamente los empleados, percepciones,
+                        destajos y deducciones del periodo.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="rowdgr" style="margin-top: 10px; padding-left: 15px; margin-bottom: 0px; padding-bottom: 20px;">
+
+            <div class="row" style="padding-top: 15px; padding-left: 20px; padding-right: 30px;">
+
+                <!-- FECHA INICIAL -->
+                <div class="col-md-3 form-group">
+                    <span>Fecha de inicio de nómina:</span>
+                    <div dx-date-box="vm.dateBox.DteFechaInicioOptions"></div>
+                </div>
+
+                <!-- FECHA FINAL -->
+                <div class="col-md-3 form-group">
+                    <span>Fecha de fin de nómina:</span>
+                    <div dx-date-box="vm.dateBox.DteFechaFinOptions"></div>
+                </div>
+
+                <!-- ESPACIO -->
+                <div class="col-md-3 form-group">
+                </div>
+
+                <!-- BOTÓN -->
+                <div class="col-md-3 form-group" style="padding-top: 20px;">
+                    <div dx-button="vm.button.BtnIniciarNominaOptions"></div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+{% endblock contenido %}
+
+{% block scripts_js %}
+<script type="text/javascript" src="{% static 'javascripts/inventarios.config.js' %}"></script>
+<script type="text/javascript" src="{% static 'nomina/js/nomina.module.js' %}"></script>
+<script type="text/javascript" src="{% static 'nomina/js/controllers/nomina.controller.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OverlayScrollbars/2.1.0/js/OverlayScrollbars.min.js"></script>
+{% endblock scripts_js %}

@@ -34,7 +34,7 @@ class ProductoEmpaque(models.Model):
         max_digits=12,
         decimal_places=4,
         default=0,
-        help_text="Costo total de empacar una unidad.",
+        help_text="Costo que se paga al empacador por unidad.",
     )
     activo = models.BooleanField(default=True)
 

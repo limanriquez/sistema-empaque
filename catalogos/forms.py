@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django import forms
-from .models import UnidadMedida, EstacionTrabajo
+from .models import UnidadMedida, EstacionTrabajo, ConceptoNomina
 
 # Formulario para registrar y modificar unidades de medida.
 # Limpia espacios y evita nombres y abreviaturas duplicados sin
@@ -112,3 +112,19 @@ class EstacionTrabajoForm(forms.ModelForm):
         }
 
 
+
+# ==========================================================
+# FORMULARIO: CONCEPTO DE NÓMINA
+#
+# Permite registrar y modificar conceptos de extras
+# y deducciones utilizados en el módulo de nómina.
+# ==========================================================
+class ConceptoNominaForm(forms.ModelForm):
+
+    class Meta:
+        model = ConceptoNomina
+        fields = [
+            "descripcion",
+            "tipo",
+            "activo",
+        ]
