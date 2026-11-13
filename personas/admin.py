@@ -14,6 +14,7 @@ from .forms import (
 )
 from .models import Direccion, Empleado, EmpleadoExtra, Persona, Telefono, Cliente, Proveedor, Destinatario
 from fruticultura.models import ClienteHuerta
+from .forms import EmpleadoExtraForm
 
 # ==========================================================
 # INLINE: DIRECCIONES
@@ -422,23 +423,17 @@ class PersonaAdmin(admin.ModelAdmin):
 # INLINE: EXTRAS DEL EMPLEADO
 # ==========================================================
 
-# Administra los conceptos extras asignados a cada empleado.
-# El concepto muestra su monto y no requiere una columna de captura.
-# El monto se asigna al guardar, en EmpleadoAdmin.save_formset.
+# Administra los conceptos de percepción asignados al empleado.
+# Permite capturar individualmente el monto de cada concepto.
 class EmpleadoExtraInline(admin.TabularInline):
     model = EmpleadoExtra
+    form = EmpleadoExtraForm
     extra = 1
-    autocomplete_fields = ("concepto_extra",)
-    fields = ("concepto_extra",)
+    autocomplete_fields = ("concepto",)
+    fields = ("concepto", "monto")
     verbose_name = "Extra asignado"
     verbose_name_plural = "Extras asignados"
     show_change_link = False
-
-    # Los conceptos inactivos se ocultan del autocompletado en
-    # ConceptoExtraAdmin.get_search_results (catalogos/admin.py).
-    # No se filtra aquí para no impedir guardar empleados que ya
-    # tienen asignado un concepto que después se desactivó.
-
 
 
 # ==========================================================
@@ -459,7 +454,7 @@ class EmpleadoAdmin(admin.ModelAdmin):
         "nss",
         "mostrar_sueldo_diario",
         "fecha_ingreso",
-        "tipo_remuneracion",
+        "mostrar_tipo_remuneracion",
         "activo",
     )
 
@@ -510,22 +505,8 @@ class EmpleadoAdmin(admin.ModelAdmin):
 
         return form
 
-    # Asigna el monto vigente del catálogo a los extras nuevos o
-    # modificados. Las filas sin cambios conservan su monto.
-    def save_formset(self, request, form, formset, change):
-        if formset.model is not EmpleadoExtra:
-            return super().save_formset(request, form, formset, change)
-
-        instancias = formset.save(commit=False)
-
-        for obj in formset.deleted_objects:
-            obj.delete()
-
-        for instancia in instancias:
-            instancia.monto = instancia.concepto_extra.monto
-            instancia.save()
-
-        formset.save_m2m()
+    # Django administra directamente el guardado de los extras,
+    # incluyendo el concepto y el monto capturado por empleado.
 
     # Impide eliminar empleados desde Django Admin.
     def has_delete_permission(self, request, obj=None):
@@ -549,9 +530,8 @@ class EmpleadoAdmin(admin.ModelAdmin):
 
     # Muestra la descripción del tipo de remuneración.
     @admin.display(description="Tipo de remuneración")
-    def tipo_remuneracion(self, obj):
+    def mostrar_tipo_remuneracion(self, obj):
         return obj.get_tipo_remuneracion_display()
-
 
 class ClienteHuertaInline(admin.TabularInline):
     model = ClienteHuerta

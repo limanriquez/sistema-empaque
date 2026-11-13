@@ -3,7 +3,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 
 from .forms import UnidadMedidaForm, EstacionTrabajoForm, ConceptoNominaForm
-from .models import ConceptoExtra, GoHome, Puesto, UnidadMedida, EstacionTrabajo, Tamano, Calidad, ConceptoNomina
+from .models import  GoHome, Puesto, UnidadMedida, EstacionTrabajo, Tamano, Calidad, ConceptoNomina
 
 
 @admin.register(GoHome)
@@ -81,57 +81,6 @@ class PuestoAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-
-# Administrador del catálogo de conceptos extras para empleados.
-# Permite registrar, consultar, buscar y activar o desactivar conceptos,
-# así como administrar su descripción y monto desde Django Admin.
-@admin.register(ConceptoExtra)
-class ConceptoExtraAdmin(admin.ModelAdmin):
-
-    # Columnas que se mostrarán en el listado del catálogo.
-    list_display = ("id", "nombre", "descripcion", "monto", "activo")
-
-    # Columnas que permiten abrir el formulario al hacer clic.
-    list_display_links = ("id", "nombre")
-
-    # Campos en los que se buscará el texto ingresado.
-    search_fields = ("nombre", "descripcion")
-
-    # Filtro lateral para mostrar conceptos activos o inactivos.
-    list_filter = ("activo",)
-
-    # Ordena los conceptos alfabéticamente por nombre.
-    ordering = ("nombre",)
-
-    def get_form(self, request, obj=None, **kwargs):
-        # Obtiene el formulario de alta o edición del concepto extra.
-        form = super().get_form(request, obj, **kwargs)
-
-        # Evita que el navegador sugiera valores guardados anteriormente.
-        for field in form.base_fields.values():
-            field.widget.attrs["autocomplete"] = "off"
-
-        return form
-
-    # En el autocompletado de extras del empleado, muestra
-    # únicamente los conceptos activos.
-    def get_search_results(self, request, queryset, search_term):
-        queryset, use_distinct = super().get_search_results(
-            request, queryset, search_term
-        )
-
-        if (
-            request.GET.get("app_label") == "personas"
-            and request.GET.get("model_name") == "empleadoextra"
-            and request.GET.get("field_name") == "concepto_extra"
-        ):
-            queryset = queryset.filter(activo=True)
-
-        return queryset, use_distinct
-
-    # Impide eliminar conceptos extras desde Django Admin.
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 
 # Administra las unidades de medida de los materiales.
@@ -311,12 +260,6 @@ class TamanoAdmin(admin.ModelAdmin):
         return False
 
 
-# ==========================================================
-# ADMIN: CONCEPTO DE NÓMINA
-#
-# Administración del catálogo de conceptos de nómina.
-# No permite eliminar registros para conservar su historial.
-# ==========================================================
 @admin.register(ConceptoNomina)
 class ConceptoNominaAdmin(admin.ModelAdmin):
 
@@ -341,6 +284,23 @@ class ConceptoNominaAdmin(admin.ModelAdmin):
     ordering = (
         "descripcion",
     )
+
+    def get_search_results(self, request, queryset, search_term):
+        queryset, use_distinct = super().get_search_results(
+            request, queryset, search_term
+        )
+
+        if (
+            request.GET.get("app_label") == "personas"
+            and request.GET.get("model_name") == "empleadoextra"
+            and request.GET.get("field_name") == "concepto"
+        ):
+            queryset = queryset.filter(
+                activo=True,
+                tipo=ConceptoNomina.Tipo.PERCEPCION,
+            )
+
+        return queryset, use_distinct
 
     def has_delete_permission(self, request, obj=None):
         return False

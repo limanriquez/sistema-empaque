@@ -275,7 +275,7 @@ class Empleado(models.Model):
         return f"Empleado {self.pk} - {self.persona}"
 
 
-# Relaciona a un empleado con los conceptos extras que tiene asignados.
+# Relaciona a un empleado con los conceptos de percepción que tiene asignados.
 # Cada asignación conserva su propio monto y puede eliminarse sin
 # eliminar al empleado ni al concepto del catálogo.
 class EmpleadoExtra(models.Model):
@@ -287,11 +287,11 @@ class EmpleadoExtra(models.Model):
         verbose_name="Empleado",
     )
 
-    concepto_extra = models.ForeignKey(
-        "catalogos.ConceptoExtra",
+    concepto = models.ForeignKey(
+        "catalogos.ConceptoNomina",
         on_delete=models.PROTECT,
         related_name="asignaciones_empleados",
-        verbose_name="Concepto extra",
+        verbose_name="Concepto de nómina",
     )
 
     monto = models.DecimalField(
@@ -307,14 +307,13 @@ class EmpleadoExtra(models.Model):
         verbose_name_plural = "Extras del empleado"
         constraints = [
             models.UniqueConstraint(
-                fields=["empleado", "concepto_extra"],
-                name="uq_empleado_concepto_extra",
+                fields=["empleado", "concepto"],
+                name="uq_empleado_concepto_nomina",
             ),
         ]
 
-        # Representa el concepto extra asignado al empleado.
     def __str__(self):
-        return f"{self.empleado} - {self.concepto_extra}"
+        return f"{self.empleado} - {self.concepto}"
 
 
 

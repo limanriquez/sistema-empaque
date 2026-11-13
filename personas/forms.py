@@ -1,7 +1,7 @@
 from django import forms
 
 from .models import Empleado, EmpleadoExtra, Persona, Cliente, Proveedor, Destinatario
-
+from catalogos.models import ConceptoNomina
 
 class PersonaAdminForm(forms.ModelForm):
     """
@@ -261,23 +261,27 @@ class EmpleadoForm(forms.ModelForm):
         return sueldo
 
 
-
-# Formulario para asignar conceptos extras a un empleado.
-# El monto se obtiene del catálogo y no puede editarse manualmente.
-# Actualmente no se usa en el admin; se conserva por si se requiere
-# fuera de él.
+# Formulario para asignar conceptos de percepción a un empleado.
+# El monto se captura manualmente para cada empleado.
 class EmpleadoExtraForm(forms.ModelForm):
 
     class Meta:
         model = EmpleadoExtra
-        fields = ("concepto_extra", "monto")
+        fields = ("concepto", "monto")
         widgets = {
             "monto": forms.NumberInput(attrs={
-                "readonly": "readonly",
                 "step": "0.01",
+                "min": "0",
             }),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["concepto"].queryset = ConceptoNomina.objects.filter(
+            tipo=ConceptoNomina.Tipo.PERCEPCION,
+            activo=True,
+        )
 
 # Formulario para registrar y modificar clientes.
 # En el alta solo ofrece personas activas que aún no son clientes.
