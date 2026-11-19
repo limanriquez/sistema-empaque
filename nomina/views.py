@@ -40,6 +40,7 @@ from nomina.models import (
     NominaOperacionDiaria,
     NominaEmpleado,
     NominaEmpleadoDestajo,
+    NominaEmpleadoConcepto,
 )
 
 
@@ -59,6 +60,7 @@ def nomina(request):
     )
 
 
+
 # ==================================================
 # VISTA: GENERAR NÓMINA
 #
@@ -69,7 +71,7 @@ def nomina(request):
 # 3. Concentrado por empleado.
 # 4. Percepciones por sueldo fijo.
 # 5. Detalles de destajo.
-# 6. Extras integrados.
+# 6. Extras integrados individualmente.
 # 7. Totales generales.
 #
 # Toda la operación se ejecuta dentro de una
@@ -276,30 +278,33 @@ def iniciar_nomina(request):
             # ==============================================
             # 6. OBTENER EXTRAS INTEGRADOS
             #
-            # Origen:
-            # Empleado -> extras -> EmpleadoExtra
+            # Se recuperan todos los conceptos y montos
+            # asignados a cada empleado.
             #
-            # Se conserva el total como fotografía
-            # histórica en NominaEmpleado.
+            # Cada concepto se conserva individualmente
+            # para generar su detalle en la nómina.
             # ==============================================
 
-            extras = (
+            extras = list(
                 EmpleadoExtra.objects
                 .filter(
                     empleado_id__in=empleados_ids
                 )
-                .values('empleado_id')
-                .annotate(
-                    total=Sum('monto')
+                .select_related('concepto')
+                .order_by(
+                    'empleado_id',
+                    'concepto_id'
                 )
             )
 
-            extras_por_empleado = {
-                registro['empleado_id']: (
-                    registro['total'] or Decimal('0.00')
-                )
-                for registro in extras
-            }
+            extras_por_empleado = {}
+
+            for extra in extras:
+
+                extras_por_empleado.setdefault(
+                    extra.empleado_id,
+                    []
+                ).append(extra)
 
             # ==============================================
             # 7. OBTENER CAJAS DE DESTAJO
@@ -400,13 +405,22 @@ def iniciar_nomina(request):
 
                 # ------------------------------------------
                 # 11.1 EXTRA INTEGRADO
+                #
+                # Recuperar los conceptos individuales
+                # asignados al empleado.
                 # ------------------------------------------
 
-                total_extra_integrado = (
-                    extras_por_empleado.get(
-                        empleado.pk,
-                        Decimal('0.00')
-                    )
+                extras_empleado = extras_por_empleado.get(
+                    empleado.pk,
+                    []
+                )
+
+                total_extra_integrado = sum(
+                    (
+                        extra.monto
+                        for extra in extras_empleado
+                    ),
+                    Decimal('0.00')
                 )
 
                 # ------------------------------------------
@@ -528,6 +542,24 @@ def iniciar_nomina(request):
                     total_deduccion=total_deduccion,
                     total_neto=total_neto_empleado
                 )
+
+                # ------------------------------------------
+                # 11.4.1 REGISTRAR EXTRAS INTEGRADOS
+                #
+                # Cada concepto genera un registro
+                # individual en NominaEmpleadoConcepto.
+                #
+                # El monto queda guardado como fotografía
+                # histórica de esta nómina.
+                # ------------------------------------------
+
+                for extra in extras_empleado:
+
+                    NominaEmpleadoConcepto.objects.create(
+                        nomina_empleado=empleado_nomina,
+                        concepto=extra.concepto,
+                        monto=extra.monto
+                    )
 
                 # ------------------------------------------
                 # 11.5 REGISTRAR DETALLES DE DESTAJO

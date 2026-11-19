@@ -1846,7 +1846,7 @@ class TarimaAdmin(admin.ModelAdmin):
                 "operacion_lote_empaque",
                 "operacion_lote_empaque__operacion_diaria",
                 "operacion_lote_empaque__lote_empaque",
-                "calidad",
+                "tamano",
                 "seccion_almacen",
                 "abierta_por",
                 "cerrada_por",
