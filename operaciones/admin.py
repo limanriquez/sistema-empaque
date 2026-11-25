@@ -1739,16 +1739,18 @@ class TarimaAdmin(admin.ModelAdmin):
 
     form = TarimaAdminForm
 
-    # ------------------------------------------------------
+    # ======================================================
     # LISTADO
-    # ------------------------------------------------------
+    # ======================================================
 
     list_display = (
         "id",
         "codigo_tarima",
         "operacion_diaria",
+        "modalidad_admin",
+        "producto_empaque",
+        "tamanos_admin",
         "capacidad_maxima",
-        "tamano",
         "total_cajas_admin",
         "espacios_disponibles_admin",
         "estado_tarima",
@@ -1756,11 +1758,17 @@ class TarimaAdmin(admin.ModelAdmin):
         "fecha_creacion",
     )
 
-    list_display_links = ("id",)
+    # Permitir abrir desde el ID o el código de tarima.
+    list_display_links = (
+        "id",
+        "codigo_tarima",
+    )
 
     list_filter = (
         "abierta",
+        "modalidad",
         "seccion_almacen",
+        "producto_empaque",
     )
 
     ordering = (
@@ -1770,7 +1778,6 @@ class TarimaAdmin(admin.ModelAdmin):
 
     list_per_page = 50
 
-    # Acciones disponibles en el combo de Django Admin.
     actions = (
         "cerrar_tarimas",
     )
@@ -1790,15 +1797,19 @@ class TarimaAdmin(admin.ModelAdmin):
                 "codigo_tarima_display",
                 "codigo_tarima_id",
                 "operacion_diaria_display",
+                "modalidad",
+                "producto_empaque",
+                "tamanos",
                 "capacidad_maxima",
-                "tamano",
                 "seccion_almacen",
             )
 
         return (
             "codigo_tarima_display",
             "operacion_diaria_display",
-            "tamano",
+            "modalidad",
+            "producto_empaque",
+            "tamanos_admin",
             "seccion_almacen",
             "fecha_creacion",
             "capacidad_maxima",
@@ -1820,8 +1831,7 @@ class TarimaAdmin(admin.ModelAdmin):
             return ()
 
         return (
-            "codigo_tarima_display",
-            "operacion_diaria_display",
+            "tamanos_admin",
             "fecha_creacion",
             "capacidad_maxima",
             "abierta",
@@ -1846,10 +1856,13 @@ class TarimaAdmin(admin.ModelAdmin):
                 "operacion_lote_empaque",
                 "operacion_lote_empaque__operacion_diaria",
                 "operacion_lote_empaque__lote_empaque",
-                "tamano",
+                "producto_empaque",
                 "seccion_almacen",
                 "abierta_por",
                 "cerrada_por",
+            )
+            .prefetch_related(
+                "tamanos_permitidos__tamano",
             )
         )
 
@@ -1859,13 +1872,37 @@ class TarimaAdmin(admin.ModelAdmin):
 
     @admin.display(
         description="Operación diaria",
-        ordering=(
-            "operacion_lote_empaque__operacion_diaria__fecha"
-        ),
+        ordering="operacion_lote_empaque__operacion_diaria__fecha",
     )
     def operacion_diaria(self, obj):
 
         return obj.operacion_lote_empaque.operacion_diaria
+
+    # ======================================================
+    # MODALIDAD
+    # ======================================================
+
+    @admin.display(
+        description="Modalidad",
+        ordering="modalidad",
+    )
+    def modalidad_admin(self, obj):
+
+        return obj.get_modalidad_display()
+
+    # ======================================================
+    # TAMAÑOS PERMITIDOS
+    # ======================================================
+
+    @admin.display(description="Tamaños permitidos")
+    def tamanos_admin(self, obj):
+
+        tamanos = [
+            relacion.tamano.nombre
+            for relacion in obj.tamanos_permitidos.all()
+        ]
+
+        return ", ".join(tamanos) if tamanos else "Sin tamaños"
 
     # ======================================================
     # TOTAL DE CAJAS
@@ -1943,25 +1980,34 @@ class TarimaAdmin(admin.ModelAdmin):
 
         with transaction.atomic():
 
-            # Crear mediante el método de negocio del modelo.
-            # Este método consume el código y crea la tarima.
-
             tarima = Tarima.crear(
+
                 codigo_tarima=(
                     form.cleaned_data["codigo_tarima_obj"]
                 ),
+
                 operacion_lote_empaque=(
                     form.cleaned_data["operacion_lote_empaque"]
                 ),
+
+                producto_empaque=(
+                    form.cleaned_data["producto_empaque"]
+                ),
+
+                modalidad=(
+                    form.cleaned_data["modalidad"]
+                ),
+
+                tamanos=(
+                    form.cleaned_data["tamanos"]
+                ),
+
                 persona=persona,
+
                 capacidad_maxima=(
                     form.cleaned_data["capacidad_maxima"]
                 ),
             )
-
-            # Información complementaria.
-
-            tarima.tamano = form.cleaned_data.get("tamano")
 
             tarima.seccion_almacen = (
                 form.cleaned_data.get("seccion_almacen")
@@ -1971,12 +2017,9 @@ class TarimaAdmin(admin.ModelAdmin):
 
             tarima.save(
                 update_fields=[
-                    "tamano",
                     "seccion_almacen",
                 ]
             )
-
-            # Actualizar instancia de Django Admin.
 
             obj.pk = tarima.pk
             obj._state.adding = False
@@ -1994,7 +2037,6 @@ class TarimaAdmin(admin.ModelAdmin):
 
         persona = self.obtener_persona(request)
 
-        # Recuperar identificadores seleccionados.
         ids_tarimas = list(
             queryset.values_list(
                 "pk",
@@ -2005,10 +2047,8 @@ class TarimaAdmin(admin.ModelAdmin):
         cerradas = 0
         ya_cerradas = 0
 
-        # Una transacción para toda la operación de cierre.
         with transaction.atomic():
 
-            # Bloquear las tarimas seleccionadas.
             tarimas = (
                 Tarima.objects
                 .select_for_update()
@@ -2020,25 +2060,14 @@ class TarimaAdmin(admin.ModelAdmin):
 
             for tarima in tarimas:
 
-                # No modificar tarimas que ya estén cerradas.
                 if not tarima.abierta:
 
                     ya_cerradas += 1
                     continue
 
-                # Utilizar el método del modelo.
-                # Registra automáticamente:
-                # - abierta = False
-                # - fecha_cierre = timezone.now()
-                # - cerrada_por = persona
-
                 tarima.cerrar(persona)
 
                 cerradas += 1
-
-        # --------------------------------------------------
-        # NOTIFICACIONES
-        # --------------------------------------------------
 
         if cerradas:
 
@@ -2077,5 +2106,4 @@ class TarimaAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
 
-        # No se permite eliminar tarimas.
         return False

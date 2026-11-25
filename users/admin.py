@@ -1,16 +1,22 @@
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import Group
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import redirect
+
 from .models import User
 
-# Desregistrar el modelo Group si está registrado
-from django.contrib.auth.models import Group
 
+# Desregistrar el modelo Group si está registrado.
 try:
     admin.site.unregister(Group)
 except admin.sites.NotRegistered:
-    pass  # Si no está registrado, no hacemos nada
+    pass
+
 
 class CustomUserAdmin(UserAdmin):
+
     list_display = ("email", "username", "is_staff", "is_active")
     search_fields = ("email", "username")
     list_filter = ("is_staff", "is_active")
@@ -49,14 +55,27 @@ class CustomUserAdmin(UserAdmin):
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
+
         if not obj:
             return fieldsets
+
         return fieldsets + (
             ('Password change', {'fields': ('password',)}),
         )
 
-# Registro del modelo con la clase de administración personalizada
+    # Redirigir la acción de restablecer contraseña
+    # a la plantilla personalizada.
+    def user_change_password(self, request, id, form_url=""):
+
+        if not self.has_change_permission(request):
+            raise PermissionDenied
+
+        return redirect('/password_reset/')
+
+
+# Registro del modelo.
 admin.site.register(User, CustomUserAdmin)
+
 admin.site.site_header = "Panel de administración"
 admin.site.index_title = "Usuarios"
 admin.site.site_title = "Panel de Administración de Usuarios"

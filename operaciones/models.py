@@ -1,13 +1,14 @@
 from decimal import Decimal
-from django.apps import apps
 
+from django.apps import apps
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models, transaction, IntegrityError, connection
 from django.db.models import Q, F
 from django.utils import timezone
+
 from catalogos.models import Calidad, Tamano, EstacionTrabajo
 from catalogoConfiguracion.models import CodigoTarima
-from django.core.validators import MinValueValidator, MaxValueValidator
 
 # Producto que se empaca, por ejemplo una caja de cierta presentación.
 # Guarda el costo total de empacar una unidad y el precio que se cobra
@@ -1360,6 +1361,7 @@ class OperacionLoteEmpaque(models.Model):
             })
 
 
+
 # ==========================================================
 # MODELO: TARIMA
 #
@@ -1368,29 +1370,37 @@ class OperacionLoteEmpaque(models.Model):
 #
 # RESPONSABILIDADES:
 # - Identificar físicamente una tarima mediante CodigoTarima.
-# - Asociar la tarima con una OperacionLoteEmpaque.
-# - Controlar su apertura y cierre.
-# - Registrar su capacidad máxima capturada al crearla.
-# - Registrar quién abrió y quién cerró la tarima.
-# - Registrar su ubicación física en el almacén.
+# - Asociarla con una OperacionLoteEmpaque.
+# - Definir su modalidad y producto de empaque.
+# - Controlar los tamaños permitidos mediante TarimaTamano.
+# - Controlar su apertura, cierre y capacidad.
+# - Registrar responsables y ubicación en almacén.
 #
 # REGLAS DE NEGOCIO:
 # - Cada tarima utiliza un código técnico único.
 # - Cada tarima pertenece a una sola OperacionLoteEmpaque.
-# - La capacidad máxima es obligatoria y debe ser mayor a cero.
-# - No se permite superar la capacidad de la tarima.
+# - Cada tarima tiene un producto de empaque obligatorio.
+# - La modalidad convencional permite exactamente un tamaño.
+# - La modalidad mixta permite uno o varios tamaños.
+# - La capacidad máxima es obligatoria y mayor a cero.
 # - El número de cajas se obtiene de DesgloseOperacion.
 # - Una tarima cerrada no puede reabrirse.
 # - Una tarima cerrada no admite nuevas cajas.
 # - Una tarima puede cerrarse aunque no esté completa.
-# - La ubicación de almacén puede modificarse incluso
-#   después de cerrar la tarima.
-# - El código técnico se marca como utilizado al crear
-#   y asignar la tarima.
+# - La ubicación puede modificarse después del cierre.
+# - El código técnico se marca como utilizado al crearla.
 #
 # ==========================================================
 
 class Tarima(models.Model):
+
+    # ------------------------------------------------------
+    # MODALIDAD
+    # ------------------------------------------------------
+
+    class Modalidad(models.TextChoices):
+        CONVENCIONAL = "CONVENCIONAL", "Convencional"
+        MIXTA = "MIXTA", "Mixta"
 
     # ------------------------------------------------------
     # IDENTIFICADOR
@@ -1424,16 +1434,25 @@ class Tarima(models.Model):
     )
 
     # ------------------------------------------------------
-    # RELACIÓN CON CATÁLOGO TAMAÑO
+    # MODALIDAD
     # ------------------------------------------------------
 
-    tamano = models.ForeignKey(
-        "catalogos.Tamano",
+    modalidad = models.CharField(
+        max_length=12,
+        choices=Modalidad.choices,
+        default=Modalidad.CONVENCIONAL,
+        verbose_name="Modalidad",
+    )
+
+    # ------------------------------------------------------
+    # PRODUCTO DE EMPAQUE
+    # ------------------------------------------------------
+
+    producto_empaque = models.ForeignKey(
+        "operaciones.ProductoEmpaque",
         on_delete=models.PROTECT,
         related_name="tarimas",
-        null=True,
-        blank=True,
-        verbose_name="Tamaño",
+        verbose_name="Producto de empaque",
     )
 
     # ------------------------------------------------------
@@ -1507,19 +1526,22 @@ class Tarima(models.Model):
         blank=True,
         verbose_name="Sección de almacén",
     )
-    # Operación comercial a la que fue asignada la tarima.
-    # Si se libera o cancela la asignación, queda sin relación.
+
+    # ------------------------------------------------------
+    # OPERACIÓN COMERCIAL
+    # ------------------------------------------------------
+
     operacion_comercial = models.ForeignKey(
         "negocio.OperacionComercial",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="tarimas",
-        verbose_name="Operación comercial"
+        verbose_name="Operación comercial",
     )
 
     # ------------------------------------------------------
-    # CONFIGURACIÓN DEL MODELO
+    # CONFIGURACIÓN
     # ------------------------------------------------------
 
     class Meta:
@@ -1601,16 +1623,17 @@ class Tarima(models.Model):
                 )
             })
 
-        # No se permite cambiar el código ni la operación
-        # a la que pertenece una tarima existente.
+        # No se permite cambiar el código.
         if original.codigo_tarima_id != self.codigo_tarima_id:
 
             raise ValidationError({
                 "codigo_tarima": (
-                    "No se puede cambiar el código de una tarima existente."
+                    "No se puede cambiar el código "
+                    "de una tarima existente."
                 )
             })
 
+        # No se permite cambiar la operación y lote.
         if (
             original.operacion_lote_empaque_id
             != self.operacion_lote_empaque_id
@@ -1619,6 +1642,26 @@ class Tarima(models.Model):
             raise ValidationError({
                 "operacion_lote_empaque": (
                     "No se puede cambiar la operación y lote "
+                    "de una tarima existente."
+                )
+            })
+
+        # No se permite cambiar el producto de empaque.
+        if original.producto_empaque_id != self.producto_empaque_id:
+
+            raise ValidationError({
+                "producto_empaque": (
+                    "No se puede cambiar el producto de empaque "
+                    "de una tarima existente."
+                )
+            })
+
+        # No se permite cambiar la modalidad.
+        if original.modalidad != self.modalidad:
+
+            raise ValidationError({
+                "modalidad": (
+                    "No se puede cambiar la modalidad "
                     "de una tarima existente."
                 )
             })
@@ -1633,12 +1676,108 @@ class Tarima(models.Model):
         cls,
         codigo_tarima,
         operacion_lote_empaque,
+        producto_empaque,
+        modalidad,
+        tamanos,
         persona,
         capacidad_maxima,
     ):
 
         # --------------------------------------------------
-        # BLOQUEAR CÓDIGO
+        # VALIDAR MODALIDAD
+        # --------------------------------------------------
+
+        if modalidad not in cls.Modalidad.values:
+
+            raise ValidationError({
+                "modalidad": (
+                    "La modalidad seleccionada no es válida."
+                )
+            })
+
+        # --------------------------------------------------
+        # NORMALIZAR TAMAÑOS
+        #
+        # Acepta instancias de Tamano o identificadores.
+        # ModelMultipleChoiceField entrega instancias.
+        # --------------------------------------------------
+
+        tamanos_recibidos = list(tamanos)
+
+        if not tamanos_recibidos:
+
+            raise ValidationError({
+                "tamanos": (
+                    "Debe seleccionar al menos un tamaño."
+                )
+            })
+
+        tamanos_ids = [
+            tamano.pk if isinstance(tamano, Tamano) else tamano
+            for tamano in tamanos_recibidos
+        ]
+
+        if len(tamanos_ids) != len(set(tamanos_ids)):
+
+            raise ValidationError({
+                "tamanos": (
+                    "No se permiten tamaños duplicados."
+                )
+            })
+
+        # La modalidad convencional admite exactamente uno.
+        if (
+            modalidad == cls.Modalidad.CONVENCIONAL
+            and len(tamanos_ids) != 1
+        ):
+
+            raise ValidationError({
+                "tamanos": (
+                    "Una tarima convencional debe tener "
+                    "exactamente un tamaño."
+                )
+            })
+
+        # --------------------------------------------------
+        # VALIDAR PRODUCTO DE EMPAQUE
+        # --------------------------------------------------
+
+        producto = (
+            ProductoEmpaque.objects
+            .select_for_update()
+            .get(pk=producto_empaque.pk)
+        )
+
+        if not producto.activo:
+
+            raise ValidationError({
+                "producto_empaque": (
+                    "El producto de empaque seleccionado está inactivo."
+                )
+            })
+
+        # --------------------------------------------------
+        # VALIDAR TAMAÑOS DEL CATÁLOGO
+        # --------------------------------------------------
+
+        tamanos_validos = list(
+            Tamano.objects.filter(
+                pk__in=tamanos_ids,
+                activo=True,
+            )
+        )
+
+        if len(tamanos_validos) != len(tamanos_ids):
+
+            raise ValidationError({
+                "tamanos": (
+                    "Uno o varios tamaños no existen "
+                    "o están inactivos."
+                )
+            })
+
+        # --------------------------------------------------
+        # BLOQUEAR Y VALIDAR CÓDIGO
         # --------------------------------------------------
 
         codigo = (
@@ -1660,6 +1799,10 @@ class Tarima(models.Model):
         relacion = (
             OperacionLoteEmpaque.objects
             .select_for_update()
+            .select_related(
+                "operacion_diaria",
+                "lote_empaque",
+            )
             .get(pk=operacion_lote_empaque.pk)
         )
 
@@ -1688,6 +1831,35 @@ class Tarima(models.Model):
             })
 
         # --------------------------------------------------
+        # CREAR TARIMA
+        # --------------------------------------------------
+
+        tarima = cls(
+            codigo_tarima=codigo,
+            operacion_lote_empaque=relacion,
+            producto_empaque=producto,
+            modalidad=modalidad,
+            abierta_por=persona,
+            capacidad_maxima=capacidad_maxima,
+            abierta=True,
+        )
+
+        tarima.full_clean()
+        tarima.save()
+
+        # --------------------------------------------------
+        # ASIGNAR TAMAÑOS PERMITIDOS
+        # --------------------------------------------------
+
+        TarimaTamano.objects.bulk_create([
+            TarimaTamano(
+                tarima=tarima,
+                tamano=tamano,
+            )
+            for tamano in tamanos_validos
+        ])
+
+        # --------------------------------------------------
         # MARCAR CÓDIGO COMO UTILIZADO
         # --------------------------------------------------
 
@@ -1696,21 +1868,6 @@ class Tarima(models.Model):
         codigo.save(
             update_fields=["usado"]
         )
-
-        # --------------------------------------------------
-        # CREAR TARIMA
-        # --------------------------------------------------
-
-        tarima = cls(
-            codigo_tarima=codigo,
-            operacion_lote_empaque=relacion,
-            abierta_por=persona,
-            capacidad_maxima=capacidad_maxima,
-            abierta=True,
-        )
-
-        tarima.full_clean()
-        tarima.save()
 
         return tarima
 
@@ -1749,6 +1906,79 @@ class Tarima(models.Model):
 
         return self
 
+
+# ==========================================================
+# MODELO: TARIMA TAMAÑO
+#
+# Define los tamaños permitidos para cada tarima.
+#
+# REGLAS DE NEGOCIO:
+# - Una tarima convencional tendrá un solo tamaño.
+# - Una tarima mixta podrá tener uno o varios tamaños.
+# - La configuración no puede modificarse después de crearla.
+#
+# ==========================================================
+
+class TarimaTamano(models.Model):
+
+    id = models.BigAutoField(
+        primary_key=True,
+        verbose_name="ID",
+    )
+
+    tarima = models.ForeignKey(
+        "operaciones.Tarima",
+        on_delete=models.CASCADE,
+        related_name="tamanos_permitidos",
+        verbose_name="Tarima",
+    )
+
+    tamano = models.ForeignKey(
+        "catalogos.Tamano",
+        on_delete=models.PROTECT,
+        related_name="tarimas_configuradas",
+        verbose_name="Tamaño",
+    )
+
+    class Meta:
+
+        db_table = "operaciones_tarima_tamano"
+
+        verbose_name = "Tamaño de tarima"
+        verbose_name_plural = "Tamaños de tarima"
+
+        ordering = ["tamano__nombre"]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tarima", "tamano"],
+                name="uq_tarima_tamano",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+
+        # Una relación existente no puede modificarse.
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            raise ValidationError(
+                "Los tamaños de una tarima no pueden modificarse "
+                "después de su creación."
+            )
+
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+
+        raise ValidationError(
+            "No se permite eliminar individualmente los tamaños "
+            "configurados en una tarima."
+        )
+
+    def __str__(self):
+
+        return f"{self.tarima} - {self.tamano}"
+
+
 # ==========================================================
 # MODELO: DESGLOSE DE OPERACIÓN
 #
@@ -1759,7 +1989,7 @@ class Tarima(models.Model):
 # - Identificar cada caja mediante un CodigoCaja único.
 # - Registrar el producto de empaque utilizado.
 # - Conservar la calidad seleccionada por el operador.
-# - Conservar el tamaño correspondiente al producto.
+# - Conservar el tamaño de la caja mediante el catálogo Tamano.
 # - Registrar la variedad del lote de empaque.
 # - Identificar la tarima a la que pertenece la caja.
 # - Registrar la estación y el empleado responsables.
@@ -1773,16 +2003,22 @@ class Tarima(models.Model):
 # - El código no se libera aunque la caja sea cancelada.
 # - La tarima determina la operación diaria y el lote
 #   de empaque al que pertenece la caja.
+# - El producto de empaque debe coincidir con el configurado
+#   en la tarima.
+# - El tamaño se selecciona del catálogo Tamano y debe estar
+#   permitido en la configuración de la tarima.
+# - En tarimas convencionales se permite únicamente
+#   el tamaño configurado.
+# - En tarimas mixtas se permite cualquiera de los tamaños
+#   asociados a la tarima.
 # - La variedad se obtiene del LoteEmpaque y se conserva
 #   directamente en este registro.
-# - El tamaño se obtiene del ProductoEmpaque y se conserva
-#   directamente en este registro.
-# - La calidad se selecciona independientemente por el operador.
+# - La calidad se conserva directamente en este registro.
 # - El empleado y la estación quedan registrados como
 #   información histórica de la caja.
-# - Una tarima no puede superar su capacidad de 50 cajas.
+# - Una tarima no puede superar su capacidad máxima.
 # - No se permite eliminar físicamente una caja.
-# - Una caja cancelada conserva todos sus datos originales.
+# - Una caja cancelada conserva sus datos originales.
 #
 # RELACIONES:
 # - CodigoCaja: código técnico de uso único.
@@ -2014,18 +2250,55 @@ class DesgloseOperacion(models.Model):
 
         errores = {}
 
-        # El tamaño debe corresponder al producto seleccionado.
-        if (
-            self.producto_empaque_id
-            and self.tamano_id
-            and self.producto_empaque.tamano_id != self.tamano_id
-        ):
-            errores["tamano"] = (
-                "El tamaño debe corresponder al producto de empaque."
-            )
+        # --------------------------------------------------
+        # VALIDACIÓN DE PRODUCTO Y TAMAÑO SEGÚN LA TARIMA
+        #
+        # REGLAS:
+        # - El producto de empaque de la caja debe coincidir
+        #   con el producto configurado en la tarima.
+        # - El tamaño debe estar permitido en TarimaTamano.
+        # - La configuración de la tarima determina qué
+        #   tamaños pueden registrarse en ella.
+        # --------------------------------------------------
 
-        # La variedad debe corresponder al lote de empaque
-        # asociado a la operación de la tarima.
+        if self.tarima_id:
+
+            if (
+                self.producto_empaque_id
+                and self.tarima.producto_empaque_id
+                != self.producto_empaque_id
+            ):
+                errores["producto_empaque"] = (
+                    "El producto de empaque no corresponde "
+                    "al configurado en esta tarima."
+                )
+
+            if self.tamano_id:
+
+                permitido = TarimaTamano.objects.filter(
+                    tarima_id=self.tarima_id,
+                    tamano_id=self.tamano_id,
+                ).exists()
+
+                if not permitido:
+                    errores["tamano"] = (
+                        "El tamaño seleccionado no está permitido "
+                        "en la configuración de esta tarima."
+                    )
+            
+                # --------------------------------------------------
+            # VALIDACIÓN DEL ESTADO DE LA TARIMA
+            # --------------------------------------------------
+
+            if not self.tarima.abierta:
+                errores["tarima"] = (
+                    "No se pueden registrar cajas en una tarima cerrada."
+                )
+
+        # --------------------------------------------------
+        # VALIDACIÓN DE VARIEDAD
+        # --------------------------------------------------
+
         if self.tarima_id and self.variedad_id:
 
             variedad_lote = (
@@ -2039,14 +2312,21 @@ class DesgloseOperacion(models.Model):
                     "de la tarima seleccionada."
                 )
 
+        # --------------------------------------------------
+        # VALIDACIÓN DE PRECIO
+        # --------------------------------------------------
+
         if self.precio_caja is not None and self.precio_caja < 0:
             errores["precio_caja"] = (
                 "El precio de la caja no puede ser negativo."
             )
 
+        # --------------------------------------------------
+        # ERRORES DE VALIDACIÓN
+        # --------------------------------------------------
+
         if errores:
             raise ValidationError(errores)
-
 
 
 # ==========================================================

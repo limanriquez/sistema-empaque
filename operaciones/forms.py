@@ -1,11 +1,21 @@
 from django import forms
 from django.db.models import Q, Subquery
-from inventarios.models import Material
-from .models import ComponenteEmpaque, ProductoEmpaque, OperacionDiaria, LoteEmpaque, Tarima
 from django.core.exceptions import ValidationError
-
 from django.apps import apps
+
 from django.db.models import Sum, Count, Min
+
+from inventarios.models import Material
+from catalogos.models import Tamano
+
+from .models import (
+    ComponenteEmpaque,
+    ProductoEmpaque,
+    OperacionDiaria,
+    LoteEmpaque,
+    Tarima,
+    TarimaTamano,
+)
 
 
 # Formulario para registrar y modificar productos de empaque.
@@ -588,11 +598,32 @@ OperacionDiaria = (
 
 # ==========================================================
 # FORMULARIO ADMINISTRATIVO DE TARIMA
+#
+# RESPONSABILIDADES:
+# - Mostrar automáticamente el código disponible.
+# - Identificar automáticamente operación y lote abiertos.
+# - Permitir seleccionar modalidad de tarima.
+# - Permitir seleccionar producto de empaque.
+# - Permitir configurar los tamaños autorizados.
+# - Capturar capacidad máxima.
+# - Asignar sección de almacén.
+#
+# REGLAS:
+# - La modalidad convencional admite exactamente un tamaño.
+# - La modalidad mixta admite uno o varios tamaños.
+# - El producto de empaque es obligatorio.
+# - No se permite seleccionar productos inactivos.
+# - No se permite seleccionar tamaños inactivos.
+# - La configuración no se modifica después de crear
+#   la tarima.
 # ==========================================================
 
 class TarimaAdminForm(forms.ModelForm):
 
-    # Código automático, sin desplegable.
+    # ------------------------------------------------------
+    # CÓDIGO AUTOMÁTICO
+    # ------------------------------------------------------
+
     codigo_tarima_display = forms.CharField(
         label="Código de tarima",
         required=False,
@@ -604,21 +635,66 @@ class TarimaAdminForm(forms.ModelForm):
         widget=forms.HiddenInput(),
     )
 
-    # Operación y lote informativos.
-    # No se permite selección manual.
+    # ------------------------------------------------------
+    # OPERACIÓN Y LOTE INFORMATIVOS
+    # ------------------------------------------------------
+
     operacion_diaria_display = forms.CharField(
         label="Operación diaria / Lote de empaque",
         required=False,
         disabled=True,
     )
 
+    # ------------------------------------------------------
+    # MODALIDAD
+    # ------------------------------------------------------
+
+    modalidad = forms.ChoiceField(
+        label="Modalidad de tarima",
+        choices=Tarima.Modalidad.choices,
+        required=True,
+        widget=forms.RadioSelect,
+        initial=Tarima.Modalidad.CONVENCIONAL,
+    )
+
+    # ------------------------------------------------------
+    # PRODUCTO DE EMPAQUE
+    # ------------------------------------------------------
+
+    producto_empaque = forms.ModelChoiceField(
+        label="Producto de empaque",
+        queryset=ProductoEmpaque.objects.none(),
+        required=True,
+    )
+
+    # ------------------------------------------------------
+    # TAMAÑOS PERMITIDOS
+    # ------------------------------------------------------
+
+    tamanos = forms.ModelMultipleChoiceField(
+        label="Tamaños permitidos",
+        queryset=Tamano.objects.none(),
+        required=True,
+        widget=forms.CheckboxSelectMultiple,
+        help_text=(
+            "Convencional: seleccione exactamente un tamaño. "
+            "Mixta: seleccione uno o varios tamaños."
+        ),
+    )
+
+    # ======================================================
+    # CONFIGURACIÓN DEL FORMULARIO
+    # ======================================================
+
     class Meta:
+
         model = Tarima
 
         fields = (
-            "tamano",
-            "seccion_almacen",
+            "modalidad",
+            "producto_empaque",
             "capacidad_maxima",
+            "seccion_almacen",
         )
 
     # ======================================================
@@ -630,7 +706,19 @@ class TarimaAdminForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         # --------------------------------------------------
-        # OBTENER EL SIGUIENTE CÓDIGO DISPONIBLE
+        # PRODUCTOS Y TAMAÑOS ACTIVOS
+        # --------------------------------------------------
+
+        productos = ProductoEmpaque.objects.filter(
+            activo=True
+        ).order_by("nombre")
+
+        tamanos = Tamano.objects.filter(
+            activo=True
+        ).order_by("nombre")
+
+        # --------------------------------------------------
+        # OBTENER CÓDIGO DE TARIMA
         # --------------------------------------------------
 
         if self.instance.pk:
@@ -653,42 +741,46 @@ class TarimaAdminForm(forms.ModelForm):
 
         self.codigo_tarima_disponible = codigo
 
-        if codigo:
+        if "codigo_tarima_display" in self.fields:
 
-            self.fields["codigo_tarima_display"].initial = (
-                f"{codigo.consecutivo:02d} - "
-                f"{codigo.codigo_tarima}"
-            )
+            if codigo:
+
+                self.fields["codigo_tarima_display"].initial = (
+                    f"{codigo.consecutivo:02d} - "
+                    f"{codigo.codigo_tarima}"
+                )
+
+            else:
+
+                self.fields["codigo_tarima_display"].initial = (
+                    "No hay códigos disponibles"
+                )
+
+        if "codigo_tarima_id" in self.fields and codigo:
 
             self.fields["codigo_tarima_id"].initial = codigo.pk
 
-        else:
-
-            self.fields["codigo_tarima_display"].initial = (
-                "No hay códigos disponibles"
-            )
-
         # --------------------------------------------------
-        # LOCALIZAR AUTOMÁTICAMENTE OPERACIÓN Y LOTE
+        # LOCALIZAR OPERACIÓN Y LOTE
         # --------------------------------------------------
 
         self.relaciones_disponibles = []
 
         if self.instance.pk:
 
-            relacion = (
-                self.instance.operacion_lote_empaque
-            )
+            relacion = self.instance.operacion_lote_empaque
 
-            self.fields["operacion_diaria_display"].initial = (
-                f"{relacion.operacion_diaria} - "
-                f"{relacion.lote_empaque}"
-            )
+            if "operacion_diaria_display" in self.fields:
+
+                self.fields[
+                    "operacion_diaria_display"
+                ].initial = (
+                    f"{relacion.operacion_diaria} - "
+                    f"{relacion.lote_empaque}"
+                )
 
         else:
 
-            # Recuperar máximo dos registros para comprobar
-            # que exista una sola relación activa.
             self.relaciones_disponibles = list(
                 OperacionLoteEmpaque.objects
                 .filter(
@@ -701,35 +793,104 @@ class TarimaAdminForm(forms.ModelForm):
                 )[:2]
             )
 
-            if len(self.relaciones_disponibles) == 1:
+            if "operacion_diaria_display" in self.fields:
 
-                relacion = self.relaciones_disponibles[0]
+                if len(self.relaciones_disponibles) == 1:
 
-                self.fields[
-                    "operacion_diaria_display"
-                ].initial = (
-                    f"{relacion.operacion_diaria} - "
-                    f"{relacion.lote_empaque}"
+                    relacion = self.relaciones_disponibles[0]
+
+                    self.fields[
+                        "operacion_diaria_display"
+                    ].initial = (
+                        f"{relacion.operacion_diaria} - "
+                        f"{relacion.lote_empaque}"
+                    )
+
+                elif not self.relaciones_disponibles:
+
+                    self.fields[
+                        "operacion_diaria_display"
+                    ].initial = (
+                        "No hay operación y lote abiertos"
+                    )
+
+                else:
+
+                    self.fields[
+                        "operacion_diaria_display"
+                    ].initial = (
+                        "Existen varias relaciones abiertas"
+                    )
+
+        # --------------------------------------------------
+        # CONFIGURACIÓN PARA EDICIÓN
+        # --------------------------------------------------
+
+        if self.instance.pk:
+
+            # Conservar el producto aunque esté inactivo.
+
+            productos = ProductoEmpaque.objects.filter(
+                Q(activo=True)
+                | Q(pk=self.instance.producto_empaque_id)
+            ).order_by("nombre")
+
+            # Recuperar tamaños configurados.
+
+            tamanos_actuales = list(
+                self.instance.tamanos_permitidos.values_list(
+                    "tamano_id",
+                    flat=True,
+                )
+            )
+
+            # Conservar tamaños aunque estén inactivos.
+
+            tamanos = Tamano.objects.filter(
+                Q(activo=True)
+                | Q(pk__in=tamanos_actuales)
+            ).order_by("nombre")
+
+            if "modalidad" in self.fields:
+
+                self.fields["modalidad"].initial = (
+                    self.instance.modalidad
                 )
 
-            elif not self.relaciones_disponibles:
+                self.fields["modalidad"].disabled = True
 
-                self.fields[
-                    "operacion_diaria_display"
-                ].initial = "No hay operación y lote abiertos"
+            if "producto_empaque" in self.fields:
 
-            else:
+                self.fields["producto_empaque"].initial = (
+                    self.instance.producto_empaque_id
+                )
 
-                self.fields[
-                    "operacion_diaria_display"
-                ].initial = "Existen varias relaciones abiertas"
+                self.fields["producto_empaque"].disabled = True
+
+            if "tamanos" in self.fields:
+
+                self.fields["tamanos"].initial = tamanos_actuales
+                self.fields["tamanos"].disabled = True
+
+        # --------------------------------------------------
+        # ASIGNAR CONSULTAS DEFINITIVAS
+        # --------------------------------------------------
+
+        if "producto_empaque" in self.fields:
+
+            self.fields["producto_empaque"].queryset = productos
+
+        if "tamanos" in self.fields:
+
+            self.fields["tamanos"].queryset = tamanos
 
         # --------------------------------------------------
         # OCULTAR ACCIONES DE CAMPOS RELACIONADOS
         # --------------------------------------------------
 
         for nombre in (
-            "tamano",
+            "producto_empaque",
+            "tamanos",
             "seccion_almacen",
         ):
 
@@ -798,14 +959,14 @@ class TarimaAdminForm(forms.ModelForm):
             )
 
         # --------------------------------------------------
-        # EDICIÓN: CONSERVAR RELACIÓN ORIGINAL
+        # EDICIÓN: CONSERVAR CONFIGURACIÓN ORIGINAL
         # --------------------------------------------------
 
         if self.instance.pk:
             return cleaned_data
 
         # --------------------------------------------------
-        # VALIDAR QUE EXISTA UNA SOLA OPERACIÓN Y LOTE
+        # VALIDAR OPERACIÓN Y LOTE
         # --------------------------------------------------
 
         if not self.relaciones_disponibles:
@@ -815,9 +976,7 @@ class TarimaAdminForm(forms.ModelForm):
                 "No existe una operación diaria con LoteEmpaque abierto.",
             )
 
-            return cleaned_data
-
-        if len(self.relaciones_disponibles) > 1:
+        elif len(self.relaciones_disponibles) > 1:
 
             self.add_error(
                 "operacion_diaria_display",
@@ -825,16 +984,65 @@ class TarimaAdminForm(forms.ModelForm):
                 "No es posible determinar automáticamente cuál utilizar.",
             )
 
-            return cleaned_data
+        else:
 
-        relacion = self.relaciones_disponibles[0]
+            relacion = self.relaciones_disponibles[0]
+
+            cleaned_data["operacion_lote_empaque"] = relacion
 
         # --------------------------------------------------
-        # ASIGNAR OPERACIÓN Y LOTE
+        # VALIDAR MODALIDAD Y TAMAÑOS
         # --------------------------------------------------
 
-        cleaned_data["operacion_lote_empaque"] = relacion
+        modalidad = cleaned_data.get("modalidad")
+        tamanos = cleaned_data.get("tamanos")
 
-        self.instance.operacion_lote_empaque = relacion
+        if modalidad and tamanos is not None:
+
+            cantidad_tamanos = tamanos.count()
+
+            if cantidad_tamanos == 0:
+
+                self.add_error(
+                    "tamanos",
+                    "Debe seleccionar al menos un tamaño.",
+                )
+
+            elif (
+                modalidad == Tarima.Modalidad.CONVENCIONAL
+                and cantidad_tamanos != 1
+            ):
+
+                self.add_error(
+                    "tamanos",
+                    "Una tarima convencional debe tener "
+                    "exactamente un tamaño.",
+                )
+
+        # --------------------------------------------------
+        # VALIDAR PRODUCTO DE EMPAQUE
+        # --------------------------------------------------
+
+        producto = cleaned_data.get("producto_empaque")
+
+        if producto and not producto.activo:
+
+            self.add_error(
+                "producto_empaque",
+                "El producto de empaque seleccionado está inactivo.",
+            )
+
+        # --------------------------------------------------
+        # VALIDAR CAPACIDAD
+        # --------------------------------------------------
+
+        capacidad = cleaned_data.get("capacidad_maxima")
+
+        if capacidad is not None and capacidad < 1:
+
+            self.add_error(
+                "capacidad_maxima",
+                "La capacidad máxima debe ser mayor a cero.",
+            )
 
         return cleaned_data
